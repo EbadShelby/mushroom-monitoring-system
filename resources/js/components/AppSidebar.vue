@@ -1,8 +1,21 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import {
+    Activity,
+    AlertTriangle,
+    Bell,
+    Camera,
+    ClipboardList,
+    Cpu,
+    FileText,
+    LayoutDashboard,
+    Ruler,
+    ScrollText,
+    Settings,
+    Users,
+} from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -13,30 +26,98 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { NavGroup } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+const page = usePage();
+const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
+const isAdmin = computed(() => userRole.value === 'admin');
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+const monitoringNav: NavGroup = {
+    label: 'Monitoring',
+    items: [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutDashboard,
+        },
+        {
+            title: 'Historical Data',
+            href: '/historical',
+            icon: Activity,
+        },
+        {
+            title: 'Actuators',
+            href: '/actuators',
+            icon: Cpu,
+        },
+    ],
+};
+
+const growingNav: NavGroup = {
+    label: 'Cultivation',
+    items: [
+        {
+            title: 'Growing Cycles',
+            href: '/cycles',
+            icon: ClipboardList,
+        },
+        {
+            title: 'Measurements',
+            href: '/measurements',
+            icon: Ruler,
+        },
+        {
+            title: 'Growth Camera',
+            href: '/camera',
+            icon: Camera,
+        },
+    ],
+};
+
+const reportsNav: NavGroup = {
+    label: 'Logs & Reports',
+    items: [
+        {
+            title: 'Alert Logs',
+            href: '/alerts',
+            icon: Bell,
+        },
+        {
+            title: 'Reports',
+            href: '/reports',
+            icon: FileText,
+        },
+    ],
+};
+
+const adminNavItems = computed(() => {
+    if (!isAdmin.value) {
+        return null;
+    }
+    return {
+        label: 'Administration',
+        items: [
+            {
+                title: 'User Logs',
+                href: '/user-logs',
+                icon: ScrollText,
+            },
+            {
+                title: 'User Management',
+                href: '/users',
+                icon: Users,
+            },
+            {
+                title: 'Settings',
+                href: '/settings',
+                icon: Settings,
+            },
+        ],
+    } satisfies NavGroup;
+});
 </script>
 
 <template>
@@ -54,11 +135,18 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :group="monitoringNav" />
+            <SidebarSeparator class="mx-3 my-1" />
+            <NavMain :group="growingNav" />
+            <SidebarSeparator class="mx-3 my-1" />
+            <NavMain :group="reportsNav" />
+            <template v-if="adminNavItems">
+                <SidebarSeparator class="mx-3 my-1" />
+                <NavMain :group="adminNavItems" />
+            </template>
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

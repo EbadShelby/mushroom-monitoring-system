@@ -1,19 +1,15 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
-
-const name = usePage().props.name;
 </script>
 
 <template>
     <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
+        class="flex aspect-square size-8 items-center justify-center rounded-lg bg-emerald-700 text-white shadow-sm"
     >
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
+        <AppLogoIcon class="size-5 fill-current" />
     </div>
-    <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate leading-tight font-semibold">{{
-            name
-        }}</span>
+    <div class="ml-2 grid flex-1 text-left text-sm leading-tight">
+        <span class="truncate font-bold text-emerald-700 dark:text-emerald-400">MycoSense</span>
+        <span class="truncate text-[10px] text-muted-foreground uppercase tracking-wider">CotSU Monitoring</span>
     </div>
 </template>

@@ -2,7 +2,6 @@
 import { Form, Head } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
-import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -12,8 +11,8 @@ import { store } from '@/routes/login';
 
 defineOptions({
     layout: {
-        title: 'Log in to your account',
-        description: 'Enter your email and password below to log in',
+        title: 'Sign in',
+        description: 'Enter your credentials to access the dashboard',
     },
 });
 
@@ -25,17 +24,9 @@ defineProps<{
 <template>
     <Head title="Log in" />
 
-    <div class="mb-6 flex flex-col items-center text-center">
-        <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <h1 class="text-2xl font-bold">CotSU Mushroom Monitoring</h1>
-        <p class="text-sm text-muted-foreground mt-1">IoT-Based Environmental System</p>
-    </div>
-
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        class="mb-4 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-center text-sm font-medium text-green-700 dark:text-green-400"
     >
         {{ status }}
     </div>
@@ -44,11 +35,11 @@ defineProps<{
         v-bind="store.form()"
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"
-        class="flex flex-col gap-6"
+        class="flex flex-col gap-5"
     >
-        <div class="grid gap-6">
+        <div class="grid gap-5">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email" class="text-sm font-medium">Email address</Label>
                 <Input
                     id="email"
                     type="email"
@@ -57,28 +48,28 @@ defineProps<{
                     autofocus
                     :tabindex="1"
                     autocomplete="email"
-                    placeholder="email@example.com"
+                    placeholder="you@cotsu.edu.ph"
+                    class="h-10"
                 />
                 <InputError :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
-                <div class="flex items-center justify-between">
-                    <Label for="password">Password</Label>
-                </div>
+                <Label for="password" class="text-sm font-medium">Password</Label>
                 <PasswordInput
                     id="password"
                     name="password"
                     required
                     :tabindex="2"
                     autocomplete="current-password"
-                    placeholder="Password"
+                    placeholder="Enter your password"
+                    class="h-10"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <div class="flex items-center justify-between">
-                <Label for="remember" class="flex items-center space-x-3">
+                <Label for="remember" class="flex cursor-pointer items-center gap-2 text-sm">
                     <Checkbox id="remember" name="remember" :tabindex="3" />
                     <span>Remember me</span>
                 </Label>
@@ -86,13 +77,13 @@ defineProps<{
 
             <Button
                 type="submit"
-                class="mt-4 w-full"
+                class="h-10 w-full bg-emerald-700 font-semibold text-white hover:bg-emerald-600 focus:ring-emerald-500"
                 :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
             >
-                <Spinner v-if="processing" />
-                Log in
+                <Spinner v-if="processing" class="mr-2" />
+                {{ processing ? 'Signing in…' : 'Sign in' }}
             </Button>
         </div>
     </Form>

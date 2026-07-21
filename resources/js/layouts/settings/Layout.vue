@@ -29,42 +29,50 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
-        />
+    <div class="relative flex min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10 px-4 py-8 md:px-10">
+        <!-- Subtle decorative blobs -->
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+            <div class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-secondary/5 blur-3xl"></div>
+        </div>
+        
+        <div class="mx-auto w-full max-w-7xl z-10">
+            <Heading
+                title="Settings"
+                description="Manage your profile and account settings"
+            />
 
-        <div class="flex flex-col lg:flex-row lg:space-x-12">
-            <aside class="w-full max-w-xl lg:w-48">
-                <nav
-                    class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
-                >
-                    <Button
-                        v-for="item in sidebarNavItems"
-                        :key="toUrl(item.href)"
-                        variant="ghost"
-                        :class="[
-                            'w-full justify-start',
-                            { 'bg-muted': isCurrentOrParentUrl(item.href) },
-                        ]"
-                        as-child
+            <div class="mt-8 flex flex-col lg:flex-row lg:space-x-12">
+                <aside class="w-full max-w-xl lg:w-64">
+                    <nav
+                        class="flex flex-col space-y-2 space-x-0"
+                        aria-label="Settings"
                     >
-                        <Link :href="item.href">
-                            <component :is="item.icon" class="h-4 w-4" />
-                            {{ item.title }}
-                        </Link>
-                    </Button>
-                </nav>
-            </aside>
+                        <Button
+                            v-for="item in sidebarNavItems"
+                            :key="toUrl(item.href)"
+                            variant="ghost"
+                            :class="[
+                                'w-full justify-start rounded-xl transition-all duration-200',
+                                isCurrentOrParentUrl(item.href) ? 'bg-primary/10 text-primary font-medium shadow-sm backdrop-blur-sm' : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground',
+                            ]"
+                            as-child
+                        >
+                            <Link :href="item.href">
+                                <component :is="item.icon" class="h-4 w-4 mr-2" />
+                                {{ item.title }}
+                            </Link>
+                        </Button>
+                    </nav>
+                </aside>
 
-            <Separator class="my-6 lg:hidden" />
+                <Separator class="my-6 lg:hidden" />
 
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
-                    <slot />
-                </section>
+                <div class="flex-1">
+                    <section class="max-w-2xl space-y-12">
+                        <slot />
+                    </section>
+                </div>
             </div>
         </div>
     </div>

@@ -37,47 +37,53 @@ const user = computed(() => page.props.auth.user);
             description="Update your name and email address"
         />
 
-        <Form
-            v-bind="ProfileController.update.form()"
-            class="space-y-6"
-            v-slot="{ errors, processing }"
-        >
-            <div class="grid gap-2">
-                <Label for="name">Name</Label>
-                <Input
-                    id="name"
-                    class="mt-1 block w-full"
-                    name="name"
-                    :default-value="user.name"
-                    required
-                    autocomplete="name"
-                    placeholder="Full name"
-                />
-                <InputError class="mt-2" :message="errors.name" />
-            </div>
+        <div class="rounded-2xl border border-border/50 bg-card/60 p-6 sm:p-8 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+            <Form
+                v-bind="ProfileController.update.form()"
+                class="space-y-6"
+                v-slot="{ errors, processing }"
+            >
+                <div class="grid gap-2">
+                    <Label for="name">Name</Label>
+                    <Input
+                        id="name"
+                        class="mt-1 block w-full bg-background/50"
+                        name="name"
+                        :default-value="user.name"
+                        required
+                        autocomplete="name"
+                        placeholder="Full name"
+                    />
+                    <InputError class="mt-2" :message="errors.name" />
+                </div>
 
-            <div class="grid gap-2">
-                <Label for="email">Email address</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    name="email"
-                    :default-value="user.email"
-                    required
-                    autocomplete="username"
-                    placeholder="Email address"
-                />
-                <InputError class="mt-2" :message="errors.email" />
-            </div>
+                <div class="grid gap-2">
+                    <Label for="email">Email address</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        class="mt-1 block w-full bg-background/50"
+                        name="email"
+                        :default-value="user.email"
+                        required
+                        autocomplete="username"
+                        placeholder="Email address"
+                    />
+                    <InputError class="mt-2" :message="errors.email" />
+                </div>
 
-            <div class="flex items-center gap-4">
-                <Button :disabled="processing" data-test="update-profile-button"
-                    >Save</Button
-                >
-            </div>
-        </Form>
+                <div class="flex items-center gap-4 pt-2">
+                    <Button :disabled="processing" data-test="update-profile-button"
+                        >Save changes</Button
+                    >
+                </div>
+            </Form>
+        </div>
     </div>
 
-    <DeleteUser />
+    <div class="mt-12">
+        <div class="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 sm:p-8 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+            <DeleteUser />
+        </div>
+    </div>
 </template>
