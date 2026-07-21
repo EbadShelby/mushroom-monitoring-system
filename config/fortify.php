@@ -143,7 +143,7 @@ return [
     */
 
     'features' => [
-        Features::resetPasswords(),
+        // Features::resetPasswords(),
     ],
 
 ];

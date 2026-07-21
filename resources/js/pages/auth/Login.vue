@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
-import { request } from '@/routes/password';
 
 defineOptions({
     layout: {
@@ -20,12 +19,19 @@ defineOptions({
 
 defineProps<{
     status?: string;
-    canResetPassword: boolean;
 }>();
 </script>
 
 <template>
     <Head title="Log in" />
+
+    <div class="mb-6 flex flex-col items-center text-center">
+        <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h1 class="text-2xl font-bold">CotSU Mushroom Monitoring</h1>
+        <p class="text-sm text-muted-foreground mt-1">IoT-Based Environmental System</p>
+    </div>
 
     <div
         v-if="status"
@@ -59,14 +65,6 @@ defineProps<{
             <div class="grid gap-2">
                 <div class="flex items-center justify-between">
                     <Label for="password">Password</Label>
-                    <TextLink
-                        v-if="canResetPassword"
-                        :href="request()"
-                        class="text-sm"
-                        :tabindex="5"
-                    >
-                        Forgot your password?
-                    </TextLink>
                 </div>
                 <PasswordInput
                     id="password"
