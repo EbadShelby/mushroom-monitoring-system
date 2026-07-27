@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getDatabase } from 'firebase/database';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getDatabase, type Database } from 'firebase/database';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,6 +11,23 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+let _app: FirebaseApp | null = null;
+let _db: Database | null = null;
 
-export const db = getDatabase(app);
+function getApp(): FirebaseApp {
+    if (!_app) {
+        _app = initializeApp(firebaseConfig);
+    }
+    return _app;
+}
+
+export function getDb(): Database {
+    if (!_db) {
+        _db = getDatabase(getApp());
+    }
+    return _db;
+}
+
+/** @deprecated Use getDb() instead — direct export causes SSR crash */
+export const db = import.meta.env.SSR ? null : getDb();
+

@@ -1,7 +1,7 @@
 import { ref, onValue, type DatabaseReference } from 'firebase/database';
 import { defineStore } from 'pinia';
 import { ref as vRef, computed } from 'vue';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 import type { SensorData, ActuatorData } from '@/types/sensor';
 
 export const useSensorStore = defineStore('sensor', () => {
@@ -66,8 +66,9 @@ export const useSensorStore = defineStore('sensor', () => {
     function startListening(): void {
         isLoading.value = true;
 
-        sensorsRef = ref(db, 'sensors');
-        actuatorsRef = ref(db, 'actuators');
+        const database = getDb();
+        sensorsRef = ref(database, 'sensors');
+        actuatorsRef = ref(database, 'actuators');
 
         onValue(
             sensorsRef,
