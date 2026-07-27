@@ -3,6 +3,8 @@ import { Head } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted } from 'vue';
 import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
+import type { GrowingCycle, CameraSnapshot, AlertLog, ChartPoint } from '@/types';
+import VueApexCharts from 'vue3-apexcharts';
 import {
     Thermometer,
     Droplets,
@@ -14,6 +16,10 @@ import {
     CheckCircle2,
     AlertCircle,
     AlertTriangle,
+    Leaf,
+    Camera,
+    Bell,
+    Calendar,
 } from '@lucide/vue';
 
 defineOptions({
@@ -27,6 +33,13 @@ defineOptions({
     },
 });
 
+const props = defineProps<{
+    activeCycle?: GrowingCycle | null;
+    latestSnapshot?: CameraSnapshot | null;
+    lastAlert?: AlertLog | null;
+    chartData?: ChartPoint[];
+}>();
+
 const store = useSensorStore();
 
 onMounted(() => store.startListening());
@@ -36,8 +49,72 @@ const anyWarning = computed(() =>
     store.temperatureStatus === 'warning' ||
     store.humidityStatus === 'warning' ||
     store.co2Status === 'warning' ||
-    (store.sensors.soil_moisture !== null && store.sensors.soil_moisture < 30)
+    (store.sensors.soil_moisture !== null && store.sensors.soil_moisture < 30),
 );
+
+// Chart options factory
+function buildChartOptions(label: string, color: string) {
+    return {
+        chart: {
+            type: 'area',
+            height: 160,
+            sparkline: { enabled: false },
+            toolbar: { show: false },
+            animations: { enabled: true, easing: 'easeinout', speed: 600 },
+            background: 'transparent',
+        },
+        colors: [color],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.05,
+                stops: [0, 100],
+            },
+        },
+        stroke: { curve: 'smooth', width: 2 },
+        dataLabels: { enabled: false },
+        xaxis: {
+            categories: props.chartData?.map((p) => p.time) ?? [],
+            labels: { style: { colors: '#94a3b8', fontSize: '10px' } },
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+        },
+        yaxis: {
+            labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v: number) => v.toFixed(1) },
+        },
+        grid: { borderColor: '#1e293b', strokeDashArray: 4, yaxis: { lines: { show: true } }, xaxis: { lines: { show: false } } },
+        tooltip: {
+            theme: 'dark',
+            x: { show: true },
+            y: { formatter: (v: number) => `${v.toFixed(1)} ${label === 'Temperature' ? '°C' : '%'}` },
+        },
+    };
+}
+
+const tempSeries = computed(() => [
+    { name: 'Temperature', data: props.chartData?.map((p) => p.temperature ?? 0) ?? [] },
+]);
+const humSeries = computed(() => [
+    { name: 'Humidity', data: props.chartData?.map((p) => p.humidity ?? 0) ?? [] },
+]);
+const tempOptions = computed(() => buildChartOptions('Temperature', '#f97316'));
+const humOptions = computed(() => buildChartOptions('Humidity', '#3b82f6'));
+
+const alertSensorLabel: Record<string, string> = {
+    temperature: 'Temperature',
+    humidity: 'Humidity',
+    co2_raw: 'CO₂',
+    light_level: 'Light',
+    soil_moisture: 'Soil',
+};
+
+function alertStatusClass(status: string) {
+    return status === 'sent'
+        ? 'bg-emerald-500/20 text-emerald-500'
+        : 'bg-destructive/20 text-destructive';
+}
 </script>
 
 <template>
@@ -269,6 +346,53 @@ const anyWarning = computed(() =>
                 </div>
             </div>
 
+            <!-- Live Charts Row -->
+            <div class="grid gap-6 lg:grid-cols-2">
+                <!-- Temperature Chart -->
+                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm">
+                    <div class="mb-4 flex items-center gap-2">
+                        <div class="rounded-lg bg-orange-500/10 p-2 text-orange-500 shadow-inner">
+                            <Thermometer class="h-4 w-4" />
+                        </div>
+                        <h3 class="font-semibold tracking-wide text-muted-foreground">TEMPERATURE — Last Hour</h3>
+                    </div>
+                    <div v-if="!chartData" class="animate-pulse space-y-2 py-6">
+                        <div class="h-3 w-3/4 rounded bg-muted"></div>
+                        <div class="h-24 w-full rounded bg-muted"></div>
+                        <div class="h-3 w-1/2 rounded bg-muted"></div>
+                    </div>
+                    <VueApexCharts
+                        v-else
+                        type="area"
+                        height="160"
+                        :options="tempOptions"
+                        :series="tempSeries"
+                    />
+                </div>
+
+                <!-- Humidity Chart -->
+                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm">
+                    <div class="mb-4 flex items-center gap-2">
+                        <div class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner">
+                            <Droplets class="h-4 w-4" />
+                        </div>
+                        <h3 class="font-semibold tracking-wide text-muted-foreground">HUMIDITY — Last Hour</h3>
+                    </div>
+                    <div v-if="!chartData" class="animate-pulse space-y-2 py-6">
+                        <div class="h-3 w-3/4 rounded bg-muted"></div>
+                        <div class="h-24 w-full rounded bg-muted"></div>
+                        <div class="h-3 w-1/2 rounded bg-muted"></div>
+                    </div>
+                    <VueApexCharts
+                        v-else
+                        type="area"
+                        height="160"
+                        :options="humOptions"
+                        :series="humSeries"
+                    />
+                </div>
+            </div>
+
             <!-- Bottom Section: Soil & Actuators -->
             <div class="grid gap-6 md:grid-cols-3">
                 <!-- Soil Moisture -->
@@ -409,7 +533,125 @@ const anyWarning = computed(() =>
                     </div>
                 </div>
             </div>
+
+            <!-- Info Row: Active Cycle + Camera Snapshot + Last Alert -->
+            <div class="grid gap-6 md:grid-cols-3">
+                <!-- Active Growing Cycle -->
+                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+                    <div class="mb-4 flex items-center gap-2">
+                        <div class="rounded-lg bg-green-500/10 p-2 text-green-500 shadow-inner">
+                            <Leaf class="h-5 w-5" />
+                        </div>
+                        <h3 class="font-semibold tracking-wide text-muted-foreground">ACTIVE CYCLE</h3>
+                    </div>
+
+                    <!-- Skeleton -->
+                    <div v-if="activeCycle === undefined" class="animate-pulse space-y-3">
+                        <div class="h-4 w-3/4 rounded bg-muted"></div>
+                        <div class="h-3 w-1/2 rounded bg-muted"></div>
+                        <div class="h-3 w-2/3 rounded bg-muted"></div>
+                        <div class="h-3 w-1/3 rounded bg-muted"></div>
+                    </div>
+
+                    <div v-else-if="activeCycle">
+                        <p class="text-xl font-bold text-foreground">{{ activeCycle.name }}</p>
+                        <div class="mt-3 space-y-2 text-sm text-muted-foreground">
+                            <div class="flex justify-between">
+                                <span>Variety</span>
+                                <span class="font-medium text-foreground">{{ activeCycle.mushroom_variety }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Substrate</span>
+                                <span class="font-medium text-foreground">{{ activeCycle.substrate_type }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Started</span>
+                                <span class="font-medium text-foreground">{{ activeCycle.start_date }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Day</span>
+                                <span class="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-600 dark:text-green-400">
+                                    Day {{ activeCycle.day_count }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                        <Calendar class="mb-2 h-10 w-10 opacity-30" />
+                        <p class="text-sm">No active cycle</p>
+                    </div>
+                </div>
+
+                <!-- Latest Camera Snapshot -->
+                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+                    <div class="mb-4 flex items-center gap-2">
+                        <div class="rounded-lg bg-teal-500/10 p-2 text-teal-500 shadow-inner">
+                            <Camera class="h-5 w-5" />
+                        </div>
+                        <h3 class="font-semibold tracking-wide text-muted-foreground">LATEST SNAPSHOT</h3>
+                    </div>
+
+                    <!-- Skeleton -->
+                    <div v-if="latestSnapshot === undefined" class="animate-pulse">
+                        <div class="h-36 w-full rounded-lg bg-muted"></div>
+                        <div class="mt-2 h-3 w-2/3 rounded bg-muted"></div>
+                    </div>
+
+                    <div v-else>
+                        <!-- Always show sample image as thumbnail (dummy) -->
+                        <div class="overflow-hidden rounded-lg border border-border/50">
+                            <img
+                                src="/sample-image.png"
+                                alt="Latest mushroom snapshot"
+                                class="h-36 w-full object-cover transition-transform duration-500 hover:scale-105"
+                            />
+                        </div>
+                        <p class="mt-2 text-xs text-muted-foreground">
+                            {{ latestSnapshot ? latestSnapshot.captured_at : 'Sample preview' }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Last SMS Alert -->
+                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+                    <div class="mb-4 flex items-center gap-2">
+                        <div class="rounded-lg bg-red-500/10 p-2 text-red-500 shadow-inner">
+                            <Bell class="h-5 w-5" />
+                        </div>
+                        <h3 class="font-semibold tracking-wide text-muted-foreground">LAST SMS ALERT</h3>
+                    </div>
+
+                    <!-- Skeleton -->
+                    <div v-if="lastAlert === undefined" class="animate-pulse space-y-3">
+                        <div class="h-4 w-1/2 rounded bg-muted"></div>
+                        <div class="h-3 w-full rounded bg-muted"></div>
+                        <div class="h-3 w-3/4 rounded bg-muted"></div>
+                    </div>
+
+                    <div v-else-if="lastAlert">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold uppercase text-foreground">
+                                {{ alertSensorLabel[lastAlert.sensor] ?? lastAlert.sensor }}
+                            </span>
+                            <span
+                                class="rounded-full px-2 py-0.5 text-xs font-bold"
+                                :class="alertStatusClass(lastAlert.status)"
+                            >
+                                {{ lastAlert.status }}
+                            </span>
+                        </div>
+                        <p class="mt-3 text-sm text-muted-foreground line-clamp-3">{{ lastAlert.message }}</p>
+                        <div class="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                            <span>Value: <strong class="text-foreground">{{ lastAlert.value_at_alert }}</strong></span>
+                            <span>{{ lastAlert.sent_at }}</span>
+                        </div>
+                    </div>
+                    <div v-else class="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                        <Bell class="mb-2 h-10 w-10 opacity-30" />
+                        <p class="text-sm">No alerts yet</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
-

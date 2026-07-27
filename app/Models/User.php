@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string $password
  * @property string $role
  * @property string|null $contact_number
+ * @property bool $is_active
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -38,6 +39,7 @@ class User extends Authenticatable
         'password',
         'role',
         'contact_number',
+        'is_active',
     ];
 
     /**
@@ -60,6 +62,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 

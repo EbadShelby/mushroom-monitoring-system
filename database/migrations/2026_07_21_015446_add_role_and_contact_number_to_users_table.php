@@ -1,29 +1,21 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
+/**
+ * This migration is a no-op. The `role` and `contact_number` columns were
+ * already included in the base create_users_table migration.
+ * Kept here to avoid breaking the migration history.
+ */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['admin', 'faculty', 'student'])->default('student')->after('remember_token');
-            $table->string('contact_number')->nullable()->after('role');
-        });
+        // No-op: columns already exist in create_users_table migration.
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['role', 'contact_number']);
-        });
+        // No-op.
     }
 };
