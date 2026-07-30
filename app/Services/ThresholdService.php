@@ -9,8 +9,8 @@ class ThresholdService
 {
     // ─── Threshold defaults (fallback if DB settings missing) ─────────────────
     private const DEFAULTS = [
-        'temp_min' => 24.0,
-        'temp_max' => 30.0,
+        'temp_min' => 28.0,
+        'temp_max' => 32.0,
         'humidity_low' => 80.0,
         'humidity_high' => 90.0,
         'co2_max' => 1000,
@@ -31,11 +31,12 @@ class ThresholdService
             array_keys(self::DEFAULTS)
         ))->pluck('value', 'key');
 
-        $this->thresholds = array_map(function ($default, $key) use ($settings) {
-            $dbKey = "threshold_{$key}";
+        $this->thresholds = [];
 
-            return $settings->has($dbKey) ? (float) $settings[$dbKey] : $default;
-        }, self::DEFAULTS, array_keys(self::DEFAULTS));
+        foreach (self::DEFAULTS as $key => $default) {
+            $dbKey = "threshold_{$key}";
+            $this->thresholds[$key] = $settings->has($dbKey) ? (float) $settings[$dbKey] : $default;
+        }
     }
 
     /**
@@ -92,7 +93,7 @@ class ThresholdService
 
             // Auto-deactivate humidifier when humidity is high enough
             if ($humidity >= $this->thresholds['humidity_high']) {
-                $this->logActuatorCommand('humidifier', 'off', 'auto');
+                $this->logActuatorCommand('humidifier', 'off', 'automatic');
             }
         }
 

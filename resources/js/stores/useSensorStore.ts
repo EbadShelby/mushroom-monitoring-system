@@ -1,4 +1,4 @@
-import { ref, onValue, type DatabaseReference } from 'firebase/database';
+import { ref, onValue, type Unsubscribe } from 'firebase/database';
 import { defineStore } from 'pinia';
 import { ref as vRef, computed } from 'vue';
 import { getDb } from '@/lib/firebase';
@@ -25,9 +25,22 @@ export const useSensorStore = defineStore('sensor', () => {
     const isConnected = vRef<boolean>(false);
     const isLoading = vRef<boolean>(true);
 
-    // Holds unsubscribe handles so we can clean up on unmount
-    let sensorsRef: DatabaseReference | null = null;
-    let actuatorsRef: DatabaseReference | null = null;
+    // Holds Firebase unsubscribe handles so we can clean up on unmount
+    let unsubscribeSensors: Unsubscribe | null = null;
+    let unsubscribeActuators: Unsubscribe | null = null;
+
+    // Offline detection: if no update arrives within 90 seconds, mark as offline
+    let offlineTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function resetOfflineTimer(): void {
+        if (offlineTimer) {
+            clearTimeout(offlineTimer);
+        }
+        // ESP32 sends every 10 s; flag offline after 30 s of silence
+        offlineTimer = setTimeout(() => {
+            isConnected.value = false;
+        }, 30_000);
+    }
 
     // --- Getters ---
     const lastUpdatedFormatted = computed(() => {
@@ -44,7 +57,7 @@ export const useSensorStore = defineStore('sensor', () => {
     const temperatureStatus = computed((): 'normal' | 'warning' | 'critical' => {
         const temp = sensors.value.temperature;
         if (temp === null) { return 'critical'; }
-        if (temp < 24 || temp > 30) { return 'warning'; }
+        if (temp < 28 || temp > 32) { return 'warning'; }
         return 'normal';
     });
 
@@ -67,15 +80,17 @@ export const useSensorStore = defineStore('sensor', () => {
         isLoading.value = true;
 
         const database = getDb();
-        sensorsRef = ref(database, 'sensors');
-        actuatorsRef = ref(database, 'actuators');
+        const sensorsRef = ref(database, 'sensors');
+        const actuatorsRef = ref(database, 'actuators');
 
-        onValue(
+        // onValue returns an Unsubscribe function — store it so stopListening can use it
+        unsubscribeSensors = onValue(
             sensorsRef,
             (snapshot) => {
                 if (snapshot.exists()) {
                     sensors.value = snapshot.val() as SensorData;
                     isConnected.value = true;
+                    resetOfflineTimer();
                 }
                 isLoading.value = false;
             },
@@ -86,7 +101,7 @@ export const useSensorStore = defineStore('sensor', () => {
             },
         );
 
-        onValue(
+        unsubscribeActuators = onValue(
             actuatorsRef,
             (snapshot) => {
                 if (snapshot.exists()) {
@@ -100,16 +115,18 @@ export const useSensorStore = defineStore('sensor', () => {
     }
 
     function stopListening(): void {
-        // Firebase's onValue returns an unsubscribe function — but since we used
-        // the ref object approach, we call off() on the refs to remove all listeners.
-        if (sensorsRef) {
-            // Re-calling ref() with the same path and passing no callback removes listeners.
-            // In firebase/database v9+, detach by keeping and calling the returned unsubscribe fn.
-            // This store uses startListening/stopListening as lifecycle hooks.
-            sensorsRef = null;
+        // Properly detach Firebase listeners
+        if (unsubscribeSensors) {
+            unsubscribeSensors();
+            unsubscribeSensors = null;
         }
-        if (actuatorsRef) {
-            actuatorsRef = null;
+        if (unsubscribeActuators) {
+            unsubscribeActuators();
+            unsubscribeActuators = null;
+        }
+        if (offlineTimer) {
+            clearTimeout(offlineTimer);
+            offlineTimer = null;
         }
         isConnected.value = false;
     }

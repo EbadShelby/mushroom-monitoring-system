@@ -82,7 +82,7 @@ class SensorController extends Controller
                 $this->threshold->logActuatorCommand(
                     actuator: $alert['actuator'],
                     action: $alert['actuatorAction'],
-                    trigger: "auto:{$alert['sensor']}_threshold",
+                    trigger: 'automatic',
                 );
             }
         }

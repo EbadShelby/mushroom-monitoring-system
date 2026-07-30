@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted } from 'vue';
 import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
@@ -42,8 +42,23 @@ const props = defineProps<{
 
 const store = useSensorStore();
 
-onMounted(() => store.startListening());
-onUnmounted(() => store.stopListening());
+// Refresh chart data from MySQL every 60 s (independent of live Firebase sensor cards)
+let chartRefreshInterval: ReturnType<typeof setInterval> | null = null;
+
+onMounted(() => {
+    store.startListening();
+    chartRefreshInterval = setInterval(() => {
+        router.reload({ only: ['chartData'] });
+    }, 60_000);
+});
+
+onUnmounted(() => {
+    store.stopListening();
+    if (chartRefreshInterval) {
+        clearInterval(chartRefreshInterval);
+        chartRefreshInterval = null;
+    }
+});
 
 const anyWarning = computed(() =>
     store.temperatureStatus === 'warning' ||
@@ -219,7 +234,7 @@ function alertStatusClass(status: string) {
                     </div>
 
                     <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground">Target: 24-30°C</span>
+                        <span class="text-muted-foreground">Target: 28-32°C</span>
                         <div v-if="store.temperatureStatus === 'warning'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
                             <AlertCircle class="h-4 w-4" /> Out of range
                         </div>
