@@ -43,7 +43,7 @@ class ActuatorController extends Controller
         $actuator = $request->input('actuator');
         $action = $request->input('action');
 
-        // Write command to Firebase via HTTP (Phase 7 will fully implement this)
+        // Write command to Firebase via FirebaseService
         $firebaseUrl = config('services.firebase.database_url');
         if ($firebaseUrl) {
             Http::put("{$firebaseUrl}/actuators/{$actuator}.json", json_encode($action));

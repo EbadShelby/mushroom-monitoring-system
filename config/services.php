@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'firebase' => [
+        'database_url' => env('FIREBASE_DATABASE_URL'),
+        // Path to the service account JSON downloaded from Firebase Console →
+        // Project Settings → Service Accounts → Generate new private key.
+        // Store it in storage/app/ and NEVER commit it to git.
+        'service_account_path' => env('FIREBASE_SERVICE_ACCOUNT_PATH'),
+    ],
+
+    'semaphore' => [
+        'api_key' => env('SEMAPHORE_API_KEY'),
+        'sender_name' => env('SEMAPHORE_SENDER_NAME', 'CotSU-IoT'),
+    ],
+
 ];
