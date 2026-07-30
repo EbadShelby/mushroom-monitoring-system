@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
 import type { GrowingCycle, CameraSnapshot, AlertLog, ChartPoint } from '@/types';
@@ -42,10 +42,25 @@ const props = defineProps<{
 
 const store = useSensorStore();
 
+// Real-time clock for the dashboard header
+const currentTime = ref('');
+let clockInterval: ReturnType<typeof setInterval> | null = null;
+
+function updateClock() {
+    currentTime.value = new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+    });
+}
+
 // Refresh chart data from MySQL every 60 s (independent of live Firebase sensor cards)
 let chartRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000);
     store.startListening();
     chartRefreshInterval = setInterval(() => {
         router.reload({ only: ['chartData'] });
@@ -53,6 +68,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    if (clockInterval) {
+        clearInterval(clockInterval);
+    }
     store.stopListening();
     if (chartRefreshInterval) {
         clearInterval(chartRefreshInterval);
@@ -149,8 +167,9 @@ function alertStatusClass(status: string) {
                     <h1 class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
                         Mushroom Cultivation
                     </h1>
-                    <p class="mt-1 text-muted-foreground">
-                        Live environmental metrics and actuator control.
+                    <p class="mt-1 text-muted-foreground flex items-center gap-2">
+                        <span>Live environmental metrics and actuator control.</span>
+                        <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground shadow-sm">{{ currentTime }}</span>
                     </p>
                 </div>
 
