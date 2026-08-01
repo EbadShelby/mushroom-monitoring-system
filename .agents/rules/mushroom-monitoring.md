@@ -70,14 +70,14 @@ Laravel API (SINGLE entry point — all data flows through here)
 - Capacitive soil moisture → GPIO 35
 
 ## Actuators and Relay Channels
-- Humidifier (ultrasonic mist maker) → Relay channel 1 → GPIO 26
-- LED grow light strip (5V USB) → Relay channel 2 → GPIO 27
-- Cooling fan (5V USB) → Relay channel 3 → GPIO 14
+- Cooling fan (5V USB) → Relay N4 → GPIO 26
+- Humidifier (ultrasonic mist maker) → Relay N3 → GPIO 14
+- LED grow light strip (5V USB) → Relay N2 → GPIO 27
 - All actuators use separate power rails — ESP32 only sends relay signal
 - Relay is active LOW (LOW = ON, HIGH = OFF)
 
 ## Threshold Values (Gray Oyster Mushroom — Pleurotus sajor-caju)
-- Temperature: 24–30°C (alert below 24 or above 30)
+- Temperature: 28–32°C (alert below 28 or above 32)
 - Humidity: 80–95% (alert below 80)
 - CO2: below 1000 ppm during fruiting (alert above 1000)
 - Light: 50–1000 lux during fruiting, dark during colonization

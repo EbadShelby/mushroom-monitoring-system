@@ -4,14 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\ActuatorLog;
 use App\Models\Setting;
+use App\Services\FirebaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ActuatorController extends Controller
 {
+    public function __construct(private FirebaseService $firebase) {}
+
     public function index(): Response
     {
         return Inertia::render('ActuatorView', [
@@ -43,11 +45,8 @@ class ActuatorController extends Controller
         $actuator = $request->input('actuator');
         $action = $request->input('action');
 
-        // Write command to Firebase via FirebaseService
-        $firebaseUrl = config('services.firebase.database_url');
-        if ($firebaseUrl) {
-            Http::put("{$firebaseUrl}/actuators/{$actuator}.json", json_encode($action));
-        }
+        // Write command to Firebase via FirebaseService (handles auth + correct serialization)
+        $this->firebase->setActuator($actuator, $action);
 
         // Log the manual toggle
         ActuatorLog::create([

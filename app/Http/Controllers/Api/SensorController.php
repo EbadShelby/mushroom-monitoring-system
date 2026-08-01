@@ -34,7 +34,7 @@ class SensorController extends Controller
             'co2_raw' => ['nullable', 'integer', 'min:0', 'max:4095'],
             'light_level' => ['nullable', 'numeric', 'min:0'],
             'soil_moisture' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'soil_status' => ['nullable', 'string', 'in:MOIST,DRY,CRITICAL'],
+            'soil_status' => ['nullable', 'string', 'in:moist,dry,critical,MOIST,DRY,CRITICAL'],
         ]);
 
         // ── 1. Find the active growing cycle (nullable — sensors may run without one) ──

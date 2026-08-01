@@ -23,7 +23,7 @@ class ThresholdService
     /** @var array<string, mixed> */
     private array $thresholds;
 
-    public function __construct()
+    public function __construct(private FirebaseService $firebase)
     {
         // Load all threshold settings from DB in one query
         $settings = Setting::whereIn('key', array_map(
@@ -51,7 +51,10 @@ class ThresholdService
     {
         $alerts = [];
 
-        // ─── Temperature ──────────────────────────────────────────────────────
+        // Load current actuator states from Firebase once to avoid redundant writes
+        $currentActuators = $this->firebase->getActuators();
+
+        // ─── Temperature ──────────────────────────────────────────────────────────────
         if (isset($reading['temperature'])) {
             $temp = (float) $reading['temperature'];
 
@@ -92,7 +95,8 @@ class ThresholdService
             }
 
             // Auto-deactivate humidifier when humidity is high enough
-            if ($humidity >= $this->thresholds['humidity_high']) {
+            if ($humidity >= $this->thresholds['humidity_high'] && ($currentActuators['humidifier'] ?? 'off') === 'on') {
+                $this->firebase->setActuator('humidifier', 'off');
                 $this->logActuatorCommand('humidifier', 'off', 'automatic');
             }
         }
@@ -110,6 +114,12 @@ class ThresholdService
                     actuator: 'fan',
                     actuatorAction: 'on',
                 );
+            } else {
+                // Auto-deactivate fan only if it is currently on
+                if (($currentActuators['fan'] ?? 'off') === 'on') {
+                    $this->firebase->setActuator('fan', 'off');
+                    $this->logActuatorCommand('fan', 'off', 'automatic');
+                }
             }
         }
 
