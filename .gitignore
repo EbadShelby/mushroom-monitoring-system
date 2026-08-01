@@ -27,6 +27,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+esp32_code.txt
 
 # Firebase service account key — contains private key, NEVER commit
 /storage/app/firebase-service-account.json

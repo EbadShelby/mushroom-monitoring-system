@@ -37,7 +37,7 @@ const props = defineProps<{
     activeCycle?: GrowingCycle | null;
     latestSnapshot?: CameraSnapshot | null;
     lastAlert?: AlertLog | null;
-    chartData?: ChartPoint[];
+    chartData?: any[];
 }>();
 
 const store = useSensorStore();
@@ -63,7 +63,7 @@ onMounted(() => {
     clockInterval = setInterval(updateClock, 1000);
     store.startListening();
     chartRefreshInterval = setInterval(() => {
-        router.reload({ only: ['chartData'] });
+        router.reload({ data: { chart_interval: chartInterval.value }, only: ['chartData'] });
     }, 60_000);
 });
 
@@ -84,6 +84,16 @@ const anyWarning = computed(() =>
     store.co2Status === 'warning' ||
     (store.sensors.soil_moisture !== null && store.sensors.soil_moisture < 30),
 );
+
+// Chart Interval Selection
+const chartInterval = ref('1m');
+const chartIntervalLabel = computed(() => {
+    const map: Record<string, string> = { '1m': 'Last Hour', '5m': 'Last 6 Hours', '15m': 'Last 24 Hours', '1h': 'Last 7 Days' };
+    return map[chartInterval.value] || 'Last Hour';
+});
+function onIntervalChange() {
+    router.reload({ data: { chart_interval: chartInterval.value }, only: ['chartData'] });
+}
 
 // Chart options factory
 function buildChartOptions(label: string, color: string) {
@@ -109,10 +119,15 @@ function buildChartOptions(label: string, color: string) {
         stroke: { curve: 'smooth', width: 2 },
         dataLabels: { enabled: false },
         xaxis: {
+            type: 'datetime',
             categories: props.chartData?.map((p) => p.time) ?? [],
-            labels: { style: { colors: '#94a3b8', fontSize: '10px' } },
+            labels: { 
+                style: { colors: '#94a3b8', fontSize: '10px' },
+                datetimeUTC: false,
+            },
             axisBorder: { show: false },
             axisTicks: { show: false },
+            tooltip: { enabled: false }
         },
         yaxis: {
             labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v: number) => v.toFixed(1) },
@@ -380,15 +395,30 @@ function alertStatusClass(status: string) {
                 </div>
             </div>
 
+            <!-- Live Charts Row Header & Controls -->
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold tracking-tight text-foreground">Environmental Trends</h2>
+                <select
+                    v-model="chartInterval"
+                    @change="onIntervalChange"
+                    class="rounded-md border border-border/50 bg-card/60 px-3 py-1.5 text-sm shadow-sm backdrop-blur-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:bg-card/40"
+                >
+                    <option value="1m">Per 1 Min (Last Hour)</option>
+                    <option value="5m">Per 5 Mins (Last 6 Hrs)</option>
+                    <option value="15m">Per 15 Mins (Last 24 Hrs)</option>
+                    <option value="1h">Per 1 Hour (Last 7 Days)</option>
+                </select>
+            </div>
+
             <!-- Live Charts Row -->
-            <div class="grid gap-6 lg:grid-cols-2">
+            <div class="grid gap-6 lg:grid-cols-2 mt-2">
                 <!-- Temperature Chart -->
                 <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm">
                     <div class="mb-4 flex items-center gap-2">
                         <div class="rounded-lg bg-orange-500/10 p-2 text-orange-500 shadow-inner">
                             <Thermometer class="h-4 w-4" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground">TEMPERATURE — Last Hour</h3>
+                        <h3 class="font-semibold tracking-wide text-muted-foreground uppercase">TEMPERATURE — {{ chartIntervalLabel }}</h3>
                     </div>
                     <div v-if="!chartData" class="animate-pulse space-y-2 py-6">
                         <div class="h-3 w-3/4 rounded bg-muted"></div>
@@ -410,7 +440,7 @@ function alertStatusClass(status: string) {
                         <div class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner">
                             <Droplets class="h-4 w-4" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground">HUMIDITY — Last Hour</h3>
+                        <h3 class="font-semibold tracking-wide text-muted-foreground uppercase">HUMIDITY — {{ chartIntervalLabel }}</h3>
                     </div>
                     <div v-if="!chartData" class="animate-pulse space-y-2 py-6">
                         <div class="h-3 w-3/4 rounded bg-muted"></div>

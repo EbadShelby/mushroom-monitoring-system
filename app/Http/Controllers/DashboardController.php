@@ -6,12 +6,14 @@ use App\Models\AlertLog;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $activeCycle = GrowingCycle::where('status', 'active')
             ->orderByDesc('start_date')
@@ -37,14 +39,57 @@ class DashboardController extends Controller
             'lastAlert' => Inertia::defer(fn () => AlertLog::orderByDesc('sent_at')
                 ->first(['id', 'sensor', 'value_at_alert', 'threshold_exceeded', 'message', 'status', 'sent_at'])),
 
-            'chartData' => Inertia::defer(fn () => SensorReading::where('recorded_at', '>=', now()->subHour())
-                ->orderBy('recorded_at')
-                ->get(['recorded_at', 'temperature', 'humidity'])
-                ->map(fn ($r) => [
-                    'time' => $r->recorded_at->format('H:i'),
-                    'temperature' => $r->temperature,
-                    'humidity' => $r->humidity,
-                ])),
+            'chartData' => Inertia::defer(function () use ($request) {
+                $interval = $request->query('chart_interval', '1m');
+                $timeWindow = match ($interval) {
+                    '5m' => now()->subHours(6),
+                    '15m' => now()->subHours(24),
+                    '1h' => now()->subDays(7),
+                    default => now()->subHour(),
+                };
+
+                $readings = SensorReading::where('recorded_at', '>=', $timeWindow)
+                    ->orderBy('recorded_at')
+                    ->get(['recorded_at', 'temperature', 'humidity']);
+
+                if ($interval === '1m') {
+                    return $readings->map(fn ($r) => [
+                        'time' => $r->recorded_at->toIso8601String(),
+                        'temperature' => $r->temperature,
+                        'humidity' => $r->humidity,
+                    ]);
+                }
+
+                $intervalSeconds = match ($interval) {
+                    '5m' => 5 * 60,
+                    '15m' => 15 * 60,
+                    '1h' => 60 * 60,
+                    default => 60,
+                };
+
+                $grouped = [];
+                foreach ($readings as $r) {
+                    $timestamp = $r->recorded_at->timestamp;
+                    $roundedTime = floor($timestamp / $intervalSeconds) * $intervalSeconds;
+
+                    if (! isset($grouped[$roundedTime])) {
+                        $grouped[$roundedTime] = ['temp' => [], 'hum' => []];
+                    }
+                    $grouped[$roundedTime]['temp'][] = $r->temperature;
+                    $grouped[$roundedTime]['hum'][] = $r->humidity;
+                }
+
+                $chartData = [];
+                foreach ($grouped as $time => $values) {
+                    $chartData[] = [
+                        'time' => Carbon::createFromTimestamp($time)->toIso8601String(),
+                        'temperature' => round(array_sum($values['temp']) / count($values['temp']), 1),
+                        'humidity' => round(array_sum($values['hum']) / count($values['hum']), 1),
+                    ];
+                }
+
+                return array_values($chartData);
+            }),
         ]);
     }
 }
