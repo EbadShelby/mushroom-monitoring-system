@@ -92,7 +92,7 @@ async function saveSchedule() {
 // Actuator metadata
 const actuators = [
     { key: 'humidifier' as const, label: 'Humidifier', relay: 'Relay 1', icon: Droplets, color: 'blue' },
-    { key: 'fan' as const, label: 'Cooling Fan', relay: 'Relay 3', icon: Wind, color: 'purple' },
+    { key: 'fan' as const, label: 'Intake Fan', relay: 'Relay 3', icon: Wind, color: 'purple' },
     { key: 'led' as const, label: 'Grow Lights', relay: 'Relay 2', icon: Sun, color: 'yellow' },
 ];
 
@@ -260,7 +260,11 @@ const actionLabels: Record<string, string> = { on: 'ON', off: 'OFF' };
                             <span class="font-semibold text-foreground">{{ thresholds.humidity_high }}%</span>
                         </div>
                         <div class="flex justify-between rounded-lg bg-muted/30 px-4 py-2">
-                            <span class="text-muted-foreground">CO₂ Max (fan ON)</span>
+                            <span class="text-muted-foreground">Temp Max (intake fan ON)</span>
+                            <span class="font-semibold text-foreground">{{ thresholds.temp_max }}°C</span>
+                        </div>
+                        <div class="flex justify-between rounded-lg bg-muted/30 px-4 py-2">
+                            <span class="text-muted-foreground">CO₂ Max (intake fan ON)</span>
                             <span class="font-semibold text-foreground">{{ thresholds.co2_max }} ppm</span>
                         </div>
                         <div class="flex justify-between rounded-lg bg-muted/30 px-4 py-2">

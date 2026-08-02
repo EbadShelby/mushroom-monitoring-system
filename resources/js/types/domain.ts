@@ -88,6 +88,7 @@ export interface LedSchedule {
 }
 
 export interface Thresholds {
+    temp_max: number;
     humidity_low: number;
     humidity_high: number;
     co2_max: number;

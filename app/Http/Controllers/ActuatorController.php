@@ -26,6 +26,7 @@ class ActuatorController extends Controller
                 'off_hour' => (int) Setting::get('led_off_hour', 18),
             ],
             'thresholds' => [
+                'temp_max' => (float) Setting::get('threshold_temp_max', 32),
                 'humidity_low' => (float) Setting::get('threshold_humidity_low', 80),
                 'humidity_high' => (float) Setting::get('threshold_humidity_high', 90),
                 'co2_max' => (int) Setting::get('threshold_co2_max', 1000),

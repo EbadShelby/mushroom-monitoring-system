@@ -72,7 +72,7 @@ class ThresholdService
                     sensor: 'temperature',
                     value: $temp,
                     threshold: "above {$this->thresholds['temp_max']}°C",
-                    message: "⚠️ [CotSU Mushroom] Temperature HIGH: {$temp}°C (max: {$this->thresholds['temp_max']}°C). Activating fan.",
+                    message: "🌡️ [CotSU Mushroom] Temperature HIGH: {$temp}°C (above {$this->thresholds['temp_max']}°C). Intake fan activated to cool the chamber.",
                     actuator: 'fan',
                     actuatorAction: 'on',
                 );
@@ -110,16 +110,16 @@ class ThresholdService
                     sensor: 'co2',
                     value: $co2,
                     threshold: "above {$this->thresholds['co2_max']} raw",
-                    message: "💨 [CotSU Mushroom] CO2 HIGH: {$co2} raw ADC (threshold: {$this->thresholds['co2_max']}). Fan activated for ventilation.",
+                    message: "💨 [CotSU Mushroom] CO2 HIGH: {$co2} raw ADC (threshold: {$this->thresholds['co2_max']}). Intake fan activated for fresh air.",
                     actuator: 'fan',
                     actuatorAction: 'on',
                 );
-            } else {
-                // Auto-deactivate fan only if it is currently on
-                if (($currentActuators['fan'] ?? 'off') === 'on') {
-                    $this->firebase->setActuator('fan', 'off');
-                    $this->logActuatorCommand('fan', 'off', 'automatic');
-                }
+            }
+
+            // Auto-deactivate fan when CO2 drops back below threshold
+            if ($co2 <= $this->thresholds['co2_max'] && ($currentActuators['fan'] ?? 'off') === 'on') {
+                $this->firebase->setActuator('fan', 'off');
+                $this->logActuatorCommand('fan', 'off', 'automatic');
             }
         }
 

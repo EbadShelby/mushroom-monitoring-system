@@ -549,7 +549,7 @@ function alertStatusClass(status: string) {
                                 </div>
                             </div>
                             <div class="mt-4">
-                                <h4 class="text-lg font-semibold text-foreground">Cooling Fan</h4>
+                                <h4 class="text-lg font-semibold text-foreground">Intake Fan</h4>
                                 <div class="mt-2 flex items-center justify-between">
                                     <span class="text-sm text-muted-foreground">Relay 3</span>
                                     <span

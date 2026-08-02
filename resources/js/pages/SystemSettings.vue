@@ -125,7 +125,7 @@ function inputClass() {
                             <input id="thresh-hum-high" v-model="settingsForm.threshold_humidity_high" type="number" step="1" :class="inputClass()" placeholder="90" />
                         </div>
                         <div class="space-y-1">
-                            <label for="thresh-co2" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">CO₂ Max — Fan ON (ppm)</label>
+                            <label for="thresh-co2" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">CO₂ Max — Intake Fan ON (ppm)</label>
                             <input id="thresh-co2" v-model="settingsForm.threshold_co2_max" type="number" step="1" :class="inputClass()" placeholder="1000" />
                         </div>
                         <div class="space-y-1">
