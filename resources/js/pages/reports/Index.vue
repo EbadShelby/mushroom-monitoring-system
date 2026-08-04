@@ -111,7 +111,7 @@ function statusColor(status: string) {
                 <!-- Card Footer (Button) -->
                 <div class="mt-auto pt-4 border-t border-slate-700/50">
                     <a
-                        :href="reports.show({ cycle: cycle.id }).url()"
+                        :href="reports.show.url({ cycle: cycle.id })"
                         target="_blank"
                         class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600/10 px-4 py-2.5 text-sm font-semibold text-emerald-500 transition-colors hover:bg-emerald-600 hover:text-white"
                     >

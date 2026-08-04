@@ -45,7 +45,7 @@ class EnforceLedSchedule extends Command
         ActuatorLog::create([
             'actuator' => 'led',
             'action' => $desiredAction,
-            'trigger' => 'schedule',
+            'trigger' => 'automatic',
             'triggered_by' => 'system',
             'triggered_at' => now(),
         ]);
