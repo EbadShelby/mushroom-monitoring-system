@@ -74,18 +74,39 @@ _All actuators use separate power rails — ESP32 only sends a relay signal. Rel
 - **Humidifier** (Ultrasonic Mist Maker) → Relay N3 → GPIO 14
 - **LED Grow Light Strip** (5V USB) → Relay N2 → GPIO 27
 
-## Threshold Values & Automation Logic (Gray Oyster Mushroom)
+## Threshold Values & Stage-Based Automation Logic (Gray Oyster Mushroom)
 
-- **Temperature**: 28–32°C (Alert below 28 or above 32).
-- **Humidity**: 80–95% (Alert below 80).
-    - _Logic_: `< 80%` → Auto-activate humidifier & send SMS alert. `>= 90%` → Auto-deactivate humidifier.
-- **CO2**: Below 1000 ppm during fruiting (Alert above 1000).
-    - _Logic_: `> 1000 ppm` → Auto-activate cooling fan & send SMS alert. `< 1000 ppm` and temp `< 30°C` → Auto-deactivate cooling fan.
-- **Light**: 50–1000 lux during fruiting, dark during colonization.
-    - _Logic_: LED grow light controlled by a schedule (12hr ON / 12hr OFF) set by the admin.
-- **Soil Moisture**:
-    - _Warning_: `< 30%` → Warning SMS only (No actuator).
-    - _Critical_: `< 20%` → Urgent SMS only (No actuator).
+The system automatically switches environmental target profiles based on the active cycle's **Growth Stage**:
+
+### 1. Colonization Stage (Spawn Running Phase)
+*Mycelium spreads throughout the substrate bag — requires warmth, darkness, and high CO₂ tolerance.*
+
+| Environmental Factor | Target Range | Sensor | System Automation & Alert Logic |
+| :--- | :--- | :--- | :--- |
+| 🌡️ **Temperature** | **24–28°C** (Ideal: 25–27°C) | DHT22 | `< 24°C` → Low temp alert. `> 28°C` → Auto-activate intake fan & alert. |
+| 💧 **Humidity** | **70–80% RH** | DHT22 | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level** | **2,000–5,000 ppm** | MQ-135 | `> 5,000 ppm` → Auto-activate intake fan for fresh air & SMS alert. |
+| 💡 **Light Level** | **0–50 lux** (Dark/Dim) | BH1750 | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF. |
+| 🌱 **Substrate Moisture** | **60–65%** | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert. |
+
+---
+
+### 2. Fruiting Stage (Mushroom Formation & Growth Phase)
+*Bags opened — requires cooler temps, high humidity, fresh air, and indirect light.*
+
+| Environmental Factor | Target Range | Sensor | System Automation & Alert Logic |
+| :--- | :--- | :--- | :--- |
+| 🌡️ **Temperature** | **20–24°C** (Ideal: 22–24°C) | DHT22 | `< 20°C` → Low temp alert. `> 24°C` → Auto-activate intake fan & alert. |
+| 💧 **Humidity** | **85–95% RH** | DHT22 | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level** | **600–1,000 ppm** | MQ-135 | `> 1,000 ppm` → Auto-activate intake fan for fresh air & SMS alert. |
+| 💡 **Light Level** | **200–800 lux** (Indirect) | BH1750 | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule. |
+| 🌱 **Substrate Moisture** | **55–65%** | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert. |
+
+---
+
+### ⚡ Actuator Interlock & Safety Logic
+- **Humidifier Interlock**: When the **Humidifier** is active, the **Intake Fan** is automatically overridden to **OFF** to prevent mist from being blown out of the chamber.
+- **Automatic Stage Switch**: Users can switch growth stages on the dashboard or cycles page, instantly updating live gauges, target indicators, Pinia status evaluators, and backend automation logic.
 
 ## User Roles
 
