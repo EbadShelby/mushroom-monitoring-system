@@ -20,5 +20,23 @@ class AdminSeeder extends Seeder
                 'role' => 'admin',
             ]
         );
+
+        User::firstOrCreate(
+            ['email' => 'faculty@cotsu.edu.ph'],
+            [
+                'name' => 'Faculty User',
+                'password' => bcrypt('faculty123'),
+                'role' => 'faculty',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'student@cotsu.edu.ph'],
+            [
+                'name' => 'Student User',
+                'password' => bcrypt('student123'),
+                'role' => 'student',
+            ]
+        );
     }
 }
