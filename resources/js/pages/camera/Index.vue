@@ -47,7 +47,7 @@ function clearFilters() {
 const groupedSnapshots = computed(() => {
     const map = new Map<string, CameraSnapshot[]>();
     for (const s of props.snapshots) {
-        const key = s.captured_date ?? s.captured_at ?? '';
+        const key = s.captured_date ?? '';
         if (!map.has(key)) { map.set(key, []); }
         map.get(key)!.push(s);
     }

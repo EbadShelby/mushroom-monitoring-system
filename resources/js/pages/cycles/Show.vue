@@ -92,6 +92,7 @@ const showMeasureModal = ref(false);
 const measureForm = ref({
     observed_date: new Date().toISOString().split('T')[0],
     flush_number: 1,
+    weight_g: '',
     height_cm: '',
     cap_diameter_cm: '',
     fruiting_body_count: '',
@@ -110,7 +111,7 @@ async function saveMeasurement() {
         });
         toast.success('Measurement saved!');
         showMeasureModal.value = false;
-        measureForm.value = { observed_date: new Date().toISOString().split('T')[0], flush_number: 1, height_cm: '', cap_diameter_cm: '', fruiting_body_count: '', notes: '' };
+        measureForm.value = { observed_date: new Date().toISOString().split('T')[0], flush_number: 1, weight_g: '', height_cm: '', cap_diameter_cm: '', fruiting_body_count: '', notes: '' };
         router.reload({ only: ['measurements'] });
     } catch (e: any) {
         if (e.response?.status === 422) { measureErrors.value = e.response.data.errors ?? {}; }
@@ -141,7 +142,7 @@ const groupedSnapshots = computed(() => {
     const snaps = props.snapshots ?? [];
     const map = new Map<string, CameraSnapshot[]>();
     for (const s of snaps) {
-        const key = s.captured_date ?? s.captured_at ?? '';
+        const key = s.captured_date ?? '';
         if (!map.has(key)) { map.set(key, []); }
         map.get(key)!.push(s);
     }
@@ -320,6 +321,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                         <tr class="border-b border-slate-700/50">
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Date</th>
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Flush</th>
+                            <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Weight (g)</th>
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Height (cm)</th>
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Cap Diam. (cm)</th>
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Fruiting Bodies</th>
@@ -333,6 +335,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <td class="py-3 pr-4">
                                 <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400">Flush {{ m.flush_number }}</span>
                             </td>
+                            <td class="py-3 pr-4 text-emerald-400 font-bold font-mono">{{ m.weight_g ?? '—' }}</td>
                             <td class="py-3 pr-4 text-slate-300">{{ m.height_cm ?? '—' }}</td>
                             <td class="py-3 pr-4 text-slate-300">{{ m.cap_diameter_cm ?? '—' }}</td>
                             <td class="py-3 pr-4 text-slate-300">{{ m.fruiting_body_count ?? '—' }}</td>
@@ -436,7 +439,17 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 <input v-model.number="measureForm.flush_number" type="number" min="1" class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-slate-300">Weight (g)</label>
+                                <input v-model="measureForm.weight_g" type="number" step="0.1" min="0" placeholder="0.0" class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-slate-300">Fruiting Bodies</label>
+                                <input v-model.number="measureForm.fruiting_body_count" type="number" min="0" placeholder="0" class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="mb-1.5 block text-sm font-medium text-slate-300">Height (cm)</label>
                                 <input v-model="measureForm.height_cm" type="number" step="0.1" min="0" placeholder="0.0" class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
@@ -444,10 +457,6 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <div>
                                 <label class="mb-1.5 block text-sm font-medium text-slate-300">Cap Diam. (cm)</label>
                                 <input v-model="measureForm.cap_diameter_cm" type="number" step="0.1" min="0" placeholder="0.0" class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
-                            </div>
-                            <div>
-                                <label class="mb-1.5 block text-sm font-medium text-slate-300">Fruiting Bodies</label>
-                                <input v-model.number="measureForm.fruiting_body_count" type="number" min="0" placeholder="0" class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none" />
                             </div>
                         </div>
                         <div>

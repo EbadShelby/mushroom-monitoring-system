@@ -27,13 +27,14 @@ class DashboardController extends Controller
                 'substrate_type' => $activeCycle->substrate_type,
                 'start_date' => $activeCycle->start_date,
                 'status' => $activeCycle->status,
+                'growing_stage' => $activeCycle->growing_stage ?? 'colonization',
                 'day_count' => (int) now()->diffInDays($activeCycle->start_date) + 1,
             ] : null),
 
             'latestSnapshot' => Inertia::defer(fn () => $activeCycle
                 ? CameraSnapshot::where('growing_cycle_id', $activeCycle->id)
-                    ->orderByDesc('captured_at')
-                    ->first(['id', 'file_path', 'file_name', 'captured_at'])
+                    ->orderByDesc('captured_date')
+                    ->first(['id', 'file_path', 'file_name', 'captured_date'])
                 : null),
 
             'lastAlert' => Inertia::defer(fn () => AlertLog::orderByDesc('sent_at')

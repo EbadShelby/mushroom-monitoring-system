@@ -16,7 +16,6 @@ export interface CameraSnapshot {
     growing_cycle_id: number;
     file_path: string;
     file_name: string;
-    captured_at?: string;
     captured_date?: string;
     flush_number?: number;
     notes?: string | null;
@@ -134,6 +133,7 @@ export interface MushroomMeasurement {
     user?: { id: number; name: string };
     observed_date: string;
     flush_number: number;
+    weight_g: number | null;
     height_cm: number | null;
     cap_diameter_cm: number | null;
     fruiting_body_count: number | null;

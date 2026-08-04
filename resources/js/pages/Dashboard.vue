@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
+import axios from 'axios';
+import { toast } from 'vue-sonner';
 import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
 import type { GrowingCycle, CameraSnapshot, AlertLog, ChartPoint } from '@/types';
@@ -22,6 +24,7 @@ import {
     Calendar,
     Microscope,
     Layers,
+    ArrowRightLeft,
 } from '@lucide/vue';
 
 defineOptions({
@@ -43,6 +46,33 @@ const props = defineProps<{
 }>();
 
 const store = useSensorStore();
+
+// Stage awareness
+const activeStage = computed(() => props.activeCycle?.growing_stage ?? 'colonization');
+const isColonization = computed(() => activeStage.value === 'colonization');
+
+watchEffect(() => {
+    store.setStage(activeStage.value);
+});
+
+const switchingStage = ref(false);
+async function toggleStage() {
+    if (!props.activeCycle?.id) return;
+    const nextStage = isColonization.value ? 'fruiting' : 'colonization';
+    const stageLabel = nextStage === 'fruiting' ? 'Fruiting' : 'Colonization';
+    if (!confirm(`Switch "${props.activeCycle.name}" to ${stageLabel} stage? This updates active environmental targets & automation logic.`)) return;
+
+    switchingStage.value = true;
+    try {
+        await axios.post(`/api/cycles/${props.activeCycle.id}/switch-stage`, { growing_stage: nextStage });
+        toast.success(`Switched to ${stageLabel} stage — thresholds updated.`);
+        router.reload({ only: ['activeCycle'] });
+    } catch (e: any) {
+        toast.error(e.response?.data?.error ?? 'Failed to switch stage');
+    } finally {
+        switchingStage.value = false;
+    }
+}
 
 // Real-time clock for the dashboard header
 const currentTime = ref('');
@@ -81,10 +111,11 @@ onUnmounted(() => {
 });
 
 const anyWarning = computed(() =>
-    store.temperatureStatus === 'warning' ||
-    store.humidityStatus === 'warning' ||
-    store.co2Status === 'warning' ||
-    (store.sensors.soil_moisture !== null && store.sensors.soil_moisture < 30),
+    store.temperatureStatus !== 'normal' ||
+    store.humidityStatus !== 'normal' ||
+    store.co2Status !== 'normal' ||
+    store.lightStatus !== 'normal' ||
+    store.soilStatus !== 'normal',
 );
 
 // Chart Interval Selection
@@ -181,9 +212,21 @@ function alertStatusClass(status: string) {
             <!-- Header & Connection Status -->
             <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                 <div>
-                    <h1 class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
-                        Mushroom Cultivation
-                    </h1>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <h1 class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+                            Mushroom Cultivation
+                        </h1>
+                        <span
+                            v-if="activeCycle"
+                            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset shadow-sm"
+                            :class="isColonization
+                                ? 'bg-amber-500/15 text-amber-400 ring-amber-500/30'
+                                : 'bg-purple-500/15 text-purple-400 ring-purple-500/30'"
+                        >
+                            <component :is="isColonization ? Microscope : Layers" class="h-3.5 w-3.5" />
+                            {{ isColonization ? 'Colonization Stage (Spawn Running)' : 'Fruiting Stage (Mushroom Formation)' }}
+                        </span>
+                    </div>
                     <p class="mt-1 text-muted-foreground flex items-center gap-2">
                         <span>Live environmental metrics and actuator control.</span>
                         <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground shadow-sm">{{ currentTime }}</span>
@@ -232,7 +275,7 @@ function alertStatusClass(status: string) {
                 class="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground dark:text-destructive backdrop-blur-md shadow-sm"
             >
                 <AlertTriangle class="h-4 w-4 shrink-0" />
-                <span class="font-medium">One or more sensor readings are outside the optimal range. Check actuator status.</span>
+                <span class="font-medium">One or more sensor readings are outside the {{ isColonization ? 'Colonization' : 'Fruiting' }} optimal stage range. Check actuator status.</span>
             </div>
 
             <!-- Sensor Grid -->
@@ -241,7 +284,7 @@ function alertStatusClass(status: string) {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                     :class="
-                        store.temperatureStatus === 'warning'
+                        store.temperatureStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -259,6 +302,12 @@ function alertStatusClass(status: string) {
                                 TEMPERATURE
                             </p>
                         </div>
+                        <span
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
+                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                        >
+                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
+                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -270,8 +319,8 @@ function alertStatusClass(status: string) {
                     </div>
 
                     <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground">Target: 28-32°C</span>
-                        <div v-if="store.temperatureStatus === 'warning'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
+                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '24–28°C' : '20–24°C' }}</span>
+                        <div v-if="store.temperatureStatus !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
                             <AlertCircle class="h-4 w-4" /> Out of range
                         </div>
                         <div v-else class="flex items-center gap-1 font-medium text-primary">
@@ -284,7 +333,7 @@ function alertStatusClass(status: string) {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                     :class="
-                        store.humidityStatus === 'warning'
+                        store.humidityStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -302,6 +351,12 @@ function alertStatusClass(status: string) {
                                 HUMIDITY
                             </p>
                         </div>
+                        <span
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
+                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                        >
+                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
+                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -313,9 +368,9 @@ function alertStatusClass(status: string) {
                     </div>
 
                     <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground">Target: 80-95%</span>
-                        <div v-if="store.humidityStatus === 'warning'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
-                            <AlertCircle class="h-4 w-4" /> Low
+                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '70–80%' : '85–95%' }}</span>
+                        <div v-if="store.humidityStatus !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
+                            <AlertCircle class="h-4 w-4" /> Out of range
                         </div>
                         <div v-else class="flex items-center gap-1 font-medium text-primary">
                             <CheckCircle2 class="h-4 w-4" /> Optimal
@@ -327,7 +382,7 @@ function alertStatusClass(status: string) {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                     :class="
-                        store.co2Status === 'warning'
+                        store.co2Status !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -345,6 +400,12 @@ function alertStatusClass(status: string) {
                                 CO₂ LEVEL
                             </p>
                         </div>
+                        <span
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
+                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                        >
+                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
+                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -356,8 +417,8 @@ function alertStatusClass(status: string) {
                     </div>
 
                     <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground">Target: &lt; 1000</span>
-                        <div v-if="store.co2Status === 'warning'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
+                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '< 5,000' : '< 1,000' }} ppm</span>
+                        <div v-if="store.co2Status !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
                             <AlertCircle class="h-4 w-4" /> High
                         </div>
                         <div v-else class="flex items-center gap-1 font-medium text-primary">
@@ -367,7 +428,14 @@ function alertStatusClass(status: string) {
                 </div>
 
                 <!-- Light Level -->
-                <div class="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div
+                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                    :class="
+                        store.lightStatus !== 'normal'
+                            ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
+                            : 'border-border/50 bg-card/60 backdrop-blur-md'
+                    "
+                >
                     <div class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-45">
                         <Sun class="h-32 w-32" stroke-width="1.5" />
                     </div>
@@ -381,6 +449,12 @@ function alertStatusClass(status: string) {
                                 LIGHT LEVEL
                             </p>
                         </div>
+                        <span
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
+                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                        >
+                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
+                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -392,7 +466,13 @@ function alertStatusClass(status: string) {
                     </div>
 
                     <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground">Fruiting: 50-1000 lux</span>
+                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '0–50 lux (Dim)' : '200–800 lux' }}</span>
+                        <div v-if="store.lightStatus !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
+                            <AlertCircle class="h-4 w-4" /> {{ isColonization ? 'Too Bright' : 'Out of range' }}
+                        </div>
+                        <div v-else class="flex items-center gap-1 font-medium text-primary">
+                            <CheckCircle2 class="h-4 w-4" /> {{ isColonization ? 'Dark' : 'Optimal' }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -622,20 +702,31 @@ function alertStatusClass(status: string) {
                     <div v-else-if="activeCycle">
                         <p class="text-xl font-bold text-foreground">{{ activeCycle.name }}</p>
                         <div class="mt-3 space-y-2 text-sm text-muted-foreground">
-                            <div class="flex justify-between">
+                            <div class="flex items-center justify-between">
                                 <span>Stage</span>
-                                <span
-                                    class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ring-1 ring-inset"
-                                    :class="activeCycle.growing_stage === 'colonization'
-                                        ? 'bg-amber-500/20 text-amber-400 ring-amber-500/30'
-                                        : 'bg-purple-500/20 text-purple-400 ring-purple-500/30'"
-                                >
-                                    <component
-                                        :is="activeCycle.growing_stage === 'colonization' ? Microscope : Layers"
-                                        class="h-3 w-3"
-                                    />
-                                    {{ activeCycle.growing_stage === 'colonization' ? 'Colonization' : 'Fruiting' }}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ring-1 ring-inset"
+                                        :class="isColonization
+                                            ? 'bg-amber-500/20 text-amber-400 ring-amber-500/30'
+                                            : 'bg-purple-500/20 text-purple-400 ring-purple-500/30'"
+                                    >
+                                        <component
+                                            :is="isColonization ? Microscope : Layers"
+                                            class="h-3 w-3"
+                                        />
+                                        {{ isColonization ? 'Colonization' : 'Fruiting' }}
+                                    </span>
+                                    <button
+                                        @click="toggleStage"
+                                        :disabled="switchingStage"
+                                        class="inline-flex items-center gap-1 rounded-md bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-secondary-foreground hover:bg-secondary transition-colors"
+                                        title="Switch active growth stage"
+                                    >
+                                        <ArrowRightLeft class="h-3 w-3" />
+                                        Switch
+                                    </button>
+                                </div>
                             </div>
                             <div class="flex justify-between">
                                 <span>Variety</span>
@@ -688,7 +779,7 @@ function alertStatusClass(status: string) {
                             />
                         </div>
                         <p class="mt-2 text-xs text-muted-foreground">
-                            {{ latestSnapshot ? latestSnapshot.captured_at : 'Sample preview' }}
+                            {{ latestSnapshot ? latestSnapshot.captured_date : 'Sample preview' }}
                         </p>
                     </div>
                 </div>

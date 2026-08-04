@@ -114,7 +114,7 @@ class GrowingCycleController extends Controller
                 ->orderByDesc('id')
                 ->get([
                     'id', 'growing_cycle_id', 'user_id', 'observed_date',
-                    'flush_number', 'height_cm', 'cap_diameter_cm',
+                    'flush_number', 'weight_g', 'height_cm', 'cap_diameter_cm',
                     'fruiting_body_count', 'notes',
                 ])),
 

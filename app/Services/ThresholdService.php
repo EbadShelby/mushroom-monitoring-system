@@ -97,6 +97,34 @@ class ThresholdService
         // Load current actuator states from Firebase once to avoid redundant writes
         $currentActuators = $this->firebase->getActuators();
 
+        // ─── Actuator Interlock Logic ─────────────────────────────────────────────
+        $humidifierOn = ($currentActuators['humidifier'] ?? 'off') === 'on';
+        $fanOn = ($currentActuators['fan'] ?? 'off') === 'on';
+
+        // 1. Turn off fan if humidifier is on
+        if ($humidifierOn && $fanOn) {
+            $this->firebase->setActuator('fan', 'off');
+            $this->logActuatorCommand('fan', 'off', 'humidifier_override');
+            $fanOn = false; // Update local state
+            $currentActuators['fan'] = 'off';
+        }
+
+        // 2. Determine if fan is allowed to turn on (delay after humidifier turns off)
+        $fanAllowed = true;
+        if ($humidifierOn) {
+            $fanAllowed = false;
+        } else {
+            // Check if humidifier was turned off recently (e.g., within 5 minutes)
+            $lastHumidifierOff = ActuatorLog::where('actuator', 'humidifier')
+                ->where('action', 'off')
+                ->latest('triggered_at')
+                ->first();
+
+            if ($lastHumidifierOff && $lastHumidifierOff->triggered_at->gt(now()->subMinutes(5))) {
+                $fanAllowed = false;
+            }
+        }
+
         // ─── Temperature ──────────────────────────────────────────────────────────
         if (isset($reading['temperature'])) {
             $temp = (float) $reading['temperature'];
@@ -111,13 +139,18 @@ class ThresholdService
                     actuatorAction: null,
                 );
             } elseif ($temp > $t['temp_max']) {
+                $message = "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Intake fan activated to cool the chamber.";
+                if (! $fanAllowed) {
+                    $message = "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Fan activation delayed to allow humidity to build up.";
+                }
+
                 $alerts[] = $this->alert(
                     sensor: 'temperature',
                     value: $temp,
                     threshold: "above {$t['temp_max']}°C",
-                    message: "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Intake fan activated to cool the chamber.",
-                    actuator: 'fan',
-                    actuatorAction: 'on',
+                    message: $message,
+                    actuator: $fanAllowed ? 'fan' : null,
+                    actuatorAction: $fanAllowed ? 'on' : null,
                 );
             }
 
@@ -159,13 +192,18 @@ class ThresholdService
                     ? "above {$t['co2_max']} ppm (colonization ceiling)"
                     : "above {$t['co2_max']} ppm (fruiting requires fresh air)";
 
+                $message = "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Intake fan activated for fresh air.";
+                if (! $fanAllowed) {
+                    $message = "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm. Fan activation delayed to allow humidity to build up.";
+                }
+
                 $alerts[] = $this->alert(
                     sensor: 'co2',
                     value: $co2,
                     threshold: $co2Label,
-                    message: "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Intake fan activated for fresh air.",
-                    actuator: 'fan',
-                    actuatorAction: 'on',
+                    message: $message,
+                    actuator: $fanAllowed ? 'fan' : null,
+                    actuatorAction: $fanAllowed ? 'on' : null,
                 );
             }
 
