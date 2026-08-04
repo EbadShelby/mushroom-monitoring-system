@@ -20,6 +20,8 @@ import {
     Camera,
     Bell,
     Calendar,
+    Microscope,
+    Layers,
 } from '@lucide/vue';
 
 defineOptions({
@@ -620,6 +622,21 @@ function alertStatusClass(status: string) {
                     <div v-else-if="activeCycle">
                         <p class="text-xl font-bold text-foreground">{{ activeCycle.name }}</p>
                         <div class="mt-3 space-y-2 text-sm text-muted-foreground">
+                            <div class="flex justify-between">
+                                <span>Stage</span>
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ring-1 ring-inset"
+                                    :class="activeCycle.growing_stage === 'colonization'
+                                        ? 'bg-amber-500/20 text-amber-400 ring-amber-500/30'
+                                        : 'bg-purple-500/20 text-purple-400 ring-purple-500/30'"
+                                >
+                                    <component
+                                        :is="activeCycle.growing_stage === 'colonization' ? Microscope : Layers"
+                                        class="h-3 w-3"
+                                    />
+                                    {{ activeCycle.growing_stage === 'colonization' ? 'Colonization' : 'Fruiting' }}
+                                </span>
+                            </div>
                             <div class="flex justify-between">
                                 <span>Variety</span>
                                 <span class="font-medium text-foreground">{{ activeCycle.mushroom_variety }}</span>

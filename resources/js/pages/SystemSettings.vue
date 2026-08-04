@@ -10,6 +10,8 @@ import {
     Sun,
     Monitor,
     ShieldX,
+    Microscope,
+    Layers,
 } from '@lucide/vue';
 
 defineOptions({
@@ -37,7 +39,7 @@ const tabs: { id: Tab; label: string; icon: unknown }[] = [
     { id: 'system', label: 'System', icon: Monitor },
 ];
 
-// ---------- Settings Tab ----------
+// ---------- Settings Form ----------
 const settingsForm = ref<SystemSettingsType>({ ...props.settings });
 const savingSettings = ref(false);
 
@@ -100,48 +102,111 @@ function inputClass() {
                 </div>
 
                 <!-- ======= SENSOR THRESHOLDS TAB ======= -->
-                <div v-if="activeTab === 'thresholds'" class="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm">
-                    <div class="mb-6 flex items-center gap-2">
-                        <div class="rounded-lg bg-primary/10 p-2 text-primary shadow-inner">
-                            <Sliders class="h-4 w-4" />
+                <div v-if="activeTab === 'thresholds'" class="space-y-6">
+
+                    <!-- Colonization Stage Thresholds -->
+                    <div class="rounded-2xl border border-amber-500/20 bg-card/60 backdrop-blur-md p-6 shadow-sm">
+                        <div class="mb-6 flex items-center gap-3">
+                            <div class="rounded-lg bg-amber-500/10 p-2 text-amber-500 shadow-inner">
+                                <Microscope class="h-4 w-4" />
+                            </div>
+                            <div>
+                                <h2 class="font-semibold text-amber-400">COLONIZATION STAGE THRESHOLDS</h2>
+                                <p class="text-xs text-muted-foreground">Mycelium spawn running phase — warm, dark, high CO₂ tolerated</p>
+                            </div>
                         </div>
-                        <h2 class="font-semibold text-muted-foreground">SENSOR THRESHOLDS</h2>
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            <div class="space-y-1">
+                                <label for="col-temp-min" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Temp Min (°C)</label>
+                                <input id="col-temp-min" v-model="settingsForm.threshold_col_temp_min" type="number" step="0.1" :class="inputClass()" placeholder="24" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="col-temp-max" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Temp Max (°C)</label>
+                                <input id="col-temp-max" v-model="settingsForm.threshold_col_temp_max" type="number" step="0.1" :class="inputClass()" placeholder="28" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="col-hum-low" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Humidity Low — Humidifier ON (%)</label>
+                                <input id="col-hum-low" v-model="settingsForm.threshold_col_humidity_low" type="number" step="1" :class="inputClass()" placeholder="70" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="col-hum-high" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Humidity High — Humidifier OFF (%)</label>
+                                <input id="col-hum-high" v-model="settingsForm.threshold_col_humidity_high" type="number" step="1" :class="inputClass()" placeholder="80" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="col-co2" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">CO₂ Max — Fan ON (ppm)</label>
+                                <input id="col-co2" v-model="settingsForm.threshold_col_co2_max" type="number" step="1" :class="inputClass()" placeholder="5000" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="col-light-max" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Light Max — Keep Dark (lux)</label>
+                                <input id="col-light-max" v-model="settingsForm.threshold_col_light_max" type="number" step="1" :class="inputClass()" placeholder="100" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="col-soil-warn" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Substrate Moisture Warning (%)</label>
+                                <input id="col-soil-warn" v-model="settingsForm.threshold_col_soil_warning" type="number" step="1" :class="inputClass()" placeholder="55" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="col-soil-crit" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Substrate Moisture Critical (%)</label>
+                                <input id="col-soil-crit" v-model="settingsForm.threshold_col_soil_critical" type="number" step="1" :class="inputClass()" placeholder="50" />
+                            </div>
+                        </div>
                     </div>
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="space-y-1">
-                            <label for="thresh-temp-min" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Temperature Min (°C)</label>
-                            <input id="thresh-temp-min" v-model="settingsForm.threshold_temperature_min" type="number" step="0.1" :class="inputClass()" placeholder="24" />
+
+                    <!-- Fruiting Stage Thresholds -->
+                    <div class="rounded-2xl border border-purple-500/20 bg-card/60 backdrop-blur-md p-6 shadow-sm">
+                        <div class="mb-6 flex items-center gap-3">
+                            <div class="rounded-lg bg-purple-500/10 p-2 text-purple-500 shadow-inner">
+                                <Layers class="h-4 w-4" />
+                            </div>
+                            <div>
+                                <h2 class="font-semibold text-purple-400">FRUITING STAGE THRESHOLDS</h2>
+                                <p class="text-xs text-muted-foreground">Mushroom formation phase — cooler, high humidity, fresh air, indirect light</p>
+                            </div>
                         </div>
-                        <div class="space-y-1">
-                            <label for="thresh-temp-max" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Temperature Max (°C)</label>
-                            <input id="thresh-temp-max" v-model="settingsForm.threshold_temperature_max" type="number" step="0.1" :class="inputClass()" placeholder="30" />
-                        </div>
-                        <div class="space-y-1">
-                            <label for="thresh-hum-low" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Humidity Low — Humidifier ON (%)</label>
-                            <input id="thresh-hum-low" v-model="settingsForm.threshold_humidity_low" type="number" step="1" :class="inputClass()" placeholder="80" />
-                        </div>
-                        <div class="space-y-1">
-                            <label for="thresh-hum-high" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Humidity High — Humidifier OFF (%)</label>
-                            <input id="thresh-hum-high" v-model="settingsForm.threshold_humidity_high" type="number" step="1" :class="inputClass()" placeholder="90" />
-                        </div>
-                        <div class="space-y-1">
-                            <label for="thresh-co2" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">CO₂ Max — Intake Fan ON (ppm)</label>
-                            <input id="thresh-co2" v-model="settingsForm.threshold_co2_max" type="number" step="1" :class="inputClass()" placeholder="1000" />
-                        </div>
-                        <div class="space-y-1">
-                            <label for="thresh-soil-warn" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Soil Warning (%)</label>
-                            <input id="thresh-soil-warn" v-model="settingsForm.threshold_soil_warning" type="number" step="1" :class="inputClass()" placeholder="30" />
-                        </div>
-                        <div class="space-y-1">
-                            <label for="thresh-soil-crit" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Soil Critical (%)</label>
-                            <input id="thresh-soil-crit" v-model="settingsForm.threshold_soil_critical" type="number" step="1" :class="inputClass()" placeholder="20" />
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            <div class="space-y-1">
+                                <label for="fruit-temp-min" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Temp Min (°C)</label>
+                                <input id="fruit-temp-min" v-model="settingsForm.threshold_fruit_temp_min" type="number" step="0.1" :class="inputClass()" placeholder="20" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-temp-max" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Temp Max (°C)</label>
+                                <input id="fruit-temp-max" v-model="settingsForm.threshold_fruit_temp_max" type="number" step="0.1" :class="inputClass()" placeholder="24" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-hum-low" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Humidity Low — Humidifier ON (%)</label>
+                                <input id="fruit-hum-low" v-model="settingsForm.threshold_fruit_humidity_low" type="number" step="1" :class="inputClass()" placeholder="85" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-hum-high" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Humidity High — Humidifier OFF (%)</label>
+                                <input id="fruit-hum-high" v-model="settingsForm.threshold_fruit_humidity_high" type="number" step="1" :class="inputClass()" placeholder="95" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-co2" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">CO₂ Max — Fan ON (ppm)</label>
+                                <input id="fruit-co2" v-model="settingsForm.threshold_fruit_co2_max" type="number" step="1" :class="inputClass()" placeholder="1000" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-light-min" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Light Min — Needs Indirect Light (lux)</label>
+                                <input id="fruit-light-min" v-model="settingsForm.threshold_fruit_light_min" type="number" step="1" :class="inputClass()" placeholder="200" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-light-max" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Light Max — Too Bright (lux)</label>
+                                <input id="fruit-light-max" v-model="settingsForm.threshold_fruit_light_max" type="number" step="1" :class="inputClass()" placeholder="800" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-soil-warn" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Substrate Moisture Warning (%)</label>
+                                <input id="fruit-soil-warn" v-model="settingsForm.threshold_fruit_soil_warning" type="number" step="1" :class="inputClass()" placeholder="55" />
+                            </div>
+                            <div class="space-y-1">
+                                <label for="fruit-soil-crit" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Substrate Moisture Critical (%)</label>
+                                <input id="fruit-soil-crit" v-model="settingsForm.threshold_fruit_soil_critical" type="number" step="1" :class="inputClass()" placeholder="50" />
+                            </div>
                         </div>
                     </div>
+
                     <button
                         id="btn-save-thresholds"
                         @click="saveSettings"
                         :disabled="savingSettings"
-                        class="mt-6 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
+                        class="rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
                     >
                         {{ savingSettings ? 'Saving...' : 'Save Thresholds' }}
                     </button>
@@ -184,7 +249,10 @@ function inputClass() {
                         <div class="rounded-lg bg-yellow-500/10 p-2 text-yellow-500 shadow-inner">
                             <Sun class="h-4 w-4" />
                         </div>
-                        <h2 class="font-semibold text-muted-foreground">LED GROW LIGHT SCHEDULE</h2>
+                        <div>
+                            <h2 class="font-semibold text-muted-foreground">LED GROW LIGHT SCHEDULE</h2>
+                            <p class="text-xs text-muted-foreground">LED runs on schedule during Fruiting stage only. Colonization keeps lights off.</p>
+                        </div>
                     </div>
                     <div class="grid gap-4 md:grid-cols-2 max-w-md">
                         <div class="space-y-1">
@@ -197,7 +265,7 @@ function inputClass() {
                         </div>
                     </div>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Lights ON at {{ settingsForm.led_on_hour ?? 6 }}:00 and OFF at {{ settingsForm.led_off_hour ?? 18 }}:00 daily (12h photoperiod).
+                        Lights ON at {{ settingsForm.led_on_hour ?? 6 }}:00 and OFF at {{ settingsForm.led_off_hour ?? 18 }}:00 daily (for fruiting photoperiod).
                     </p>
                     <button
                         id="btn-save-schedule-settings"

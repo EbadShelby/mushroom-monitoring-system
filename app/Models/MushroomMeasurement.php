@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $user_id
  * @property string $observed_date
  * @property int $flush_number
+ * @property float|null $weight_g
  * @property float|null $height_cm
  * @property float|null $cap_diameter_cm
  * @property int|null $fruiting_body_count
@@ -27,6 +28,7 @@ class MushroomMeasurement extends Model
         'user_id',
         'observed_date',
         'flush_number',
+        'weight_g',
         'height_cm',
         'cap_diameter_cm',
         'fruiting_body_count',

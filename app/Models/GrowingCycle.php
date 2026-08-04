@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $start_date
  * @property string|null $end_date
  * @property string $status
+ * @property string $growing_stage
  * @property string|null $notes
  */
 class GrowingCycle extends Model
@@ -27,6 +28,7 @@ class GrowingCycle extends Model
         'start_date',
         'end_date',
         'status',
+        'growing_stage',
         'notes',
     ];
 

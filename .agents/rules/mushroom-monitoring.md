@@ -1,6 +1,4 @@
----
-trigger: always_on
----
+
 
 - IoT system monitoring oyster mushroom cultivation at CotSU. ESP32 sends sensor data to Laravel, stored in MySQL and Firebase. Vue.js dashboard shows live readings, automates actuators, sends SMS alerts, and generates cycle reports.
 
@@ -63,6 +61,14 @@ Laravel API (SINGLE entry point — all data flows through here)
                 └── Historical charts ← MySQL via Laravel API
 ```
 
+## Growing Stages
+Each cycle has a `growing_stage` of either `colonization` or `fruiting`. The active cycle's stage determines which threshold set is used for automation and alerts.
+
+- **Colonization** — Spawn running. Mycelium spreads through substrate. Dark, warm, high CO₂ tolerated.
+- **Fruiting** — Mushrooms forming. Needs indirect light, fresh air, high humidity, cooler temps.
+
+New cycles default to `colonization`. Faculty/Admin can switch the stage via the Cycles page.
+
 ## Sensors and GPIO Pins
 - DHT22 (temperature + humidity) → GPIO 4
 - MQ-135 (CO2 / air quality) → GPIO 34
@@ -76,31 +82,52 @@ Laravel API (SINGLE entry point — all data flows through here)
 - All actuators use separate power rails — ESP32 only sends relay signal
 - Relay is active LOW (LOW = ON, HIGH = OFF)
 
-## Threshold Values (Gray Oyster Mushroom — Pleurotus sajor-caju)
-- Temperature: 28–32°C (alert below 28 or above 32)
-- Humidity: 80–95% (alert below 80)
-- CO2: below 1000 ppm during fruiting (alert above 1000)
-- Light: 50–1000 lux during fruiting, dark during colonization
-- Soil moisture dry: below 30% (warning SMS)
-- Soil moisture critical: below 20% (auto-trigger pump + urgent SMS)
+## Threshold Values — Colonization Stage
+- Temperature: 24–28°C (ideal 25–27°C) — alert below 24°C or above 28°C
+- Humidity: 70–80% RH — alert below 70%, deactivate humidifier at 80%
+- CO₂: below 5,000 ppm (high CO₂ acceptable during colonization) — alert above 5,000 ppm
+- Light: 0–100 lux (keep dark/very dim) — alert if above 100 lux
+- Substrate moisture: warning below 55%, critical below 50%
 
-## Automation Logic
-- Humidity < 80% → auto-activate humidifier via relay + send SMS alert
-- Humidity >= 90% → auto-deactivate humidifier
-- Soil moisture < 30% → warning SMS only (no actuator)
-- Soil moisture < 20% (critical) → urgent SMS only (no actuator)
-- CO2 > 1000 ppm → auto-activate cooling fan via relay + send SMS
-- LED grow light → controlled by schedule (12hr on / 12hr off) set by admin
-- All actuator activations logged to actuator_logs table
+## Threshold Values — Fruiting Stage
+- Temperature: 20–24°C (ideal 22–24°C) — alert below 20°C or above 24°C
+- Humidity: 85–95% RH — alert below 85%, deactivate humidifier at 95%
+- CO₂: below 1,000 ppm (fresh air essential for fruiting) — alert above 1,000 ppm
+- Light: 200–800 lux indirect — alert below 200 lux or above 800 lux
+- Substrate moisture: warning below 55%, critical below 50%
+
+## Automation Logic (Stage-Aware)
+ThresholdService reads the active cycle's `growing_stage` and applies the correct threshold set.
+
+**Colonization:**
+- Humidity < 70% → auto-activate humidifier + SMS alert
+- Humidity >= 80% → auto-deactivate humidifier
+- CO₂ > 5,000 ppm → auto-activate cooling fan + SMS alert
+- Light > 100 lux → SMS alert (no actuator — notify to block light)
+- Soil moisture < 55% → warning SMS; < 50% → critical SMS
+
+**Fruiting:**
+- Humidity < 85% → auto-activate humidifier + SMS alert
+- Humidity >= 95% → auto-deactivate humidifier
+- CO₂ > 1,000 ppm → auto-activate cooling fan + SMS alert
+- Light < 200 lux OR > 800 lux → SMS alert
+- Soil moisture < 55% → warning SMS; < 50% → critical SMS
+- Fan auto-deactivates when CO₂ drops back to safe AND temperature is safe
+
+**LED Schedule:** Controlled by admin-configured schedule (on/off hour). Relevant during fruiting. During colonization, lights stay off (not enforced by actuator — managed by LED schedule settings).
+
+All actuator activations logged to actuator_logs table.
 
 ## User Roles
 - Admin: full access — user management, settings, thresholds, all logs
-- Faculty: start/end cycles, log measurements, upload growth photos, control actuators, generate reports, receive SMS
+- Faculty: start/end cycles, switch cycle stage, log measurements, upload growth photos, control actuators, generate reports, receive SMS
 - Student: view dashboard, view growth docs, log measurements, analyze historical data
 
 ## Database Tables (MySQL)
 - users (id, name, email, password, role, contact_number, timestamps)
-- growing_cycles (id, name, mushroom_variety, substrate_type, start_date, end_date, status, notes, timestamps)
+- growing_cycles (id, name, mushroom_variety, substrate_type, start_date, end_date, status, growing_stage, notes, timestamps)
+  - `status`: active | completed | cancelled
+  - `growing_stage`: colonization | fruiting (default: colonization)
 - sensor_readings (id, growing_cycle_id, temperature, humidity, co2_raw, light_level, soil_moisture, soil_status, recorded_at, timestamps)
 - mushroom_measurements (id, growing_cycle_id, user_id, observed_date, flush_number, height_cm, cap_diameter_cm, fruiting_body_count, photo_path, notes, timestamps)
 - actuator_logs (id, actuator, action, trigger, triggered_by, triggered_at, timestamps)
@@ -108,6 +135,8 @@ Laravel API (SINGLE entry point — all data flows through here)
 - user_logs (id, user_id, action, details, ip_address, performed_at, timestamps)
 - camera_snapshots (id, growing_cycle_id, file_path, file_name, captured_at, timestamps)
 - settings (id, key, value, timestamps)
+  - Threshold keys use prefix `threshold_col_*` for colonization and `threshold_fruit_*` for fruiting
+  - e.g. `threshold_col_temp_min`, `threshold_fruit_humidity_low`
 
 ## Firebase Structure (latest values only)
 ```json
@@ -122,7 +151,7 @@ Laravel API (SINGLE entry point — all data flows through here)
     "last_updated": ""
   },
   "actuators": {
-    "pump": "off",
+    "humidifier": "off",
     "led": "off",
     "fan": "off"
   }
@@ -130,22 +159,23 @@ Laravel API (SINGLE entry point — all data flows through here)
 ```
 
 ## Laravel API Endpoints
-- POST   /api/sensor-data           (ESP32 sends readings)
-- GET    /api/actuator-commands      (ESP32 polls for pending commands)
-- POST   /api/camera/snapshot        (stores CCTV snapshot)
-- GET    /api/sensor-readings        (historical data for charts)
-- GET    /api/growing-cycles         (cycle list)
-- POST   /api/growing-cycles         (create cycle)
-- GET    /api/growing-cycles/{id}    (cycle detail)
-- PUT    /api/growing-cycles/{id}    (update cycle)
-- POST   /api/measurements           (add measurement)
-- GET    /api/measurements           (measurement list)
-- POST   /api/actuators/command      (manual actuator toggle from dashboard)
-- GET    /api/alert-logs             (SMS alert history)
-- GET    /api/user-logs              (user activity — admin only)
-- GET    /api/settings               (system settings)
-- POST   /api/settings               (update settings)
-- GET    /api/reports/{cycleId}      (generate and download PDF report)
+- POST   /api/sensor-data                     (ESP32 sends readings)
+- GET    /api/actuator-commands               (ESP32 polls for pending commands)
+- POST   /api/camera/snapshot                 (stores CCTV snapshot)
+- GET    /api/sensor-readings                 (historical data for charts)
+- GET    /api/growing-cycles                  (cycle list)
+- POST   /api/growing-cycles                  (create cycle)
+- GET    /api/growing-cycles/{id}             (cycle detail)
+- PUT    /api/growing-cycles/{id}             (update cycle)
+- POST   /api/cycles/{cycle}/switch-stage     (switch colonization ↔ fruiting)
+- POST   /api/measurements                    (add measurement)
+- GET    /api/measurements                    (measurement list)
+- POST   /api/actuators/command               (manual actuator toggle from dashboard)
+- GET    /api/alert-logs                      (SMS alert history)
+- GET    /api/user-logs                       (user activity — admin only)
+- GET    /api/settings                        (system settings)
+- POST   /api/settings                        (update settings)
+- GET    /api/reports/{cycleId}               (generate and download PDF report)
 
 ## Mushroom Growth Documentation
 - Camera: CCTV (not ESP32-CAM)
@@ -158,16 +188,16 @@ Laravel API (SINGLE entry point — all data flows through here)
 
 ## Pages (Vue.js via Inertia.js)
 - /login → LoginView
-- /dashboard → DashboardView (live monitoring)
+- /dashboard → DashboardView (live monitoring — shows current stage badge)
 - /historical → HistoricalView (charts + data table)
-- /cycles → GrowingCyclesView (list)
+- /cycles → GrowingCyclesView (list — stage badge + switch-stage button)
 - /cycles/{id} → CycleDetailView (detail + report)
 - /measurements → MeasurementsView
 - /camera → CameraView (growth photo timeline)
 - /actuators → ActuatorView (control + logs)
 - /alerts → AlertLogsView
 - /user-logs → UserLogsView (admin only)
-- /settings → SettingsView (admin only)
+- /settings → SettingsView (admin only — per-stage threshold sections)
 
 ## Code Style Rules
 - Vue: always use <script setup lang="ts"> syntax

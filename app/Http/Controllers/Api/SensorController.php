@@ -64,7 +64,7 @@ class SensorController extends Controller
         ]);
 
         // ── 4. Evaluate thresholds and dispatch alerts / actuator commands ────
-        $alerts = $this->threshold->evaluate($data);
+        $alerts = $this->threshold->evaluate($data, $activeCycle);
 
         foreach ($alerts as $alert) {
             // Send SMS alert (with built-in cooldown)

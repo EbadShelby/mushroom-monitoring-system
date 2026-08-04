@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('cycles/{cycle}', [GrowingCycleController::class, 'show'])->name('cycles.show');
     Route::put('api/cycles/{cycle}', [GrowingCycleController::class, 'update'])->name('cycles.update');
     Route::post('api/cycles/{cycle}/end', [GrowingCycleController::class, 'endCycle'])->name('cycles.end');
+    Route::post('api/cycles/{cycle}/switch-stage', [GrowingCycleController::class, 'switchStage'])->name('cycles.switch-stage');
     Route::delete('api/cycles/{cycle}', [GrowingCycleController::class, 'destroy'])->name('cycles.destroy');
 
     // Camera / Snapshots
@@ -60,6 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('api/camera/{cameraSnapshot}', [CameraController::class, 'destroy'])->name('camera.destroy');
 
     // Measurements
+    Route::get('measurements', [MeasurementController::class, 'index'])->name('measurements.index');
     Route::post('api/measurements', [MeasurementController::class, 'store'])->name('measurements.store');
     Route::delete('api/measurements/{mushroomMeasurement}', [MeasurementController::class, 'destroy'])->name('measurements.destroy');
 
