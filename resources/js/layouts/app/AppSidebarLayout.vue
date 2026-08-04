@@ -5,6 +5,8 @@ import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import { Toaster } from '@/components/ui/sonner';
 import type { BreadcrumbItem } from '@/types';
+import { useSensorStore } from '@/stores/useSensorStore';
+import { onMounted, onUnmounted } from 'vue';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -12,6 +14,16 @@ type Props = {
 
 withDefaults(defineProps<Props>(), {
     breadcrumbs: () => [],
+});
+
+const store = useSensorStore();
+
+onMounted(() => {
+    store.startListening();
+});
+
+onUnmounted(() => {
+    store.stopListening();
 });
 </script>
 

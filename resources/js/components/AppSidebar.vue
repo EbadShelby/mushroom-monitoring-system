@@ -35,9 +35,8 @@ const page = usePage();
 const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
 const isAdmin = computed(() => userRole.value === 'admin');
 
-const monitoringNav: NavGroup = {
-    label: 'Monitoring',
-    items: [
+const monitoringNav = computed<NavGroup>(() => {
+    const items = [
         {
             title: 'Dashboard',
             href: dashboard(),
@@ -48,13 +47,21 @@ const monitoringNav: NavGroup = {
             href: '/historical',
             icon: Activity,
         },
-        {
+    ];
+
+    if (userRole.value !== 'student') {
+        items.push({
             title: 'Actuators',
             href: '/actuators',
             icon: Cpu,
-        },
-    ],
-};
+        });
+    }
+
+    return {
+        label: 'Monitoring',
+        items,
+    };
+});
 
 const growingNav: NavGroup = {
     label: 'Cultivation',
@@ -77,21 +84,28 @@ const growingNav: NavGroup = {
     ],
 };
 
-const reportsNav: NavGroup = {
-    label: 'Logs & Reports',
-    items: [
-        {
-            title: 'Alert Logs',
-            href: '/alerts',
-            icon: Bell,
-        },
+const reportsNav = computed<NavGroup>(() => {
+    const items = [
         {
             title: 'Reports',
             href: '/reports',
             icon: FileText,
         },
-    ],
-};
+    ];
+
+    if (userRole.value !== 'student') {
+        items.unshift({
+            title: 'Alert Logs',
+            href: '/alerts',
+            icon: Bell,
+        });
+    }
+
+    return {
+        label: 'Logs & Reports',
+        items,
+    };
+});
 
 const adminNavItems = computed(() => {
     if (!isAdmin.value) {

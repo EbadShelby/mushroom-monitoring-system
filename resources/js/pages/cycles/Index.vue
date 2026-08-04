@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import axios from 'axios';
@@ -35,6 +35,9 @@ const props = defineProps<{
     cycles: Paginated<GrowingCycle>;
     filters: { status?: string | null };
 }>();
+
+const page = usePage();
+const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
 
 // ── Status filter ──────────────────────────────────────────────────────────────
 const statusFilter = ref<string>(props.filters.status ?? '');
@@ -210,6 +213,7 @@ function formatDate(d: string | null) {
                 </p>
             </div>
             <button
+                v-if="userRole !== 'student'"
                 id="create-cycle-btn"
                 class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95"
                 @click="showModal = true"
@@ -350,7 +354,7 @@ function formatDate(d: string | null) {
                                 </Link>
                                 <!-- Switch Stage button (active cycles only) -->
                                 <button
-                                    v-if="cycle.status === 'active'"
+                                    v-if="cycle.status === 'active' && userRole !== 'student'"
                                     :disabled="switchingStage === cycle.id"
                                     class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition disabled:opacity-50"
                                     :class="cycle.growing_stage === 'colonization'
@@ -364,7 +368,7 @@ function formatDate(d: string | null) {
                                     → {{ cycle.growing_stage === 'colonization' ? 'Fruiting' : 'Colonization' }}
                                 </button>
                                 <button
-                                    v-if="cycle.status === 'active'"
+                                    v-if="cycle.status === 'active' && userRole !== 'student'"
                                     :disabled="actioning === cycle.id"
                                     class="flex items-center gap-1.5 rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs font-medium text-blue-300 ring-1 ring-blue-500/30 transition hover:bg-blue-600/30 disabled:opacity-50"
                                     @click="endCycle(cycle)"
@@ -373,7 +377,7 @@ function formatDate(d: string | null) {
                                     End
                                 </button>
                                 <button
-                                    v-if="cycle.status === 'active'"
+                                    v-if="cycle.status === 'active' && userRole !== 'student'"
                                     :disabled="actioning === cycle.id"
                                     class="flex items-center gap-1.5 rounded-lg bg-red-600/20 px-3 py-1.5 text-xs font-medium text-red-300 ring-1 ring-red-500/30 transition hover:bg-red-600/30 disabled:opacity-50"
                                     @click="cancelCycle(cycle)"

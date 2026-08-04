@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { Ruler, Plus, X, ListTodo, Activity } from '@lucide/vue';
@@ -32,6 +32,9 @@ const props = defineProps<{
     measurements: Paginated<Measurement>;
     activeCycles: { id: number; name: string }[];
 }>();
+
+const page = usePage();
+const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
 
 const isModalOpen = ref(false);
 const isSubmitting = ref(false);
@@ -112,6 +115,7 @@ async function deleteMeasurement(id: number) {
                     <p class="mt-1 text-muted-foreground">Log daily measurements and harvest yields.</p>
                 </div>
                 <button
+                    v-if="userRole !== 'student'"
                     @click="openModal"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-95"
                 >
@@ -141,12 +145,12 @@ async function deleteMeasurement(id: number) {
                                 <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weight (g)</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Count</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Logger</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
+                                <th v-if="userRole !== 'student'" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="!measurements.data.length">
-                                <td colspan="7" class="px-4 py-8 text-center text-muted-foreground">No measurements logged yet.</td>
+                                <td :colspan="userRole !== 'student' ? 7 : 6" class="px-4 py-8 text-center text-muted-foreground">No measurements logged yet.</td>
                             </tr>
                             <tr
                                 v-for="m in measurements.data"
@@ -159,7 +163,7 @@ async function deleteMeasurement(id: number) {
                                 <td class="px-4 py-3 text-right font-mono text-emerald-500 font-bold">{{ m.weight_g ? m.weight_g : '-' }}</td>
                                 <td class="px-4 py-3 text-right font-mono">{{ m.fruiting_body_count || '-' }}</td>
                                 <td class="px-4 py-3 text-muted-foreground">{{ m.user?.name }}</td>
-                                <td class="px-4 py-3 text-right">
+                                <td v-if="userRole !== 'student'" class="px-4 py-3 text-right">
                                     <button @click="deleteMeasurement(m.id)" class="text-xs text-destructive hover:underline">Delete</button>
                                 </td>
                             </tr>

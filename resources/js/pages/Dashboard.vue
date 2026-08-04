@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
@@ -44,6 +44,9 @@ const props = defineProps<{
     lastAlert?: AlertLog | null;
     chartData?: any[];
 }>();
+
+const page = usePage();
+const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
 
 const store = useSensorStore();
 
@@ -93,7 +96,6 @@ let chartRefreshInterval: ReturnType<typeof setInterval> | null = null;
 onMounted(() => {
     updateClock();
     clockInterval = setInterval(updateClock, 1000);
-    store.startListening();
     chartRefreshInterval = setInterval(() => {
         router.reload({ data: { chart_interval: chartInterval.value }, only: ['chartData'] });
     }, 60_000);
@@ -103,7 +105,6 @@ onUnmounted(() => {
     if (clockInterval) {
         clearInterval(clockInterval);
     }
-    store.stopListening();
     if (chartRefreshInterval) {
         clearInterval(chartRefreshInterval);
         chartRefreshInterval = null;
@@ -681,7 +682,7 @@ function alertStatusClass(status: string) {
             </div>
 
             <!-- Info Row: Active Cycle + Camera Snapshot + Last Alert -->
-            <div class="grid gap-6 md:grid-cols-3">
+            <div class="grid gap-6" :class="userRole === 'student' ? 'md:grid-cols-2' : 'md:grid-cols-3'">
                 <!-- Active Growing Cycle -->
                 <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
                     <div class="mb-4 flex items-center gap-2">
@@ -718,6 +719,7 @@ function alertStatusClass(status: string) {
                                         {{ isColonization ? 'Colonization' : 'Fruiting' }}
                                     </span>
                                     <button
+                                        v-if="userRole !== 'student'"
                                         @click="toggleStage"
                                         :disabled="switchingStage"
                                         class="inline-flex items-center gap-1 rounded-md bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-secondary-foreground hover:bg-secondary transition-colors"
@@ -785,7 +787,7 @@ function alertStatusClass(status: string) {
                 </div>
 
                 <!-- Last SMS Alert -->
-                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+                <div v-if="userRole !== 'student'" class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
                     <div class="mb-4 flex items-center gap-2">
                         <div class="rounded-lg bg-red-500/10 p-2 text-red-500 shadow-inner">
                             <Bell class="h-5 w-5" />

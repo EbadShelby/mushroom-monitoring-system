@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import axios from 'axios';
@@ -33,6 +33,9 @@ const props = defineProps<{
     measurements?: MushroomMeasurement[];
     snapshots?: CameraSnapshot[];
 }>();
+
+const page = usePage();
+const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
 const statusConfig = {
@@ -303,6 +306,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     Measurement History
                 </h2>
                 <button
+                    v-if="userRole !== 'student'"
                     class="flex items-center gap-1.5 rounded-xl bg-emerald-600/20 px-3 py-1.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-500/30 transition hover:bg-emerald-600/30"
                     @click="showMeasureModal = true"
                 >
@@ -326,7 +330,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Cap Diam. (cm)</th>
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Fruiting Bodies</th>
                             <th class="pb-2.5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Logged By</th>
-                            <th class="pb-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Actions</th>
+                            <th v-if="userRole !== 'student'" class="pb-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-700/30">
@@ -340,7 +344,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <td class="py-3 pr-4 text-slate-300">{{ m.cap_diameter_cm ?? '—' }}</td>
                             <td class="py-3 pr-4 text-slate-300">{{ m.fruiting_body_count ?? '—' }}</td>
                             <td class="py-3 pr-4 text-slate-300">{{ m.user?.name ?? '—' }}</td>
-                            <td class="py-3 text-right">
+                            <td v-if="userRole !== 'student'" class="py-3 text-right">
                                 <button
                                     class="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
                                     @click="deleteMeasurement(m.id)"
@@ -400,6 +404,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 </div>
                             </div>
                             <button
+                                v-if="userRole !== 'student'"
                                 class="absolute right-1 top-1 rounded-lg bg-red-500/80 p-1 opacity-0 transition group-hover:opacity-100"
                                 @click.stop="deleteSnapshot(snap.id)"
                             >

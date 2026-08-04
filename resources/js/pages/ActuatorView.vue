@@ -36,7 +36,6 @@ const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student
 const canControl = computed(() => ['admin', 'faculty'].includes(userRole.value));
 
 const store = useSensorStore();
-store.startListening();
 
 // Logs pagination
 const logsData = ref<Paginated<ActuatorLog> | null>(props.logs ?? null);

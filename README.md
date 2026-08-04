@@ -112,7 +112,7 @@ The system automatically switches environmental target profiles based on the act
 
 - **Admin**: Full access — User management, settings, thresholds, and all logs.
 - **Faculty**: Start/end cycles, log measurements, upload growth photos, control actuators, generate reports, and receive SMS alerts.
-- **Student**: View dashboard, view growth documentation, log measurements, and analyze historical data.
+- **Student**: View dashboard, view growth documentation, view measurements, and analyze historical data.
 
 ## Setup & Installation (Local Development)
 

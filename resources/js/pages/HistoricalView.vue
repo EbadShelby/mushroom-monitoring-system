@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import axios from 'axios';
 import VueApexCharts from 'vue3-apexcharts';
 import type { SensorReading, Paginated } from '@/types';
@@ -122,7 +122,9 @@ const columnLabels: Record<string, string> = {
 };
 
 // Initial load
-fetchData();
+onMounted(() => {
+    fetchData();
+});
 </script>
 
 <template>

@@ -25,47 +25,61 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('api/historical', [HistoricalController::class, 'data'])->name('historical.data');
     Route::get('api/historical/export', [HistoricalController::class, 'export'])->name('historical.export');
 
-    // Actuators (admin + faculty)
-    Route::get('actuators', [ActuatorController::class, 'index'])->name('actuators');
-    Route::post('api/actuators/toggle', [ActuatorController::class, 'toggle'])->name('actuators.toggle');
-    Route::put('api/actuators/schedule', [ActuatorController::class, 'schedule'])->name('actuators.schedule');
+    // Admin + Faculty Routes
+    Route::middleware('role:admin,faculty')->group(function () {
+        // Actuators
+        Route::get('actuators', [ActuatorController::class, 'index'])->name('actuators');
+        Route::post('api/actuators/toggle', [ActuatorController::class, 'toggle'])->name('actuators.toggle');
+        Route::put('api/actuators/schedule', [ActuatorController::class, 'schedule'])->name('actuators.schedule');
 
-    // Alert Logs
-    Route::get('alerts', [AlertLogController::class, 'index'])->name('alerts');
-    Route::get('api/alert-logs/chart', [AlertLogController::class, 'chart'])->name('alerts.chart');
+        // Alert Logs (SMS)
+        Route::get('alerts', [AlertLogController::class, 'index'])->name('alerts');
+        Route::get('api/alert-logs/chart', [AlertLogController::class, 'chart'])->name('alerts.chart');
+    });
 
-    // User Logs (admin only)
-    Route::get('user-logs', [UserLogController::class, 'index'])->name('user-logs');
+    // Admin Only Routes
+    Route::middleware('role:admin')->group(function () {
+        // User Logs
+        Route::get('user-logs', [UserLogController::class, 'index'])->name('user-logs');
 
-    // User Management (admin only)
-    Route::get('users', [UserManagementController::class, 'index'])->name('users.index');
-    Route::post('api/users', [UserManagementController::class, 'store'])->name('users.store');
-    Route::put('api/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
-    Route::delete('api/users/{user}', [UserManagementController::class, 'deactivate'])->name('users.deactivate');
-    Route::patch('api/users/{user}/activate', [UserManagementController::class, 'activate'])->name('users.activate');
+        // User Management
+        Route::get('users', [UserManagementController::class, 'index'])->name('users.index');
+        Route::post('api/users', [UserManagementController::class, 'store'])->name('users.store');
+        Route::put('api/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+        Route::delete('api/users/{user}', [UserManagementController::class, 'deactivate'])->name('users.deactivate');
+        Route::patch('api/users/{user}/activate', [UserManagementController::class, 'activate'])->name('users.activate');
 
-    // System Settings (admin only)
-    Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings');
-    Route::put('api/settings', [SystemSettingsController::class, 'updateSettings'])->name('settings.update');
+        // System Settings
+        Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings');
+        Route::put('api/settings', [SystemSettingsController::class, 'updateSettings'])->name('settings.update');
+    });
 
     // Growing Cycles
     Route::get('cycles', [GrowingCycleController::class, 'index'])->name('cycles.index');
-    Route::post('api/cycles', [GrowingCycleController::class, 'store'])->name('cycles.store');
     Route::get('cycles/{cycle}', [GrowingCycleController::class, 'show'])->name('cycles.show');
-    Route::put('api/cycles/{cycle}', [GrowingCycleController::class, 'update'])->name('cycles.update');
-    Route::post('api/cycles/{cycle}/end', [GrowingCycleController::class, 'endCycle'])->name('cycles.end');
-    Route::post('api/cycles/{cycle}/switch-stage', [GrowingCycleController::class, 'switchStage'])->name('cycles.switch-stage');
-    Route::delete('api/cycles/{cycle}', [GrowingCycleController::class, 'destroy'])->name('cycles.destroy');
 
     // Camera / Snapshots
     Route::get('camera', [CameraController::class, 'index'])->name('camera.index');
-    Route::post('api/camera/upload', [CameraController::class, 'store'])->name('camera.store');
-    Route::delete('api/camera/{cameraSnapshot}', [CameraController::class, 'destroy'])->name('camera.destroy');
 
     // Measurements
     Route::get('measurements', [MeasurementController::class, 'index'])->name('measurements.index');
-    Route::post('api/measurements', [MeasurementController::class, 'store'])->name('measurements.store');
-    Route::delete('api/measurements/{mushroomMeasurement}', [MeasurementController::class, 'destroy'])->name('measurements.destroy');
+
+    Route::middleware('role:admin,faculty')->group(function () {
+        // Cycle Management
+        Route::post('api/cycles', [GrowingCycleController::class, 'store'])->name('cycles.store');
+        Route::put('api/cycles/{cycle}', [GrowingCycleController::class, 'update'])->name('cycles.update');
+        Route::post('api/cycles/{cycle}/end', [GrowingCycleController::class, 'endCycle'])->name('cycles.end');
+        Route::post('api/cycles/{cycle}/switch-stage', [GrowingCycleController::class, 'switchStage'])->name('cycles.switch-stage');
+        Route::delete('api/cycles/{cycle}', [GrowingCycleController::class, 'destroy'])->name('cycles.destroy');
+
+        // Camera Management
+        Route::post('api/camera/upload', [CameraController::class, 'store'])->name('camera.store');
+        Route::delete('api/camera/{cameraSnapshot}', [CameraController::class, 'destroy'])->name('camera.destroy');
+
+        // Measurement Management
+        Route::post('api/measurements', [MeasurementController::class, 'store'])->name('measurements.store');
+        Route::delete('api/measurements/{mushroomMeasurement}', [MeasurementController::class, 'destroy'])->name('measurements.destroy');
+    });
 
     // Reports (PDF download)
     // Reports

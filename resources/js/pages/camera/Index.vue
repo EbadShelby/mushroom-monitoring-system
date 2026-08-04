@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import axios from 'axios';
@@ -21,6 +21,9 @@ const props = defineProps<{
     cycles: Pick<GrowingCycle, 'id' | 'name' | 'status'>[];
     filters: { cycle_id?: number | null; date?: string | null };
 }>();
+
+const page = usePage();
+const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 const filterCycle = ref<string>(props.filters.cycle_id ? String(props.filters.cycle_id) : '');
@@ -172,6 +175,7 @@ function formatDate(d: string | null) {
                 <p class="mt-1 text-sm text-slate-400">Daily mushroom documentation timeline</p>
             </div>
             <button
+                v-if="userRole !== 'student'"
                 id="upload-photo-btn"
                 class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95"
                 @click="showUpload = true"
@@ -227,6 +231,7 @@ function formatDate(d: string | null) {
                 <p class="mt-1 text-sm text-slate-400">Upload daily growth photos to start documenting.</p>
             </div>
             <button
+                v-if="userRole !== 'student'"
                 class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
                 @click="showUpload = true"
             >
@@ -259,6 +264,7 @@ function formatDate(d: string | null) {
                             <span v-if="snap.notes" class="mt-0.5 line-clamp-2 text-xs text-slate-300">{{ snap.notes }}</span>
                         </div>
                         <button
+                            v-if="userRole !== 'student'"
                             class="absolute right-1.5 top-1.5 rounded-lg bg-red-500/90 p-1.5 opacity-0 shadow-lg transition group-hover:opacity-100"
                             @click.stop="deleteSnapshot(snap.id)"
                         >
