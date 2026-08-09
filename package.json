@@ -37,6 +37,7 @@
         "@inertiajs/vite": "^3.0.0",
         "@inertiajs/vue3": "^3.0.0",
         "@lucide/vue": "^1.17.0",
+        "@vue/devtools-api": "^8.2.1",
         "@vueuse/core": "^12.8.2",
         "apexcharts": "^6.4.0",
         "axios": "^1.18.1",
