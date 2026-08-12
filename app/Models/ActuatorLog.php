@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $action
  * @property string $trigger
  * @property string|null $triggered_by
- * @property string $triggered_at
+ * @property Carbon $triggered_at
  */
 class ActuatorLog extends Model
 {

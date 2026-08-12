@@ -54,11 +54,11 @@ class DashboardController extends Controller
                     ->get(['recorded_at', 'temperature', 'humidity']);
 
                 if ($interval === '1m') {
-                    return $readings->map(fn ($r) => [
-                        'time' => $r->recorded_at->toIso8601String(),
+                    return array_values($readings->map(fn (SensorReading $r) => [
+                        'time' => Carbon::parse($r->recorded_at)->toIso8601String(),
                         'temperature' => $r->temperature,
                         'humidity' => $r->humidity,
-                    ]);
+                    ])->all());
                 }
 
                 $intervalSeconds = match ($interval) {
@@ -68,10 +68,11 @@ class DashboardController extends Controller
                     default => 60,
                 };
 
+                /** @var array<int, array{temp: list<float|null>, hum: list<float|null>}> $grouped */
                 $grouped = [];
                 foreach ($readings as $r) {
-                    $timestamp = $r->recorded_at->timestamp;
-                    $roundedTime = floor($timestamp / $intervalSeconds) * $intervalSeconds;
+                    $timestamp = (int) Carbon::parse($r->recorded_at)->timestamp;
+                    $roundedTime = (int) (floor($timestamp / $intervalSeconds) * $intervalSeconds);
 
                     if (! isset($grouped[$roundedTime])) {
                         $grouped[$roundedTime] = ['temp' => [], 'hum' => []];
@@ -89,7 +90,7 @@ class DashboardController extends Controller
                     ];
                 }
 
-                return array_values($chartData);
+                return $chartData;
             }),
         ]);
     }

@@ -9,7 +9,12 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
         <AppLogoIcon class="size-5 fill-current" />
     </div>
     <div class="ml-2 grid flex-1 text-left text-sm leading-tight">
-        <span class="truncate font-bold text-emerald-700 dark:text-emerald-400">MycoSense</span>
-        <span class="truncate text-[10px] text-muted-foreground uppercase tracking-wider">CotSU Monitoring</span>
+        <span class="truncate font-bold text-emerald-700 dark:text-emerald-400"
+            >MycoSense</span
+        >
+        <span
+            class="truncate text-[10px] tracking-wider text-muted-foreground uppercase"
+            >CotSU Monitoring</span
+        >
     </div>
 </template>

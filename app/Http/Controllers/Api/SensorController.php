@@ -76,12 +76,12 @@ class SensorController extends Controller
             ]);
 
             // Trigger actuator if specified
-            if ($alert['actuator'] && $alert['actuatorAction']) {
-                $this->firebase->setActuator($alert['actuator'], $alert['actuatorAction']);
+            if ($alert['actuator'] && $alert['actuator_action']) {
+                $this->firebase->setActuator($alert['actuator'], $alert['actuator_action']);
 
                 $this->threshold->logActuatorCommand(
                     actuator: $alert['actuator'],
-                    action: $alert['actuatorAction'],
+                    action: $alert['actuator_action'],
                     trigger: 'automatic',
                 );
             }

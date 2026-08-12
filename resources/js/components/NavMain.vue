@@ -19,7 +19,9 @@ const { isCurrentUrl } = useCurrentUrl();
 
 <template>
     <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel class="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">
+        <SidebarGroupLabel
+            class="text-[10px] font-semibold tracking-widest text-muted-foreground/60 uppercase"
+        >
             {{ group.label }}
         </SidebarGroupLabel>
         <SidebarMenu>

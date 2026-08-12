@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Activity, LayoutDashboard, Menu, RefreshCw } from '@lucide/vue';
+import { Activity, LayoutDashboard, Menu } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
@@ -25,12 +25,6 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
@@ -211,7 +205,6 @@ const rightNavItems: NavItem[] = [];
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-
             </div>
         </div>
 

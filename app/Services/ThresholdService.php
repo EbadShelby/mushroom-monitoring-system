@@ -88,7 +88,7 @@ class ThresholdService
      */
     public function evaluate(array $reading, ?GrowingCycle $cycle = null): array
     {
-        $stage = $cycle?->growing_stage ?? 'fruiting'; // default to stricter fruiting if unknown
+        $stage = $cycle !== null ? $cycle->growing_stage : 'fruiting'; // default to stricter fruiting if unknown
         $t = $this->thresholdsForStage($stage);
         $stageLabel = $stage === 'colonization' ? 'Colonization' : 'Fruiting';
 
@@ -311,6 +311,13 @@ class ThresholdService
         ?string $actuator,
         ?string $actuatorAction,
     ): array {
-        return compact('sensor', 'value', 'threshold', 'message', 'actuator', 'actuatorAction');
+        return [
+            'sensor' => $sensor,
+            'value' => $value,
+            'threshold' => $threshold,
+            'message' => $message,
+            'actuator' => $actuator,
+            'actuator_action' => $actuatorAction,
+        ];
     }
 }

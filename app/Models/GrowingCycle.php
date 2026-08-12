@@ -32,16 +32,19 @@ class GrowingCycle extends Model
         'notes',
     ];
 
+    /** @return HasMany<SensorReading, $this> */
     public function sensorReadings(): HasMany
     {
         return $this->hasMany(SensorReading::class);
     }
 
+    /** @return HasMany<MushroomMeasurement, $this> */
     public function measurements(): HasMany
     {
         return $this->hasMany(MushroomMeasurement::class);
     }
 
+    /** @return HasMany<CameraSnapshot, $this> */
     public function snapshots(): HasMany
     {
         return $this->hasMany(CameraSnapshot::class);

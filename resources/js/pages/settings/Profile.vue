@@ -37,7 +37,9 @@ const user = computed(() => page.props.auth.user);
             description="Update your name and email address"
         />
 
-        <div class="rounded-2xl border border-border/50 bg-card/60 p-6 sm:p-8 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+        <div
+            class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md sm:p-8"
+        >
             <Form
                 v-bind="ProfileController.update.form()"
                 class="space-y-6"
@@ -73,7 +75,9 @@ const user = computed(() => page.props.auth.user);
                 </div>
 
                 <div class="flex items-center gap-4 pt-2">
-                    <Button :disabled="processing" data-test="update-profile-button"
+                    <Button
+                        :disabled="processing"
+                        data-test="update-profile-button"
                         >Save changes</Button
                     >
                 </div>
@@ -82,7 +86,9 @@ const user = computed(() => page.props.auth.user);
     </div>
 
     <div class="mt-12">
-        <div class="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 sm:p-8 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+        <div
+            class="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md sm:p-8"
+        >
             <DeleteUser />
         </div>
     </div>

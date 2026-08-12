@@ -39,7 +39,9 @@ defineProps<{
     >
         <div class="grid gap-5">
             <div class="grid gap-2">
-                <Label for="email" class="text-sm font-medium">Email address</Label>
+                <Label for="email" class="text-sm font-medium"
+                    >Email address</Label
+                >
                 <Input
                     id="email"
                     type="email"
@@ -55,7 +57,9 @@ defineProps<{
             </div>
 
             <div class="grid gap-2">
-                <Label for="password" class="text-sm font-medium">Password</Label>
+                <Label for="password" class="text-sm font-medium"
+                    >Password</Label
+                >
                 <PasswordInput
                     id="password"
                     name="password"
@@ -69,7 +73,10 @@ defineProps<{
             </div>
 
             <div class="flex items-center justify-between">
-                <Label for="remember" class="flex cursor-pointer items-center gap-2 text-sm">
+                <Label
+                    for="remember"
+                    class="flex cursor-pointer items-center gap-2 text-sm"
+                >
                     <Checkbox id="remember" name="remember" :tabindex="3" />
                     <span>Remember me</span>
                 </Label>

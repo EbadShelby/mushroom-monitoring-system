@@ -66,16 +66,19 @@ class User extends Authenticatable
         ];
     }
 
+    /** @return HasMany<MushroomMeasurement, $this> */
     public function measurements(): HasMany
     {
         return $this->hasMany(MushroomMeasurement::class);
     }
 
+    /** @return HasMany<UserLog, $this> */
     public function userLogs(): HasMany
     {
         return $this->hasMany(UserLog::class);
     }
 
+    /** @return HasMany<CameraSnapshot, $this> */
     public function snapshots(): HasMany
     {
         return $this->hasMany(CameraSnapshot::class, 'uploaded_by');

@@ -36,11 +36,13 @@ class MushroomMeasurement extends Model
         'notes',
     ];
 
+    /** @return BelongsTo<GrowingCycle, $this> */
     public function growingCycle(): BelongsTo
     {
         return $this->belongsTo(GrowingCycle::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

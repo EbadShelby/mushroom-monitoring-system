@@ -30,11 +30,13 @@ class CameraSnapshot extends Model
         'uploaded_by',
     ];
 
+    /** @return BelongsTo<GrowingCycle, $this> */
     public function growingCycle(): BelongsTo
     {
         return $this->belongsTo(GrowingCycle::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');

@@ -38,7 +38,9 @@ defineOptions({
             description="Ensure your account is using a long, random password to stay secure"
         />
 
-        <div class="rounded-2xl border border-border/50 bg-card/60 p-6 sm:p-8 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+        <div
+            class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md sm:p-8"
+        >
             <Form
                 v-bind="SecurityController.update.form()"
                 :options="{

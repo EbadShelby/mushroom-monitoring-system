@@ -9,6 +9,8 @@ export interface GrowingCycle {
     growing_stage: 'colonization' | 'fruiting';
     notes: string | null;
     day_count?: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface CameraSnapshot {

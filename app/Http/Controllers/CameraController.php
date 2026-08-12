@@ -48,6 +48,11 @@ class CameraController extends Controller
         ]);
 
         $path = $request->file('photo')->store('snapshots', 'public');
+
+        if ($path === false) {
+            return response()->json(['error' => 'File upload failed.'], 500);
+        }
+
         $fileName = basename($path);
 
         $snapshot = CameraSnapshot::create([

@@ -2,7 +2,6 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     Activity,
-    AlertTriangle,
     Bell,
     Camera,
     ClipboardList,
@@ -32,7 +31,9 @@ import { dashboard } from '@/routes';
 import type { NavGroup } from '@/types';
 
 const page = usePage();
-const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
+const userRole = computed(
+    () => (page.props.auth as any)?.user?.role ?? 'student',
+);
 const isAdmin = computed(() => userRole.value === 'admin');
 
 const monitoringNav = computed<NavGroup>(() => {

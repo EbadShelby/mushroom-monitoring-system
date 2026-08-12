@@ -1,7 +1,7 @@
-import { initializeApp  } from 'firebase/app';
-import type {FirebaseApp} from 'firebase/app';
-import { getDatabase  } from 'firebase/database';
-import type {Database} from 'firebase/database';
+import { initializeApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
+import { getDatabase } from 'firebase/database';
+import type { Database } from 'firebase/database';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -34,4 +34,3 @@ export function getDb(): Database {
 
 /** @deprecated Use getDb() instead — direct export causes SSR crash */
 export const db = import.meta.env.SSR ? null : getDb();
-

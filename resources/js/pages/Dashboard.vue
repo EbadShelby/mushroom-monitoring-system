@@ -19,13 +19,14 @@ import {
     Layers,
     ArrowRightLeft,
 } from '@lucide/vue';
+import type { ApexOptions } from 'apexcharts';
 import axios from 'axios';
 import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import { toast } from 'vue-sonner';
 import VueApexCharts from 'vue3-apexcharts';
 import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
-import type { GrowingCycle, CameraSnapshot, AlertLog, ChartPoint } from '@/types';
+import type { GrowingCycle, CameraSnapshot, AlertLog } from '@/types';
 
 defineOptions({
     layout: {
@@ -46,12 +47,16 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const userRole = computed(() => (page.props.auth as any)?.user?.role ?? 'student');
+const userRole = computed(
+    () => (page.props.auth as any)?.user?.role ?? 'student',
+);
 
 const store = useSensorStore();
 
 // Stage awareness
-const activeStage = computed(() => props.activeCycle?.growing_stage ?? 'colonization');
+const activeStage = computed(
+    () => props.activeCycle?.growing_stage ?? 'colonization',
+);
 const isColonization = computed(() => activeStage.value === 'colonization');
 
 watchEffect(() => {
@@ -61,20 +66,26 @@ watchEffect(() => {
 const switchingStage = ref(false);
 async function toggleStage() {
     if (!props.activeCycle?.id) {
-return;
-}
+        return;
+    }
 
     const nextStage = isColonization.value ? 'fruiting' : 'colonization';
     const stageLabel = nextStage === 'fruiting' ? 'Fruiting' : 'Colonization';
 
-    if (!confirm(`Switch "${props.activeCycle.name}" to ${stageLabel} stage? This updates active environmental targets & automation logic.`)) {
-return;
-}
+    if (
+        !confirm(
+            `Switch "${props.activeCycle.name}" to ${stageLabel} stage? This updates active environmental targets & automation logic.`,
+        )
+    ) {
+        return;
+    }
 
     switchingStage.value = true;
 
     try {
-        await axios.post(`/api/cycles/${props.activeCycle.id}/switch-stage`, { growing_stage: nextStage });
+        await axios.post(`/api/cycles/${props.activeCycle.id}/switch-stage`, {
+            growing_stage: nextStage,
+        });
         toast.success(`Switched to ${stageLabel} stage — thresholds updated.`);
         router.reload({ only: ['activeCycle'] });
     } catch (e: any) {
@@ -104,7 +115,10 @@ onMounted(() => {
     updateClock();
     clockInterval = setInterval(updateClock, 1000);
     chartRefreshInterval = setInterval(() => {
-        router.reload({ data: { chart_interval: chartInterval.value }, only: ['chartData'] });
+        router.reload({
+            data: { chart_interval: chartInterval.value },
+            only: ['chartData'],
+        });
     }, 60_000);
 });
 
@@ -119,30 +133,39 @@ onUnmounted(() => {
     }
 });
 
-const anyWarning = computed(() =>
-    store.temperatureStatus !== 'normal' ||
-    store.humidityStatus !== 'normal' ||
-    store.co2Status !== 'normal' ||
-    store.lightStatus !== 'normal' ||
-    store.soilStatus !== 'normal',
+const anyWarning = computed(
+    () =>
+        store.temperatureStatus !== 'normal' ||
+        store.humidityStatus !== 'normal' ||
+        store.co2Status !== 'normal' ||
+        store.lightStatus !== 'normal' ||
+        store.soilStatus !== 'normal',
 );
 
 // Chart Interval Selection
 const chartInterval = ref('1m');
 const chartIntervalLabel = computed(() => {
-    const map: Record<string, string> = { '1m': 'Last Hour', '5m': 'Last 6 Hours', '15m': 'Last 24 Hours', '1h': 'Last 7 Days' };
+    const map: Record<string, string> = {
+        '1m': 'Last Hour',
+        '5m': 'Last 6 Hours',
+        '15m': 'Last 24 Hours',
+        '1h': 'Last 7 Days',
+    };
 
     return map[chartInterval.value] || 'Last Hour';
 });
 function onIntervalChange() {
-    router.reload({ data: { chart_interval: chartInterval.value }, only: ['chartData'] });
+    router.reload({
+        data: { chart_interval: chartInterval.value },
+        only: ['chartData'],
+    });
 }
 
 // Chart options factory
-function buildChartOptions(label: string, color: string) {
+function buildChartOptions(label: string, color: string): ApexOptions {
     return {
         chart: {
-            type: 'area',
+            type: 'area' as const,
             height: 160,
             sparkline: { enabled: false },
             toolbar: { show: false },
@@ -164,31 +187,48 @@ function buildChartOptions(label: string, color: string) {
         xaxis: {
             type: 'datetime',
             categories: props.chartData?.map((p) => p.time) ?? [],
-            labels: { 
+            labels: {
                 style: { colors: '#94a3b8', fontSize: '10px' },
                 datetimeUTC: false,
             },
             axisBorder: { show: false },
             axisTicks: { show: false },
-            tooltip: { enabled: false }
+            tooltip: { enabled: false },
         },
         yaxis: {
-            labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v: number) => v.toFixed(1) },
+            labels: {
+                style: { colors: '#94a3b8', fontSize: '10px' },
+                formatter: (v: number) => v.toFixed(1),
+            },
         },
-        grid: { borderColor: '#1e293b', strokeDashArray: 4, yaxis: { lines: { show: true } }, xaxis: { lines: { show: false } } },
+        grid: {
+            borderColor: '#1e293b',
+            strokeDashArray: 4,
+            yaxis: { lines: { show: true } },
+            xaxis: { lines: { show: false } },
+        },
         tooltip: {
             theme: 'dark',
             x: { show: true },
-            y: { formatter: (v: number) => `${v.toFixed(1)} ${label === 'Temperature' ? '°C' : '%'}` },
+            y: {
+                formatter: (v: number) =>
+                    `${v.toFixed(1)} ${label === 'Temperature' ? '°C' : '%'}`,
+            },
         },
     };
 }
 
 const tempSeries = computed(() => [
-    { name: 'Temperature', data: props.chartData?.map((p) => p.temperature ?? 0) ?? [] },
+    {
+        name: 'Temperature',
+        data: props.chartData?.map((p) => p.temperature ?? 0) ?? [],
+    },
 ]);
 const humSeries = computed(() => [
-    { name: 'Humidity', data: props.chartData?.map((p) => p.humidity ?? 0) ?? [] },
+    {
+        name: 'Humidity',
+        data: props.chartData?.map((p) => p.humidity ?? 0) ?? [],
+    },
 ]);
 const tempOptions = computed(() => buildChartOptions('Temperature', '#f97316'));
 const humOptions = computed(() => buildChartOptions('Humidity', '#3b82f6'));
@@ -211,40 +251,69 @@ function alertStatusClass(status: string) {
 <template>
     <Head title="Live Monitoring" />
 
-    <div class="relative flex h-full min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10">
+    <div
+        class="relative flex h-full min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10"
+    >
         <!-- Subtle decorative blobs -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
-            <div class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl"></div>
-            <div class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-secondary/5 blur-3xl"></div>
+            <div
+                class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl"
+            ></div>
+            <div
+                class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-secondary/5 blur-3xl"
+            ></div>
         </div>
 
-        <div class="mx-auto flex h-full w-full max-w-7xl flex-1 flex-col space-y-8 p-4 md:p-8 md:pt-6 z-10">
+        <div
+            class="z-10 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col space-y-8 p-4 md:p-8 md:pt-6"
+        >
             <!-- Header & Connection Status -->
-            <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div
+                class="flex flex-col justify-between gap-4 md:flex-row md:items-end"
+            >
                 <div>
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <h1 class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h1
+                            class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
+                        >
                             Mushroom Cultivation
                         </h1>
                         <span
                             v-if="activeCycle"
-                            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset shadow-sm"
-                            :class="isColonization
-                                ? 'bg-amber-500/15 text-amber-400 ring-amber-500/30'
-                                : 'bg-purple-500/15 text-purple-400 ring-purple-500/30'"
+                            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ring-1 ring-inset"
+                            :class="
+                                isColonization
+                                    ? 'bg-amber-500/15 text-amber-400 ring-amber-500/30'
+                                    : 'bg-purple-500/15 text-purple-400 ring-purple-500/30'
+                            "
                         >
-                            <component :is="isColonization ? Microscope : Layers" class="h-3.5 w-3.5" />
-                            {{ isColonization ? 'Colonization Stage (Spawn Running)' : 'Fruiting Stage (Mushroom Formation)' }}
+                            <component
+                                :is="isColonization ? Microscope : Layers"
+                                class="h-3.5 w-3.5"
+                            />
+                            {{
+                                isColonization
+                                    ? 'Colonization Stage (Spawn Running)'
+                                    : 'Fruiting Stage (Mushroom Formation)'
+                            }}
                         </span>
                     </div>
-                    <p class="mt-1 text-muted-foreground flex items-center gap-2">
-                        <span>Live environmental metrics and actuator control.</span>
-                        <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground shadow-sm">{{ currentTime }}</span>
+                    <p
+                        class="mt-1 flex items-center gap-2 text-muted-foreground"
+                    >
+                        <span
+                            >Live environmental metrics and actuator
+                            control.</span
+                        >
+                        <span
+                            class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground shadow-sm"
+                            >{{ currentTime }}</span
+                        >
                     </p>
                 </div>
 
                 <div
-                    class="flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition-all duration-300 backdrop-blur-md"
+                    class="flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-medium shadow-sm backdrop-blur-md transition-all duration-300"
                     :class="
                         store.isLoading
                             ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400'
@@ -257,7 +326,9 @@ function alertStatusClass(status: string) {
                         <span
                             v-if="store.isLoading || store.isConnected"
                             class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
-                            :class="store.isLoading ? 'bg-yellow-400' : 'bg-primary'"
+                            :class="
+                                store.isLoading ? 'bg-yellow-400' : 'bg-primary'
+                            "
                         ></span>
                         <span
                             class="relative inline-flex h-3 w-3 rounded-full"
@@ -273,7 +344,9 @@ function alertStatusClass(status: string) {
                     <span v-if="store.isLoading">Syncing sensors...</span>
                     <span v-else-if="store.isConnected">
                         Live
-                        <span class="hidden sm:inline">— Updated: {{ store.lastUpdatedFormatted }}</span>
+                        <span class="hidden sm:inline"
+                            >— Updated: {{ store.lastUpdatedFormatted }}</span
+                        >
                     </span>
                     <span v-else>Offline — Check connection</span>
                 </div>
@@ -282,58 +355,93 @@ function alertStatusClass(status: string) {
             <!-- Alert Banner -->
             <div
                 v-if="anyWarning && store.isConnected"
-                class="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground dark:text-destructive backdrop-blur-md shadow-sm"
+                class="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground shadow-sm backdrop-blur-md dark:text-destructive"
             >
                 <AlertTriangle class="h-4 w-4 shrink-0" />
-                <span class="font-medium">One or more sensor readings are outside the {{ isColonization ? 'Colonization' : 'Fruiting' }} optimal stage range. Check actuator status.</span>
+                <span class="font-medium"
+                    >One or more sensor readings are outside the
+                    {{ isColonization ? 'Colonization' : 'Fruiting' }} optimal
+                    stage range. Check actuator status.</span
+                >
             </div>
 
             <!-- Sensor Grid -->
             <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <!-- Temperature -->
                 <div
-                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
                         store.temperatureStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
                 >
-                    <div class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">
+                    <div
+                        class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12"
+                    >
                         <Thermometer class="h-32 w-32" stroke-width="1.5" />
                     </div>
 
-                    <div class="relative z-10 flex items-center justify-between">
+                    <div
+                        class="relative z-10 flex items-center justify-between"
+                    >
                         <div class="flex items-center gap-2">
-                            <div class="rounded-lg bg-orange-500/10 p-2 text-orange-500 shadow-inner">
+                            <div
+                                class="rounded-lg bg-orange-500/10 p-2 text-orange-500 shadow-inner"
+                            >
                                 <Thermometer class="h-5 w-5" />
                             </div>
-                            <p class="text-sm font-semibold tracking-wide text-muted-foreground">
+                            <p
+                                class="text-sm font-semibold tracking-wide text-muted-foreground"
+                            >
                                 TEMPERATURE
                             </p>
                         </div>
                         <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
-                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
+                            :class="
+                                isColonization
+                                    ? 'bg-amber-500/15 text-amber-400'
+                                    : 'bg-purple-500/15 text-purple-400'
+                            "
                         >
                             {{ isColonization ? 'Colonization' : 'Fruiting' }}
                         </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
-                        <p class="text-5xl font-bold tracking-tighter text-foreground">
-                            <span v-if="store.sensors.temperature !== null">{{ store.sensors.temperature }}</span>
-                            <span v-else class="text-muted-foreground/50">--</span>
+                        <p
+                            class="text-5xl font-bold tracking-tighter text-foreground"
+                        >
+                            <span v-if="store.sensors.temperature !== null">{{
+                                store.sensors.temperature
+                            }}</span>
+                            <span v-else class="text-muted-foreground/50"
+                                >--</span
+                            >
                         </p>
-                        <span class="text-xl font-medium text-muted-foreground">°C</span>
+                        <span class="text-xl font-medium text-muted-foreground"
+                            >°C</span
+                        >
                     </div>
 
-                    <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '24–28°C' : '20–24°C' }}</span>
-                        <div v-if="store.temperatureStatus !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
+                    <div
+                        class="relative z-10 mt-4 flex items-center justify-between text-sm"
+                    >
+                        <span class="font-medium text-muted-foreground"
+                            >Target:
+                            {{ isColonization ? '24–28°C' : '20–24°C' }}</span
+                        >
+                        <div
+                            v-if="store.temperatureStatus !== 'normal'"
+                            class="flex animate-pulse items-center gap-1 font-medium text-destructive"
+                        >
                             <AlertCircle class="h-4 w-4" /> Out of range
                         </div>
-                        <div v-else class="flex items-center gap-1 font-medium text-primary">
+                        <div
+                            v-else
+                            class="flex items-center gap-1 font-medium text-primary"
+                        >
                             <CheckCircle2 class="h-4 w-4" /> Optimal
                         </div>
                     </div>
@@ -341,48 +449,79 @@ function alertStatusClass(status: string) {
 
                 <!-- Humidity -->
                 <div
-                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
                         store.humidityStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
                 >
-                    <div class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">
+                    <div
+                        class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12"
+                    >
                         <Droplets class="h-32 w-32" stroke-width="1.5" />
                     </div>
 
-                    <div class="relative z-10 flex items-center justify-between">
+                    <div
+                        class="relative z-10 flex items-center justify-between"
+                    >
                         <div class="flex items-center gap-2">
-                            <div class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner">
+                            <div
+                                class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner"
+                            >
                                 <Droplets class="h-5 w-5" />
                             </div>
-                            <p class="text-sm font-semibold tracking-wide text-muted-foreground">
+                            <p
+                                class="text-sm font-semibold tracking-wide text-muted-foreground"
+                            >
                                 HUMIDITY
                             </p>
                         </div>
                         <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
-                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
+                            :class="
+                                isColonization
+                                    ? 'bg-amber-500/15 text-amber-400'
+                                    : 'bg-purple-500/15 text-purple-400'
+                            "
                         >
                             {{ isColonization ? 'Colonization' : 'Fruiting' }}
                         </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
-                        <p class="text-5xl font-bold tracking-tighter text-foreground">
-                            <span v-if="store.sensors.humidity !== null">{{ store.sensors.humidity }}</span>
-                            <span v-else class="text-muted-foreground/50">--</span>
+                        <p
+                            class="text-5xl font-bold tracking-tighter text-foreground"
+                        >
+                            <span v-if="store.sensors.humidity !== null">{{
+                                store.sensors.humidity
+                            }}</span>
+                            <span v-else class="text-muted-foreground/50"
+                                >--</span
+                            >
                         </p>
-                        <span class="text-xl font-medium text-muted-foreground">%</span>
+                        <span class="text-xl font-medium text-muted-foreground"
+                            >%</span
+                        >
                     </div>
 
-                    <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '70–80%' : '85–95%' }}</span>
-                        <div v-if="store.humidityStatus !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
+                    <div
+                        class="relative z-10 mt-4 flex items-center justify-between text-sm"
+                    >
+                        <span class="font-medium text-muted-foreground"
+                            >Target:
+                            {{ isColonization ? '70–80%' : '85–95%' }}</span
+                        >
+                        <div
+                            v-if="store.humidityStatus !== 'normal'"
+                            class="flex animate-pulse items-center gap-1 font-medium text-destructive"
+                        >
                             <AlertCircle class="h-4 w-4" /> Out of range
                         </div>
-                        <div v-else class="flex items-center gap-1 font-medium text-primary">
+                        <div
+                            v-else
+                            class="flex items-center gap-1 font-medium text-primary"
+                        >
                             <CheckCircle2 class="h-4 w-4" /> Optimal
                         </div>
                     </div>
@@ -390,48 +529,80 @@ function alertStatusClass(status: string) {
 
                 <!-- CO2 -->
                 <div
-                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
                         store.co2Status !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
                 >
-                    <div class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">
+                    <div
+                        class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12"
+                    >
                         <Wind class="h-32 w-32" stroke-width="1.5" />
                     </div>
 
-                    <div class="relative z-10 flex items-center justify-between">
+                    <div
+                        class="relative z-10 flex items-center justify-between"
+                    >
                         <div class="flex items-center gap-2">
-                            <div class="rounded-lg bg-purple-500/10 p-2 text-purple-500 shadow-inner">
+                            <div
+                                class="rounded-lg bg-purple-500/10 p-2 text-purple-500 shadow-inner"
+                            >
                                 <Wind class="h-5 w-5" />
                             </div>
-                            <p class="text-sm font-semibold tracking-wide text-muted-foreground">
+                            <p
+                                class="text-sm font-semibold tracking-wide text-muted-foreground"
+                            >
                                 CO₂ LEVEL
                             </p>
                         </div>
                         <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
-                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
+                            :class="
+                                isColonization
+                                    ? 'bg-amber-500/15 text-amber-400'
+                                    : 'bg-purple-500/15 text-purple-400'
+                            "
                         >
                             {{ isColonization ? 'Colonization' : 'Fruiting' }}
                         </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
-                        <p class="text-5xl font-bold tracking-tighter text-foreground">
-                            <span v-if="store.sensors.co2_raw !== null">{{ store.sensors.co2_raw }}</span>
-                            <span v-else class="text-muted-foreground/50">--</span>
+                        <p
+                            class="text-5xl font-bold tracking-tighter text-foreground"
+                        >
+                            <span v-if="store.sensors.co2_raw !== null">{{
+                                store.sensors.co2_raw
+                            }}</span>
+                            <span v-else class="text-muted-foreground/50"
+                                >--</span
+                            >
                         </p>
-                        <span class="text-xl font-medium text-muted-foreground">ppm</span>
+                        <span class="text-xl font-medium text-muted-foreground"
+                            >ppm</span
+                        >
                     </div>
 
-                    <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '< 5,000' : '< 1,000' }} ppm</span>
-                        <div v-if="store.co2Status !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
+                    <div
+                        class="relative z-10 mt-4 flex items-center justify-between text-sm"
+                    >
+                        <span class="font-medium text-muted-foreground"
+                            >Target:
+                            {{ isColonization ? '< 5,000' : '< 1,000' }}
+                            ppm</span
+                        >
+                        <div
+                            v-if="store.co2Status !== 'normal'"
+                            class="flex animate-pulse items-center gap-1 font-medium text-destructive"
+                        >
                             <AlertCircle class="h-4 w-4" /> High
                         </div>
-                        <div v-else class="flex items-center gap-1 font-medium text-primary">
+                        <div
+                            v-else
+                            class="flex items-center gap-1 font-medium text-primary"
+                        >
                             <CheckCircle2 class="h-4 w-4" /> Good
                         </div>
                     </div>
@@ -439,49 +610,86 @@ function alertStatusClass(status: string) {
 
                 <!-- Light Level -->
                 <div
-                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
                         store.lightStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
                 >
-                    <div class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-45">
+                    <div
+                        class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-45"
+                    >
                         <Sun class="h-32 w-32" stroke-width="1.5" />
                     </div>
 
-                    <div class="relative z-10 flex items-center justify-between">
+                    <div
+                        class="relative z-10 flex items-center justify-between"
+                    >
                         <div class="flex items-center gap-2">
-                            <div class="rounded-lg bg-yellow-500/10 p-2 text-yellow-500 shadow-inner">
+                            <div
+                                class="rounded-lg bg-yellow-500/10 p-2 text-yellow-500 shadow-inner"
+                            >
                                 <Sun class="h-5 w-5" />
                             </div>
-                            <p class="text-sm font-semibold tracking-wide text-muted-foreground">
+                            <p
+                                class="text-sm font-semibold tracking-wide text-muted-foreground"
+                            >
                                 LIGHT LEVEL
                             </p>
                         </div>
                         <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider"
-                            :class="isColonization ? 'bg-amber-500/15 text-amber-400' : 'bg-purple-500/15 text-purple-400'"
+                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
+                            :class="
+                                isColonization
+                                    ? 'bg-amber-500/15 text-amber-400'
+                                    : 'bg-purple-500/15 text-purple-400'
+                            "
                         >
                             {{ isColonization ? 'Colonization' : 'Fruiting' }}
                         </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
-                        <p class="text-5xl font-bold tracking-tighter text-foreground">
-                            <span v-if="store.sensors.light_level !== null">{{ store.sensors.light_level }}</span>
-                            <span v-else class="text-muted-foreground/50">--</span>
+                        <p
+                            class="text-5xl font-bold tracking-tighter text-foreground"
+                        >
+                            <span v-if="store.sensors.light_level !== null">{{
+                                store.sensors.light_level
+                            }}</span>
+                            <span v-else class="text-muted-foreground/50"
+                                >--</span
+                            >
                         </p>
-                        <span class="text-xl font-medium text-muted-foreground">lux</span>
+                        <span class="text-xl font-medium text-muted-foreground"
+                            >lux</span
+                        >
                     </div>
 
-                    <div class="relative z-10 mt-4 flex items-center justify-between text-sm">
-                        <span class="text-muted-foreground font-medium">Target: {{ isColonization ? '0–50 lux (Dim)' : '200–800 lux' }}</span>
-                        <div v-if="store.lightStatus !== 'normal'" class="flex animate-pulse items-center gap-1 font-medium text-destructive">
-                            <AlertCircle class="h-4 w-4" /> {{ isColonization ? 'Too Bright' : 'Out of range' }}
+                    <div
+                        class="relative z-10 mt-4 flex items-center justify-between text-sm"
+                    >
+                        <span class="font-medium text-muted-foreground"
+                            >Target:
+                            {{
+                                isColonization
+                                    ? '0–50 lux (Dim)'
+                                    : '200–800 lux'
+                            }}</span
+                        >
+                        <div
+                            v-if="store.lightStatus !== 'normal'"
+                            class="flex animate-pulse items-center gap-1 font-medium text-destructive"
+                        >
+                            <AlertCircle class="h-4 w-4" />
+                            {{ isColonization ? 'Too Bright' : 'Out of range' }}
                         </div>
-                        <div v-else class="flex items-center gap-1 font-medium text-primary">
-                            <CheckCircle2 class="h-4 w-4" /> {{ isColonization ? 'Dark' : 'Optimal' }}
+                        <div
+                            v-else
+                            class="flex items-center gap-1 font-medium text-primary"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{ isColonization ? 'Dark' : 'Optimal' }}
                         </div>
                     </div>
                 </div>
@@ -489,11 +697,13 @@ function alertStatusClass(status: string) {
 
             <!-- Live Charts Row Header & Controls -->
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-bold tracking-tight text-foreground">Environmental Trends</h2>
+                <h2 class="text-xl font-bold tracking-tight text-foreground">
+                    Environmental Trends
+                </h2>
                 <select
                     v-model="chartInterval"
                     @change="onIntervalChange"
-                    class="rounded-md border border-border/50 bg-card/60 px-3 py-1.5 text-sm shadow-sm backdrop-blur-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:bg-card/40"
+                    class="rounded-md border border-border/50 bg-card/60 px-3 py-1.5 text-sm shadow-sm backdrop-blur-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:bg-card/40"
                 >
                     <option value="1m">Per 1 Min (Last Hour)</option>
                     <option value="5m">Per 5 Mins (Last 6 Hrs)</option>
@@ -503,14 +713,22 @@ function alertStatusClass(status: string) {
             </div>
 
             <!-- Live Charts Row -->
-            <div class="grid gap-6 lg:grid-cols-2 mt-2">
+            <div class="mt-2 grid gap-6 lg:grid-cols-2">
                 <!-- Temperature Chart -->
-                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm">
+                <div
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
+                >
                     <div class="mb-4 flex items-center gap-2">
-                        <div class="rounded-lg bg-orange-500/10 p-2 text-orange-500 shadow-inner">
+                        <div
+                            class="rounded-lg bg-orange-500/10 p-2 text-orange-500 shadow-inner"
+                        >
                             <Thermometer class="h-4 w-4" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground uppercase">TEMPERATURE — {{ chartIntervalLabel }}</h3>
+                        <h3
+                            class="font-semibold tracking-wide text-muted-foreground uppercase"
+                        >
+                            TEMPERATURE — {{ chartIntervalLabel }}
+                        </h3>
                     </div>
                     <div v-if="!chartData" class="animate-pulse space-y-2 py-6">
                         <div class="h-3 w-3/4 rounded bg-muted"></div>
@@ -527,12 +745,20 @@ function alertStatusClass(status: string) {
                 </div>
 
                 <!-- Humidity Chart -->
-                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm">
+                <div
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
+                >
                     <div class="mb-4 flex items-center gap-2">
-                        <div class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner">
+                        <div
+                            class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner"
+                        >
                             <Droplets class="h-4 w-4" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground uppercase">HUMIDITY — {{ chartIntervalLabel }}</h3>
+                        <h3
+                            class="font-semibold tracking-wide text-muted-foreground uppercase"
+                        >
+                            HUMIDITY — {{ chartIntervalLabel }}
+                        </h3>
                     </div>
                     <div v-if="!chartData" class="animate-pulse space-y-2 py-6">
                         <div class="h-3 w-3/4 rounded bg-muted"></div>
@@ -552,31 +778,56 @@ function alertStatusClass(status: string) {
             <!-- Bottom Section: Soil & Actuators -->
             <div class="grid gap-6 md:grid-cols-3">
                 <!-- Soil Moisture -->
-                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm md:col-span-1 transition-all duration-300 hover:shadow-lg">
+                <div
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg md:col-span-1"
+                >
                     <div class="mb-6 flex items-center gap-2">
-                        <div class="rounded-lg bg-emerald-500/10 p-2 text-emerald-500 shadow-inner">
+                        <div
+                            class="rounded-lg bg-emerald-500/10 p-2 text-emerald-500 shadow-inner"
+                        >
                             <Sprout class="h-5 w-5" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground">
+                        <h3
+                            class="font-semibold tracking-wide text-muted-foreground"
+                        >
                             SOIL MOISTURE
                         </h3>
                     </div>
 
                     <div class="flex flex-col items-center justify-center py-6">
-                        <div class="relative flex h-40 w-40 items-center justify-center rounded-full border-4 border-muted shadow-inner bg-background/50">
+                        <div
+                            class="relative flex h-40 w-40 items-center justify-center rounded-full border-4 border-muted bg-background/50 shadow-inner"
+                        >
                             <div
                                 class="absolute inset-0 rounded-full border-4 border-emerald-500 transition-all duration-1000"
                                 :style="`clip-path: inset(${100 - (store.sensors.soil_moisture ?? 0)}% 0 0 0)`"
                             ></div>
-                            <div class="text-center z-10 bg-background/80 px-3 py-1 rounded-full backdrop-blur-sm">
-                                <p class="text-3xl font-bold tracking-tighter text-foreground">
-                                    <span v-if="store.sensors.soil_moisture !== null">{{ store.sensors.soil_moisture }}</span>
-                                    <span v-else class="text-muted-foreground/50">--</span>
-                                    <span class="text-lg text-muted-foreground">%</span>
+                            <div
+                                class="z-10 rounded-full bg-background/80 px-3 py-1 text-center backdrop-blur-sm"
+                            >
+                                <p
+                                    class="text-3xl font-bold tracking-tighter text-foreground"
+                                >
+                                    <span
+                                        v-if="
+                                            store.sensors.soil_moisture !== null
+                                        "
+                                        >{{ store.sensors.soil_moisture }}</span
+                                    >
+                                    <span
+                                        v-else
+                                        class="text-muted-foreground/50"
+                                        >--</span
+                                    >
+                                    <span class="text-lg text-muted-foreground"
+                                        >%</span
+                                    >
                                 </p>
                             </div>
                         </div>
-                        <div class="mt-6 flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 font-medium text-emerald-600 capitalize dark:text-emerald-400 shadow-sm">
+                        <div
+                            class="mt-6 flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 font-medium text-emerald-600 capitalize shadow-sm dark:text-emerald-400"
+                        >
                             <Activity class="h-4 w-4" />
                             {{ store.sensors.soil_status ?? 'Unknown' }}
                         </div>
@@ -584,42 +835,69 @@ function alertStatusClass(status: string) {
                 </div>
 
                 <!-- Actuators Panel -->
-                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm md:col-span-2 transition-all duration-300 hover:shadow-lg">
+                <div
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg md:col-span-2"
+                >
                     <div class="mb-6 flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <div class="rounded-lg bg-indigo-500/10 p-2 text-indigo-500 shadow-inner">
+                            <div
+                                class="rounded-lg bg-indigo-500/10 p-2 text-indigo-500 shadow-inner"
+                            >
                                 <Zap class="h-5 w-5" />
                             </div>
-                            <h3 class="font-semibold tracking-wide text-muted-foreground">
+                            <h3
+                                class="font-semibold tracking-wide text-muted-foreground"
+                            >
                                 SYSTEM AUTOMATION
                             </h3>
                         </div>
-                        <span class="rounded-full bg-secondary/80 px-2.5 py-1 text-xs font-medium text-secondary-foreground shadow-sm">
+                        <span
+                            class="rounded-full bg-secondary/80 px-2.5 py-1 text-xs font-medium text-secondary-foreground shadow-sm"
+                        >
                             Automated
                         </span>
                     </div>
 
                     <div class="grid h-[calc(100%-4rem)] gap-4 sm:grid-cols-3">
                         <!-- Humidifier Actuator -->
-                        <div class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 backdrop-blur-sm p-4 transition-all hover:bg-muted/50 hover:shadow-md">
+                        <div
+                            class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 p-4 backdrop-blur-sm transition-all hover:bg-muted/50 hover:shadow-md"
+                        >
                             <div class="flex items-start justify-between">
-                                <div class="rounded-lg bg-blue-500/10 p-2.5 text-blue-500 shadow-inner">
+                                <div
+                                    class="rounded-lg bg-blue-500/10 p-2.5 text-blue-500 shadow-inner"
+                                >
                                     <Droplets class="h-6 w-6" />
                                 </div>
-                                <div class="relative flex h-3 w-3" v-if="store.actuators.humidifier === 'on'">
-                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
-                                    <span class="relative inline-flex h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+                                <div
+                                    class="relative flex h-3 w-3"
+                                    v-if="store.actuators.humidifier === 'on'"
+                                >
+                                    <span
+                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"
+                                    ></span>
+                                    <span
+                                        class="relative inline-flex h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
+                                    ></span>
                                 </div>
                             </div>
                             <div class="mt-4">
-                                <h4 class="text-lg font-semibold text-foreground">Humidifier</h4>
-                                <div class="mt-2 flex items-center justify-between">
-                                    <span class="text-sm text-muted-foreground">Relay 1</span>
+                                <h4
+                                    class="text-lg font-semibold text-foreground"
+                                >
+                                    Humidifier
+                                </h4>
+                                <div
+                                    class="mt-2 flex items-center justify-between"
+                                >
+                                    <span class="text-sm text-muted-foreground"
+                                        >Relay 1</span
+                                    >
                                     <span
                                         class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase transition-colors"
                                         :class="
                                             store.actuators.humidifier === 'on'
-                                                ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 shadow-sm'
+                                                ? 'bg-blue-500/20 text-blue-600 shadow-sm dark:text-blue-400'
                                                 : 'bg-secondary text-muted-foreground'
                                         "
                                     >
@@ -630,25 +908,44 @@ function alertStatusClass(status: string) {
                         </div>
 
                         <!-- Fan Actuator -->
-                        <div class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 backdrop-blur-sm p-4 transition-all hover:bg-muted/50 hover:shadow-md">
+                        <div
+                            class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 p-4 backdrop-blur-sm transition-all hover:bg-muted/50 hover:shadow-md"
+                        >
                             <div class="flex items-start justify-between">
-                                <div class="rounded-lg bg-purple-500/10 p-2.5 text-purple-500 shadow-inner">
+                                <div
+                                    class="rounded-lg bg-purple-500/10 p-2.5 text-purple-500 shadow-inner"
+                                >
                                     <Wind class="h-6 w-6" />
                                 </div>
-                                <div class="relative flex h-3 w-3" v-if="store.actuators.fan === 'on'">
-                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-purple-400 opacity-75"></span>
-                                    <span class="relative inline-flex h-3 w-3 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></span>
+                                <div
+                                    class="relative flex h-3 w-3"
+                                    v-if="store.actuators.fan === 'on'"
+                                >
+                                    <span
+                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-purple-400 opacity-75"
+                                    ></span>
+                                    <span
+                                        class="relative inline-flex h-3 w-3 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"
+                                    ></span>
                                 </div>
                             </div>
                             <div class="mt-4">
-                                <h4 class="text-lg font-semibold text-foreground">Intake Fan</h4>
-                                <div class="mt-2 flex items-center justify-between">
-                                    <span class="text-sm text-muted-foreground">Relay 3</span>
+                                <h4
+                                    class="text-lg font-semibold text-foreground"
+                                >
+                                    Intake Fan
+                                </h4>
+                                <div
+                                    class="mt-2 flex items-center justify-between"
+                                >
+                                    <span class="text-sm text-muted-foreground"
+                                        >Relay 3</span
+                                    >
                                     <span
                                         class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase transition-colors"
                                         :class="
                                             store.actuators.fan === 'on'
-                                                ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 shadow-sm'
+                                                ? 'bg-purple-500/20 text-purple-600 shadow-sm dark:text-purple-400'
                                                 : 'bg-secondary text-muted-foreground'
                                         "
                                     >
@@ -659,25 +956,44 @@ function alertStatusClass(status: string) {
                         </div>
 
                         <!-- LED Actuator -->
-                        <div class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 backdrop-blur-sm p-4 transition-all hover:bg-muted/50 hover:shadow-md">
+                        <div
+                            class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 p-4 backdrop-blur-sm transition-all hover:bg-muted/50 hover:shadow-md"
+                        >
                             <div class="flex items-start justify-between">
-                                <div class="rounded-lg bg-yellow-500/10 p-2.5 text-yellow-500 shadow-inner">
+                                <div
+                                    class="rounded-lg bg-yellow-500/10 p-2.5 text-yellow-500 shadow-inner"
+                                >
                                     <Sun class="h-6 w-6" />
                                 </div>
-                                <div class="relative flex h-3 w-3" v-if="store.actuators.led === 'on'">
-                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75"></span>
-                                    <span class="relative inline-flex h-3 w-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span>
+                                <div
+                                    class="relative flex h-3 w-3"
+                                    v-if="store.actuators.led === 'on'"
+                                >
+                                    <span
+                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75"
+                                    ></span>
+                                    <span
+                                        class="relative inline-flex h-3 w-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"
+                                    ></span>
                                 </div>
                             </div>
                             <div class="mt-4">
-                                <h4 class="text-lg font-semibold text-foreground">Grow Lights</h4>
-                                <div class="mt-2 flex items-center justify-between">
-                                    <span class="text-sm text-muted-foreground">Relay 2</span>
+                                <h4
+                                    class="text-lg font-semibold text-foreground"
+                                >
+                                    Grow Lights
+                                </h4>
+                                <div
+                                    class="mt-2 flex items-center justify-between"
+                                >
+                                    <span class="text-sm text-muted-foreground"
+                                        >Relay 2</span
+                                    >
                                     <span
                                         class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase transition-colors"
                                         :class="
                                             store.actuators.led === 'on'
-                                                ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 shadow-sm'
+                                                ? 'bg-yellow-500/20 text-yellow-600 shadow-sm dark:text-yellow-400'
                                                 : 'bg-secondary text-muted-foreground'
                                         "
                                     >
@@ -691,18 +1007,34 @@ function alertStatusClass(status: string) {
             </div>
 
             <!-- Info Row: Active Cycle + Camera Snapshot + Last Alert -->
-            <div class="grid gap-6" :class="userRole === 'student' ? 'md:grid-cols-2' : 'md:grid-cols-3'">
+            <div
+                class="grid gap-6"
+                :class="
+                    userRole === 'student' ? 'md:grid-cols-2' : 'md:grid-cols-3'
+                "
+            >
                 <!-- Active Growing Cycle -->
-                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+                <div
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+                >
                     <div class="mb-4 flex items-center gap-2">
-                        <div class="rounded-lg bg-green-500/10 p-2 text-green-500 shadow-inner">
+                        <div
+                            class="rounded-lg bg-green-500/10 p-2 text-green-500 shadow-inner"
+                        >
                             <Leaf class="h-5 w-5" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground">ACTIVE CYCLE</h3>
+                        <h3
+                            class="font-semibold tracking-wide text-muted-foreground"
+                        >
+                            ACTIVE CYCLE
+                        </h3>
                     </div>
 
                     <!-- Skeleton -->
-                    <div v-if="activeCycle === undefined" class="animate-pulse space-y-3">
+                    <div
+                        v-if="activeCycle === undefined"
+                        class="animate-pulse space-y-3"
+                    >
                         <div class="h-4 w-3/4 rounded bg-muted"></div>
                         <div class="h-3 w-1/2 rounded bg-muted"></div>
                         <div class="h-3 w-2/3 rounded bg-muted"></div>
@@ -710,28 +1042,42 @@ function alertStatusClass(status: string) {
                     </div>
 
                     <div v-else-if="activeCycle">
-                        <p class="text-xl font-bold text-foreground">{{ activeCycle.name }}</p>
-                        <div class="mt-3 space-y-2 text-sm text-muted-foreground">
+                        <p class="text-xl font-bold text-foreground">
+                            {{ activeCycle.name }}
+                        </p>
+                        <div
+                            class="mt-3 space-y-2 text-sm text-muted-foreground"
+                        >
                             <div class="flex items-center justify-between">
                                 <span>Stage</span>
                                 <div class="flex items-center gap-2">
                                     <span
                                         class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ring-1 ring-inset"
-                                        :class="isColonization
-                                            ? 'bg-amber-500/20 text-amber-400 ring-amber-500/30'
-                                            : 'bg-purple-500/20 text-purple-400 ring-purple-500/30'"
+                                        :class="
+                                            isColonization
+                                                ? 'bg-amber-500/20 text-amber-400 ring-amber-500/30'
+                                                : 'bg-purple-500/20 text-purple-400 ring-purple-500/30'
+                                        "
                                     >
                                         <component
-                                            :is="isColonization ? Microscope : Layers"
+                                            :is="
+                                                isColonization
+                                                    ? Microscope
+                                                    : Layers
+                                            "
                                             class="h-3 w-3"
                                         />
-                                        {{ isColonization ? 'Colonization' : 'Fruiting' }}
+                                        {{
+                                            isColonization
+                                                ? 'Colonization'
+                                                : 'Fruiting'
+                                        }}
                                     </span>
                                     <button
                                         v-if="userRole !== 'student'"
                                         @click="toggleStage"
                                         :disabled="switchingStage"
-                                        class="inline-flex items-center gap-1 rounded-md bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-secondary-foreground hover:bg-secondary transition-colors"
+                                        class="inline-flex items-center gap-1 rounded-md bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-secondary-foreground transition-colors hover:bg-secondary"
                                         title="Switch active growth stage"
                                     >
                                         <ArrowRightLeft class="h-3 w-3" />
@@ -741,48 +1087,72 @@ function alertStatusClass(status: string) {
                             </div>
                             <div class="flex justify-between">
                                 <span>Variety</span>
-                                <span class="font-medium text-foreground">{{ activeCycle.mushroom_variety }}</span>
+                                <span class="font-medium text-foreground">{{
+                                    activeCycle.mushroom_variety
+                                }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span>Substrate</span>
-                                <span class="font-medium text-foreground">{{ activeCycle.substrate_type }}</span>
+                                <span class="font-medium text-foreground">{{
+                                    activeCycle.substrate_type
+                                }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span>Started</span>
-                                <span class="font-medium text-foreground">{{ activeCycle.start_date }}</span>
+                                <span class="font-medium text-foreground">{{
+                                    activeCycle.start_date
+                                }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span>Day</span>
-                                <span class="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-600 dark:text-green-400">
+                                <span
+                                    class="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-600 dark:text-green-400"
+                                >
                                     Day {{ activeCycle.day_count }}
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <div v-else class="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                    <div
+                        v-else
+                        class="flex flex-col items-center justify-center py-6 text-center text-muted-foreground"
+                    >
                         <Calendar class="mb-2 h-10 w-10 opacity-30" />
                         <p class="text-sm">No active cycle</p>
                     </div>
                 </div>
 
                 <!-- Latest Camera Snapshot -->
-                <div class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+                <div
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+                >
                     <div class="mb-4 flex items-center gap-2">
-                        <div class="rounded-lg bg-teal-500/10 p-2 text-teal-500 shadow-inner">
+                        <div
+                            class="rounded-lg bg-teal-500/10 p-2 text-teal-500 shadow-inner"
+                        >
                             <Camera class="h-5 w-5" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground">LATEST SNAPSHOT</h3>
+                        <h3
+                            class="font-semibold tracking-wide text-muted-foreground"
+                        >
+                            LATEST SNAPSHOT
+                        </h3>
                     </div>
 
                     <!-- Skeleton -->
-                    <div v-if="latestSnapshot === undefined" class="animate-pulse">
+                    <div
+                        v-if="latestSnapshot === undefined"
+                        class="animate-pulse"
+                    >
                         <div class="h-36 w-full rounded-lg bg-muted"></div>
                         <div class="mt-2 h-3 w-2/3 rounded bg-muted"></div>
                     </div>
 
                     <div v-else>
                         <!-- Always show sample image as thumbnail (dummy) -->
-                        <div class="overflow-hidden rounded-lg border border-border/50">
+                        <div
+                            class="overflow-hidden rounded-lg border border-border/50"
+                        >
                             <img
                                 src="/sample-image.png"
                                 alt="Latest mushroom snapshot"
@@ -790,22 +1160,38 @@ function alertStatusClass(status: string) {
                             />
                         </div>
                         <p class="mt-2 text-xs text-muted-foreground">
-                            {{ latestSnapshot ? latestSnapshot.captured_date : 'Sample preview' }}
+                            {{
+                                latestSnapshot
+                                    ? latestSnapshot.captured_date
+                                    : 'Sample preview'
+                            }}
                         </p>
                     </div>
                 </div>
 
                 <!-- Last SMS Alert -->
-                <div v-if="userRole !== 'student'" class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+                <div
+                    v-if="userRole !== 'student'"
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+                >
                     <div class="mb-4 flex items-center gap-2">
-                        <div class="rounded-lg bg-red-500/10 p-2 text-red-500 shadow-inner">
+                        <div
+                            class="rounded-lg bg-red-500/10 p-2 text-red-500 shadow-inner"
+                        >
                             <Bell class="h-5 w-5" />
                         </div>
-                        <h3 class="font-semibold tracking-wide text-muted-foreground">LAST SMS ALERT</h3>
+                        <h3
+                            class="font-semibold tracking-wide text-muted-foreground"
+                        >
+                            LAST SMS ALERT
+                        </h3>
                     </div>
 
                     <!-- Skeleton -->
-                    <div v-if="lastAlert === undefined" class="animate-pulse space-y-3">
+                    <div
+                        v-if="lastAlert === undefined"
+                        class="animate-pulse space-y-3"
+                    >
                         <div class="h-4 w-1/2 rounded bg-muted"></div>
                         <div class="h-3 w-full rounded bg-muted"></div>
                         <div class="h-3 w-3/4 rounded bg-muted"></div>
@@ -813,8 +1199,13 @@ function alertStatusClass(status: string) {
 
                     <div v-else-if="lastAlert">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-semibold uppercase text-foreground">
-                                {{ alertSensorLabel[lastAlert.sensor] ?? lastAlert.sensor }}
+                            <span
+                                class="text-sm font-semibold text-foreground uppercase"
+                            >
+                                {{
+                                    alertSensorLabel[lastAlert.sensor] ??
+                                    lastAlert.sensor
+                                }}
                             </span>
                             <span
                                 class="rounded-full px-2 py-0.5 text-xs font-bold"
@@ -823,13 +1214,27 @@ function alertStatusClass(status: string) {
                                 {{ lastAlert.status }}
                             </span>
                         </div>
-                        <p class="mt-3 text-sm text-muted-foreground line-clamp-3">{{ lastAlert.message }}</p>
-                        <div class="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Value: <strong class="text-foreground">{{ lastAlert.value_at_alert }}</strong></span>
+                        <p
+                            class="mt-3 line-clamp-3 text-sm text-muted-foreground"
+                        >
+                            {{ lastAlert.message }}
+                        </p>
+                        <div
+                            class="mt-3 flex items-center justify-between text-xs text-muted-foreground"
+                        >
+                            <span
+                                >Value:
+                                <strong class="text-foreground">{{
+                                    lastAlert.value_at_alert
+                                }}</strong></span
+                            >
                             <span>{{ lastAlert.sent_at }}</span>
                         </div>
                     </div>
-                    <div v-else class="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                    <div
+                        v-else
+                        class="flex flex-col items-center justify-center py-6 text-center text-muted-foreground"
+                    >
                         <Bell class="mb-2 h-10 w-10 opacity-30" />
                         <p class="text-sm">No alerts yet</p>
                     </div>

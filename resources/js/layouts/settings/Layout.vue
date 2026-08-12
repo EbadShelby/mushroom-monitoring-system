@@ -29,14 +29,20 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <div class="relative flex min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10 px-4 py-8 md:px-10">
+    <div
+        class="relative flex min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10 px-4 py-8 md:px-10"
+    >
         <!-- Subtle decorative blobs -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
-            <div class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl"></div>
-            <div class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-secondary/5 blur-3xl"></div>
+            <div
+                class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl"
+            ></div>
+            <div
+                class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-secondary/5 blur-3xl"
+            ></div>
         </div>
-        
-        <div class="mx-auto w-full max-w-7xl z-10">
+
+        <div class="z-10 mx-auto w-full max-w-7xl">
             <Heading
                 title="Settings"
                 description="Manage your profile and account settings"
@@ -54,12 +60,17 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                             variant="ghost"
                             :class="[
                                 'w-full justify-start rounded-xl transition-all duration-200',
-                                isCurrentOrParentUrl(item.href) ? 'bg-primary/10 text-primary font-medium shadow-sm backdrop-blur-sm' : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground',
+                                isCurrentOrParentUrl(item.href)
+                                    ? 'bg-primary/10 font-medium text-primary shadow-sm backdrop-blur-sm'
+                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                             ]"
                             as-child
                         >
                             <Link :href="item.href">
-                                <component :is="item.icon" class="h-4 w-4 mr-2" />
+                                <component
+                                    :is="item.icon"
+                                    class="mr-2 h-4 w-4"
+                                />
                                 {{ item.title }}
                             </Link>
                         </Button>

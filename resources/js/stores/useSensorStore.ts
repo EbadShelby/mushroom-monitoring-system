@@ -1,5 +1,5 @@
-import { ref, onValue  } from 'firebase/database';
-import type {Unsubscribe} from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
+import type { Unsubscribe } from 'firebase/database';
 import { defineStore } from 'pinia';
 import { ref as vRef, computed } from 'vue';
 import { getDb } from '@/lib/firebase';
@@ -62,57 +62,59 @@ export const useSensorStore = defineStore('sensor', () => {
         });
     });
 
-    const temperatureStatus = computed((): 'normal' | 'warning' | 'critical' => {
-        const temp = sensors.value.temperature;
+    const temperatureStatus = computed(
+        (): 'normal' | 'warning' | 'critical' => {
+            const temp = sensors.value.temperature;
 
-        if (temp === null) {
- return 'critical'; 
-}
+            if (temp === null) {
+                return 'critical';
+            }
 
-        if (activeStage.value === 'colonization') {
-            if (temp < 22 || temp > 30) {
- return 'critical'; 
-}
+            if (activeStage.value === 'colonization') {
+                if (temp < 22 || temp > 30) {
+                    return 'critical';
+                }
 
-            if (temp < 24 || temp > 28) {
- return 'warning'; 
-}
-        } else {
-            if (temp < 18 || temp > 26) {
- return 'critical'; 
-}
+                if (temp < 24 || temp > 28) {
+                    return 'warning';
+                }
+            } else {
+                if (temp < 18 || temp > 26) {
+                    return 'critical';
+                }
 
-            if (temp < 20 || temp > 24) {
- return 'warning'; 
-}
-        }
+                if (temp < 20 || temp > 24) {
+                    return 'warning';
+                }
+            }
 
-        return 'normal';
-    });
+            return 'normal';
+        },
+    );
 
     const humidityStatus = computed((): 'normal' | 'warning' | 'critical' => {
         const hum = sensors.value.humidity;
 
         if (hum === null) {
- return 'critical'; 
-}
+            return 'critical';
+        }
 
         if (activeStage.value === 'colonization') {
             if (hum < 65) {
- return 'critical'; 
-}
+                return 'critical';
+            }
 
             if (hum < 70 || hum > 80) {
- return 'warning'; 
-}
+                return 'warning';
+            }
         } else {
             if (hum < 80) {
- return 'critical'; 
-}
+                return 'critical';
+            }
 
             if (hum < 85 || hum > 95) {
- return 'warning'; 
-}
+                return 'warning';
+            }
         }
 
         return 'normal';
@@ -122,25 +124,25 @@ export const useSensorStore = defineStore('sensor', () => {
         const co2 = sensors.value.co2_raw;
 
         if (co2 === null) {
- return 'critical'; 
-}
+            return 'critical';
+        }
 
         if (activeStage.value === 'colonization') {
             if (co2 > 6000) {
- return 'critical'; 
-}
+                return 'critical';
+            }
 
             if (co2 > 5000) {
- return 'warning'; 
-}
+                return 'warning';
+            }
         } else {
             if (co2 > 1500) {
- return 'critical'; 
-}
+                return 'critical';
+            }
 
             if (co2 > 1000) {
- return 'warning'; 
-}
+                return 'warning';
+            }
         }
 
         return 'normal';
@@ -150,25 +152,25 @@ export const useSensorStore = defineStore('sensor', () => {
         const light = sensors.value.light_level;
 
         if (light === null) {
- return 'normal'; 
-}
+            return 'normal';
+        }
 
         if (activeStage.value === 'colonization') {
             if (light > 300) {
- return 'critical'; 
-}
+                return 'critical';
+            }
 
             if (light > 100) {
- return 'warning'; 
-}
+                return 'warning';
+            }
         } else {
             if (light < 100 || light > 1000) {
- return 'critical'; 
-}
+                return 'critical';
+            }
 
             if (light < 200 || light > 800) {
- return 'warning'; 
-}
+                return 'warning';
+            }
         }
 
         return 'normal';
@@ -178,16 +180,16 @@ export const useSensorStore = defineStore('sensor', () => {
         const soil = sensors.value.soil_moisture;
 
         if (soil === null) {
- return 'normal'; 
-}
+            return 'normal';
+        }
 
         if (soil < 50) {
- return 'critical'; 
-}
+            return 'critical';
+        }
 
         if (soil < 55) {
- return 'warning'; 
-}
+            return 'warning';
+        }
 
         return 'normal';
     });

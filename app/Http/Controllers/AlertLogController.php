@@ -25,7 +25,7 @@ class AlertLogController extends Controller
                 ->groupBy('sensor')
                 ->orderByDesc('count')
                 ->get()
-                ->map(fn ($row) => ['sensor' => $row->sensor, 'count' => $row->count])
+                ->map(fn (AlertLog $row) => ['sensor' => $row->sensor, 'count' => (int) $row->getAttribute('count')])
             ),
         ]);
     }

@@ -22,12 +22,12 @@ const roleLabel = computed(() => {
     const role = auth.value?.role;
 
     if (role === 'admin') {
- return 'Admin'; 
-}
+        return 'Admin';
+    }
 
     if (role === 'faculty') {
- return 'Faculty'; 
-}
+        return 'Faculty';
+    }
 
     return 'Student';
 });

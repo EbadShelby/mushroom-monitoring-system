@@ -39,6 +39,7 @@ class SensorReading extends Model
         'recorded_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<GrowingCycle, $this> */
     public function growingCycle(): BelongsTo
     {
         return $this->belongsTo(GrowingCycle::class);

@@ -27,8 +27,10 @@ defineOptions({
             title="Appearance settings"
             description="Update the appearance settings for your account"
         />
-        
-        <div class="rounded-2xl border border-border/50 bg-card/60 p-6 sm:p-8 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+
+        <div
+            class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md sm:p-8"
+        >
             <AppearanceTabs />
         </div>
     </div>

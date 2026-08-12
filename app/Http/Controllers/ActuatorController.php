@@ -54,7 +54,7 @@ class ActuatorController extends Controller
             'actuator' => $actuator,
             'action' => $action,
             'trigger' => 'manual',
-            'triggered_by' => auth()->user()?->name ?? 'system',
+            'triggered_by' => auth()->user()->name ?? 'system',
             'triggered_at' => now(),
         ]);
 

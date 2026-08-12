@@ -71,7 +71,15 @@ class FirebaseService
         }
 
         return Cache::remember('firebase_access_token', now()->addMinutes(55), function () {
-            $sa = json_decode(file_get_contents($this->serviceAccountPath), true);
+            $fileContents = file_get_contents($this->serviceAccountPath);
+
+            if ($fileContents === false) {
+                Log::error('Firebase service account JSON could not be read');
+
+                return null;
+            }
+
+            $sa = json_decode($fileContents, true);
 
             $now = time();
             $payload = [
@@ -83,11 +91,27 @@ class FirebaseService
                 'scope' => 'https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email',
             ];
 
-            $header = $this->base64url(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
-            $body = $this->base64url(json_encode($payload));
+            $headerJson = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
+            $payloadJson = json_encode($payload);
+
+            if ($headerJson === false || $payloadJson === false) {
+                Log::error('Firebase JWT JSON encoding failed');
+
+                return null;
+            }
+
+            $header = $this->base64url($headerJson);
+            $body = $this->base64url($payloadJson);
             $signingInput = "{$header}.{$body}";
 
             $privateKey = openssl_pkey_get_private($sa['private_key']);
+
+            if ($privateKey === false) {
+                Log::error('Firebase private key could not be loaded');
+
+                return null;
+            }
+
             openssl_sign($signingInput, $signature, $privateKey, OPENSSL_ALGO_SHA256);
             $jwt = "{$signingInput}.".$this->base64url($signature);
 
