@@ -171,10 +171,10 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
         _Note: `--host=0.0.0.0` is required so the ESP32 on your Wi-Fi network can POST data._
 
-    - **Terminal 2 — Vite Compiler**
+    - **Terminal 2 — Composer compiler**
 
         ```bash
-        npm run dev
+        composer run dev
         ```
 
     - **Terminal 3 — Task Scheduler**
@@ -208,7 +208,7 @@ Follow these steps when powering up the physical mushroom monitoring setup:
 
 3. **Start the 3 Required Terminals**
     - **Terminal 1 — Laravel API Server**: `php artisan serve --host=0.0.0.0 --port=8080`
-    - **Terminal 2 — Vite Asset Compiler**: `npm run dev`
+    - **Terminal 2 — Composer Compiler**: `composer run dev`
     - **Terminal 3 — Task Scheduler**: `php artisan schedule:work`
 
 4. **Access the Dashboard**
