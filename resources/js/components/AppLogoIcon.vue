@@ -14,7 +14,7 @@ defineProps<Props>();
 
 <template>
     <img
-        src="/oyster-mushroom-logo.png"
+        src="/oyster-mushroom.png"
         alt="MycoSense Logo"
         :class="className"
         v-bind="$attrs"

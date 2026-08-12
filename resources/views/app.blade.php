@@ -30,8 +30,8 @@
             }
         </style>
 
-        <link rel="icon" href="/oyster-mushroom-logo.png" type="image/png">
-        <link rel="apple-touch-icon" href="/oyster-mushroom-logo.png">
+        <link rel="icon" href="/oyster-mushroom.png" type="image/png">
+        <link rel="apple-touch-icon" href="/oyster-mushroom.png">
 
         @fonts
 
