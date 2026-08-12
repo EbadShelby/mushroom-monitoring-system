@@ -20,8 +20,15 @@ const page = usePage();
 const auth = computed(() => (page.props.auth as any)?.user);
 const roleLabel = computed(() => {
     const role = auth.value?.role;
-    if (role === 'admin') { return 'Admin'; }
-    if (role === 'faculty') { return 'Faculty'; }
+
+    if (role === 'admin') {
+ return 'Admin'; 
+}
+
+    if (role === 'faculty') {
+ return 'Faculty'; 
+}
+
     return 'Student';
 });
 </script>

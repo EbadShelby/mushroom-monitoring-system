@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { FileText, Download, CalendarDays, FlaskConical, Search } from '@lucide/vue';
-import type { GrowingCycle } from '@/types';
-import * as reports from '@/routes/reports';
 import { ref, computed } from 'vue';
+import * as reports from '@/routes/reports';
+import type { GrowingCycle } from '@/types';
 
 defineOptions({
     layout: {
@@ -18,8 +18,12 @@ const props = defineProps<{
 const searchQuery = ref('');
 
 const filteredCycles = computed(() => {
-    if (!searchQuery.value) return props.cycles;
+    if (!searchQuery.value) {
+return props.cycles;
+}
+
     const q = searchQuery.value.toLowerCase();
+
     return props.cycles.filter(c =>
         c.name.toLowerCase().includes(q) ||
         (c.mushroom_variety ?? '').toLowerCase().includes(q)
@@ -27,7 +31,10 @@ const filteredCycles = computed(() => {
 });
 
 function formatDate(dateStr: string | null) {
-    if (!dateStr) return '—';
+    if (!dateStr) {
+return '—';
+}
+
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 

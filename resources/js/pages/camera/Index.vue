@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import { toast } from 'vue-sonner';
-import axios from 'axios';
-import type { CameraSnapshot, GrowingCycle } from '@/types';
-import * as camera from '@/routes/camera';
 import {
     Camera, Upload, X, Trash2, Filter, ChevronLeft, ChevronRight,
     ImageIcon, CalendarDays, FlaskConical, Loader2,
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
+import * as camera from '@/routes/camera';
+import type { CameraSnapshot, GrowingCycle } from '@/types';
 
 defineOptions({
     layout: {
@@ -49,11 +49,17 @@ function clearFilters() {
 // ── Grouped snapshots by date ─────────────────────────────────────────────────
 const groupedSnapshots = computed(() => {
     const map = new Map<string, CameraSnapshot[]>();
+
     for (const s of props.snapshots) {
         const key = s.captured_date ?? '';
-        if (!map.has(key)) { map.set(key, []); }
+
+        if (!map.has(key)) {
+ map.set(key, []); 
+}
+
         map.get(key)!.push(s);
     }
+
     return Array.from(map.entries())
         .sort(([a], [b]) => b.localeCompare(a))
         .map(([date, items]) => ({ date, items }));
@@ -76,20 +82,28 @@ const dropActive  = ref(false);
 
 function onFileSelected(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
-    if (file) { setFile(file); }
+
+    if (file) {
+ setFile(file); 
+}
 }
 
 function setFile(file: File) {
     photoFile.value = file;
     const reader = new FileReader();
-    reader.onload = (e) => { photoPreview.value = e.target?.result as string; };
+    reader.onload = (e) => {
+ photoPreview.value = e.target?.result as string; 
+};
     reader.readAsDataURL(file);
 }
 
 function onDrop(e: DragEvent) {
     dropActive.value = false;
     const file = e.dataTransfer?.files?.[0];
-    if (file && file.type.startsWith('image/')) { setFile(file); }
+
+    if (file && file.type.startsWith('image/')) {
+ setFile(file); 
+}
 }
 
 function clearPhoto() {
@@ -98,7 +112,12 @@ function clearPhoto() {
 }
 
 async function submitUpload() {
-    if (!photoFile.value) { toast.error('Please select a photo'); return; }
+    if (!photoFile.value) {
+ toast.error('Please select a photo');
+
+ return; 
+}
+
     uploadErrors.value = {};
     uploading.value = true;
 
@@ -107,7 +126,10 @@ async function submitUpload() {
     fd.append('growing_cycle_id', uploadForm.value.growing_cycle_id);
     fd.append('flush_number', uploadForm.value.flush_number);
     fd.append('captured_date', uploadForm.value.captured_date);
-    if (uploadForm.value.notes) { fd.append('notes', uploadForm.value.notes); }
+
+    if (uploadForm.value.notes) {
+ fd.append('notes', uploadForm.value.notes); 
+}
 
     try {
         await axios.post('/api/camera/upload', fd, {
@@ -118,8 +140,11 @@ async function submitUpload() {
         clearPhoto();
         router.reload({ only: ['snapshots'] });
     } catch (e: any) {
-        if (e.response?.status === 422) { uploadErrors.value = e.response.data.errors ?? {}; }
-        else { toast.error('Upload failed'); }
+        if (e.response?.status === 422) {
+ uploadErrors.value = e.response.data.errors ?? {}; 
+} else {
+ toast.error('Upload failed'); 
+}
     } finally {
         uploading.value = false;
     }
@@ -127,12 +152,17 @@ async function submitUpload() {
 
 // ── Delete snapshot ───────────────────────────────────────────────────────────
 async function deleteSnapshot(id: number) {
-    if (!confirm('Delete this photo permanently?')) { return; }
+    if (!confirm('Delete this photo permanently?')) {
+ return; 
+}
+
     try {
         await axios.delete(`/api/camera/${id}`);
         toast.success('Photo deleted');
         router.reload({ only: ['snapshots'] });
-    } catch { toast.error('Delete failed'); }
+    } catch {
+ toast.error('Delete failed'); 
+}
 }
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
@@ -159,7 +189,10 @@ function lightboxNext() {
 }
 
 function formatDate(d: string | null) {
-    if (!d) { return '—'; }
+    if (!d) {
+ return '—'; 
+}
+
     return new Date(d).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 </script>

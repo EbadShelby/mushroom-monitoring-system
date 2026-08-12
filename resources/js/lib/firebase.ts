@@ -1,5 +1,7 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getDatabase, type Database } from 'firebase/database';
+import { initializeApp  } from 'firebase/app';
+import type {FirebaseApp} from 'firebase/app';
+import { getDatabase  } from 'firebase/database';
+import type {Database} from 'firebase/database';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,6 +20,7 @@ function getApp(): FirebaseApp {
     if (!_app) {
         _app = initializeApp(firebaseConfig);
     }
+
     return _app;
 }
 
@@ -25,6 +28,7 @@ export function getDb(): Database {
     if (!_db) {
         _db = getDatabase(getApp());
     }
+
     return _db;
 }
 

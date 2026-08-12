@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ref, computed, watch, onMounted } from 'vue';
-import axios from 'axios';
-import VueApexCharts from 'vue3-apexcharts';
-import type { SensorReading, Paginated } from '@/types';
 import {
     Activity,
     Download,
@@ -12,6 +8,10 @@ import {
     ChevronRight,
     BarChart2,
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed, watch, onMounted } from 'vue';
+import VueApexCharts from 'vue3-apexcharts';
+import type { SensorReading, Paginated } from '@/types';
 
 defineOptions({
     layout: {
@@ -39,14 +39,21 @@ const currentPage = ref(1);
 
 async function fetchData() {
     isLoading.value = true;
+
     try {
         const params: Record<string, unknown> = {
             page: currentPage.value,
             per_page: 50,
             sensors: selectedSensors.value,
         };
-        if (fromDate.value) params.from = fromDate.value;
-        if (toDate.value) params.to = toDate.value;
+
+        if (fromDate.value) {
+params.from = fromDate.value;
+}
+
+        if (toDate.value) {
+params.to = toDate.value;
+}
 
         const response = await axios.get('/api/historical', { params });
         readings.value = response.data;
@@ -67,17 +74,28 @@ function applyFilters() {
 
 function exportCsv() {
     const params = new URLSearchParams();
-    if (fromDate.value) params.set('from', fromDate.value);
-    if (toDate.value) params.set('to', toDate.value);
+
+    if (fromDate.value) {
+params.set('from', fromDate.value);
+}
+
+    if (toDate.value) {
+params.set('to', toDate.value);
+}
+
     selectedSensors.value.forEach((s) => params.append('sensors[]', s));
     window.location.href = `/api/historical/export?${params.toString()}`;
 }
 
 // Charts
 const chartSeries = computed(() => {
-    if (!readings.value?.data.length) return [];
+    if (!readings.value?.data.length) {
+return [];
+}
+
     return selectedSensors.value.map((key) => {
         const opt = sensorOptions.find((s) => s.key === key)!;
+
         return {
             name: opt.label,
             data: readings.value!.data.slice().reverse().map((r) => ({

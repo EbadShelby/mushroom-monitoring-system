@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import axios from 'axios';
-import { toast } from 'vue-sonner';
-import type { AppUser } from '@/types';
 import {
     Users, Plus, X, Eye, EyeOff, ShieldX, Check, Pencil, UserX, UserCheck
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
 import * as usersApi from '@/routes/users';
+import type { AppUser } from '@/types';
 
 defineOptions({
     layout: {
@@ -33,6 +33,7 @@ const creating = ref(false);
 
 async function createUser() {
     creating.value = true;
+
     try {
         const res = await axios.post('/api/users', newUser.value);
         usersData.value.push(res.data.user);
@@ -41,6 +42,7 @@ async function createUser() {
         toast.success('User created successfully.');
     } catch (e: any) {
         const errors = e.response?.data?.errors;
+
         if (errors) {
             toast.error(Object.values(errors).flat().join(' '));
         } else {
@@ -67,12 +69,15 @@ function cancelEdit() {
 
 async function saveUser(user: AppUser) {
     saving.value = true;
+
     try {
         await axios.put(`/api/users/${user.id}`, editForm.value);
         const idx = usersData.value.findIndex((u) => u.id === user.id);
+
         if (idx >= 0) {
             usersData.value[idx] = { ...usersData.value[idx], ...editForm.value } as AppUser;
         }
+
         editingId.value = null;
         toast.success('User updated.');
     } catch {
@@ -83,11 +88,18 @@ async function saveUser(user: AppUser) {
 }
 
 async function deactivateUser(user: AppUser) {
-    if (!confirm(`Deactivate ${user.name}?`)) return;
+    if (!confirm(`Deactivate ${user.name}?`)) {
+return;
+}
+
     try {
         await axios.delete(`/api/users/${user.id}`);
         const idx = usersData.value.findIndex((u) => u.id === user.id);
-        if (idx >= 0) usersData.value[idx].is_active = false;
+
+        if (idx >= 0) {
+usersData.value[idx].is_active = false;
+}
+
         toast.success(`${user.name} deactivated.`);
     } catch (e: any) {
         toast.error(e.response?.data?.error ?? 'Failed to deactivate.');
@@ -98,7 +110,11 @@ async function activateUser(user: AppUser) {
     try {
         await axios.patch(`/api/users/${user.id}/activate`);
         const idx = usersData.value.findIndex((u) => u.id === user.id);
-        if (idx >= 0) usersData.value[idx].is_active = true;
+
+        if (idx >= 0) {
+usersData.value[idx].is_active = true;
+}
+
         toast.success(`${user.name} activated.`);
     } catch {
         toast.error('Failed to activate.');

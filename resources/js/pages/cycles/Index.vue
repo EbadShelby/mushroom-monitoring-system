@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import { toast } from 'vue-sonner';
-import axios from 'axios';
-import type { GrowingCycle, Paginated } from '@/types';
-import * as cyclesApi from '@/routes/cycles';
 import {
     Sprout,
     Plus,
@@ -24,6 +19,11 @@ import {
     Layers,
     ArrowLeftRight,
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
+import * as cyclesApi from '@/routes/cycles';
+import type { GrowingCycle, Paginated } from '@/types';
 
 defineOptions({
     layout: {
@@ -72,6 +72,7 @@ const formErrors = ref<Record<string, string>>({});
 async function createCycle() {
     formErrors.value = {};
     creating.value = true;
+
     try {
         await axios.post('/api/cycles', form.value);
         toast.success('Growing cycle created!');
@@ -106,7 +107,9 @@ async function switchStage(cycle: GrowingCycle) {
     if (!confirm(`Switch "${cycle.name}" to ${stageLabel} stage? This changes the active thresholds and automation logic.`)) {
         return;
     }
+
     switchingStage.value = cycle.id;
+
     try {
         await axios.post(`/api/cycles/${cycle.id}/switch-stage`, { growing_stage: nextStage });
         toast.success(`Switched to ${stageLabel} stage — thresholds updated.`);
@@ -125,7 +128,9 @@ async function endCycle(cycle: GrowingCycle) {
     if (!confirm(`Mark "${cycle.name}" as completed?`)) {
         return;
     }
+
     actioning.value = cycle.id;
+
     try {
         await axios.post(`/api/cycles/${cycle.id}/end`);
         toast.success('Cycle marked as completed');
@@ -141,7 +146,9 @@ async function cancelCycle(cycle: GrowingCycle) {
     if (!confirm(`Cancel "${cycle.name}"? This cannot be undone.`)) {
         return;
     }
+
     actioning.value = cycle.id;
+
     try {
         await axios.delete(`/api/cycles/${cycle.id}`);
         toast.success('Cycle cancelled');
@@ -158,6 +165,7 @@ function goToPage(url: string | null) {
     if (!url) {
         return;
     }
+
     router.visit(url, { preserveScroll: true });
 }
 
@@ -196,6 +204,7 @@ function formatDate(d: string | null) {
     if (!d) {
         return '—';
     }
+
     return new Date(d).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 </script>

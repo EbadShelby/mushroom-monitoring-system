@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import { toast } from 'vue-sonner';
-import axios from 'axios';
-import VueApexCharts from 'vue3-apexcharts';
-import type { GrowingCycle, CameraSnapshot, MushroomMeasurement, DailySensorAverage, ThresholdBreachSummary } from '@/types';
-import * as cycles from '@/routes/cycles';
-import * as reports from '@/routes/reports';
 import {
     Sprout, CalendarDays, CheckCircle2, XCircle, Clock, ChevronLeft,
     FileText, Thermometer, Droplets, Wind, Sun, Leaf, Plus, X, Trash2,
     Camera, FlaskConical, AlertTriangle, Activity,
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
+import VueApexCharts from 'vue3-apexcharts';
+import * as cycles from '@/routes/cycles';
+import * as reports from '@/routes/reports';
+import type { GrowingCycle, CameraSnapshot, MushroomMeasurement, DailySensorAverage, ThresholdBreachSummary } from '@/types';
 
 defineOptions({
     layout: {
@@ -49,13 +49,17 @@ function statusCfg(s: string) {
 }
 
 function formatDate(d: string | null) {
-    if (!d) { return '—'; }
+    if (!d) {
+ return '—'; 
+}
+
     return new Date(d).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // ── Sensor average chart ────────────────────────────────────────────────────────
 function buildAvgChart(key: 'avg_temperature' | 'avg_humidity' | 'avg_co2' | 'avg_light', color: string) {
     const avgs = props.dailyAverages ?? [];
+
     return {
         options: {
             chart: { type: 'area', height: 160, toolbar: { show: false }, background: 'transparent' },
@@ -107,6 +111,7 @@ const savingMeasure = ref(false);
 async function saveMeasurement() {
     measureErrors.value = {};
     savingMeasure.value = true;
+
     try {
         await axios.post('/api/measurements', {
             ...measureForm.value,
@@ -117,20 +122,28 @@ async function saveMeasurement() {
         measureForm.value = { observed_date: new Date().toISOString().split('T')[0], flush_number: 1, weight_g: '', height_cm: '', cap_diameter_cm: '', fruiting_body_count: '', notes: '' };
         router.reload({ only: ['measurements'] });
     } catch (e: any) {
-        if (e.response?.status === 422) { measureErrors.value = e.response.data.errors ?? {}; }
-        else { toast.error('Failed to save measurement'); }
+        if (e.response?.status === 422) {
+ measureErrors.value = e.response.data.errors ?? {}; 
+} else {
+ toast.error('Failed to save measurement'); 
+}
     } finally {
         savingMeasure.value = false;
     }
 }
 
 async function deleteMeasurement(id: number) {
-    if (!confirm('Delete this measurement?')) { return; }
+    if (!confirm('Delete this measurement?')) {
+ return; 
+}
+
     try {
         await axios.delete(`/api/measurements/${id}`);
         toast.success('Measurement deleted');
         router.reload({ only: ['measurements'] });
-    } catch { toast.error('Failed to delete'); }
+    } catch {
+ toast.error('Failed to delete'); 
+}
 }
 
 // ── Lightbox ───────────────────────────────────────────────────────────────────
@@ -144,21 +157,32 @@ function openLightbox(snap: CameraSnapshot) {
 const groupedSnapshots = computed(() => {
     const snaps = props.snapshots ?? [];
     const map = new Map<string, CameraSnapshot[]>();
+
     for (const s of snaps) {
         const key = s.captured_date ?? '';
-        if (!map.has(key)) { map.set(key, []); }
+
+        if (!map.has(key)) {
+ map.set(key, []); 
+}
+
         map.get(key)!.push(s);
     }
+
     return Array.from(map.entries()).map(([date, items]) => ({ date, items }));
 });
 
 async function deleteSnapshot(id: number) {
-    if (!confirm('Delete this photo?')) { return; }
+    if (!confirm('Delete this photo?')) {
+ return; 
+}
+
     try {
         await axios.delete(`/api/camera/${id}`);
         toast.success('Photo deleted');
         router.reload({ only: ['snapshots'] });
-    } catch { toast.error('Failed to delete photo'); }
+    } catch {
+ toast.error('Failed to delete photo'); 
+}
 }
 
 const reportUrl = computed(() => `/reports/${props.cycle.id}`);

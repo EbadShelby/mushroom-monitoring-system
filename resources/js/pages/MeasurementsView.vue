@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import axios from 'axios';
-import { toast } from 'vue-sonner';
 import { Ruler, Plus, X, ListTodo, Activity } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
 import type { Paginated } from '@/types';
 
 defineOptions({
@@ -71,10 +71,12 @@ function closeModal() {
 async function submitMeasurement() {
     if (!form.value.growing_cycle_id) {
         toast.error('Please select a growing cycle');
+
         return;
     }
     
     isSubmitting.value = true;
+
     try {
         await axios.post('/api/measurements', form.value);
         toast.success('Measurement logged successfully');
@@ -89,7 +91,10 @@ async function submitMeasurement() {
 }
 
 async function deleteMeasurement(id: number) {
-    if (!confirm('Are you sure you want to delete this measurement?')) return;
+    if (!confirm('Are you sure you want to delete this measurement?')) {
+return;
+}
+
     try {
         await axios.delete(`/api/measurements/${id}`);
         toast.success('Measurement deleted');

@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import axios from 'axios';
-import VueApexCharts from 'vue3-apexcharts';
-import type { AlertLog, Paginated } from '@/types';
 import {
     Bell,
     Filter,
@@ -12,6 +8,10 @@ import {
     BarChart2,
     AlertTriangle,
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import VueApexCharts from 'vue3-apexcharts';
+import type { AlertLog, Paginated } from '@/types';
 
 defineOptions({
     layout: {
@@ -46,11 +46,21 @@ const sensorOptions = [
 async function fetchLogs(page = 1) {
     isLoading.value = true;
     currentPage.value = page;
+
     try {
         const params: Record<string, unknown> = { page };
-        if (sensorFilter.value) params.sensor = sensorFilter.value;
-        if (fromDate.value) params.from = fromDate.value;
-        if (toDate.value) params.to = toDate.value;
+
+        if (sensorFilter.value) {
+params.sensor = sensorFilter.value;
+}
+
+        if (fromDate.value) {
+params.from = fromDate.value;
+}
+
+        if (toDate.value) {
+params.to = toDate.value;
+}
 
         const [logsRes, chartRes] = await Promise.all([
             axios.get('/api/alert-logs/chart', { params }),
@@ -62,9 +72,11 @@ async function fetchLogs(page = 1) {
             params,
             headers: { 'X-Inertia': true, 'X-Inertia-Partial-Data': 'logs', 'X-Inertia-Partial-Component': 'AlertLogsView' },
         });
+
         if (logsResponse.data?.props?.logs) {
             logsData.value = logsResponse.data.props.logs;
         }
+
         chartData.value = logsRes.data;
     } finally {
         isLoading.value = false;

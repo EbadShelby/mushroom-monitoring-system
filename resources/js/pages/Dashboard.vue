@@ -1,12 +1,5 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
-import axios from 'axios';
-import { toast } from 'vue-sonner';
-import { dashboard } from '@/routes';
-import { useSensorStore } from '@/stores/useSensorStore';
-import type { GrowingCycle, CameraSnapshot, AlertLog, ChartPoint } from '@/types';
-import VueApexCharts from 'vue3-apexcharts';
 import {
     Thermometer,
     Droplets,
@@ -26,6 +19,13 @@ import {
     Layers,
     ArrowRightLeft,
 } from '@lucide/vue';
+import axios from 'axios';
+import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
+import { toast } from 'vue-sonner';
+import VueApexCharts from 'vue3-apexcharts';
+import { dashboard } from '@/routes';
+import { useSensorStore } from '@/stores/useSensorStore';
+import type { GrowingCycle, CameraSnapshot, AlertLog, ChartPoint } from '@/types';
 
 defineOptions({
     layout: {
@@ -60,12 +60,19 @@ watchEffect(() => {
 
 const switchingStage = ref(false);
 async function toggleStage() {
-    if (!props.activeCycle?.id) return;
+    if (!props.activeCycle?.id) {
+return;
+}
+
     const nextStage = isColonization.value ? 'fruiting' : 'colonization';
     const stageLabel = nextStage === 'fruiting' ? 'Fruiting' : 'Colonization';
-    if (!confirm(`Switch "${props.activeCycle.name}" to ${stageLabel} stage? This updates active environmental targets & automation logic.`)) return;
+
+    if (!confirm(`Switch "${props.activeCycle.name}" to ${stageLabel} stage? This updates active environmental targets & automation logic.`)) {
+return;
+}
 
     switchingStage.value = true;
+
     try {
         await axios.post(`/api/cycles/${props.activeCycle.id}/switch-stage`, { growing_stage: nextStage });
         toast.success(`Switched to ${stageLabel} stage — thresholds updated.`);
@@ -105,6 +112,7 @@ onUnmounted(() => {
     if (clockInterval) {
         clearInterval(clockInterval);
     }
+
     if (chartRefreshInterval) {
         clearInterval(chartRefreshInterval);
         chartRefreshInterval = null;
@@ -123,6 +131,7 @@ const anyWarning = computed(() =>
 const chartInterval = ref('1m');
 const chartIntervalLabel = computed(() => {
     const map: Record<string, string> = { '1m': 'Last Hour', '5m': 'Last 6 Hours', '15m': 'Last 24 Hours', '1h': 'Last 7 Days' };
+
     return map[chartInterval.value] || 'Last Hour';
 });
 function onIntervalChange() {

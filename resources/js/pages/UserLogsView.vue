@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
-import type { UserLog, Paginated } from '@/types';
 import {
     ScrollText,
     Filter,
@@ -10,6 +8,8 @@ import {
     ChevronRight,
     ShieldX,
 } from '@lucide/vue';
+import { ref, computed, onMounted } from 'vue';
+import type { UserLog, Paginated } from '@/types';
 
 defineOptions({
     layout: {

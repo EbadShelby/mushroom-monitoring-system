@@ -111,6 +111,7 @@ const adminNavItems = computed(() => {
     if (!isAdmin.value) {
         return null;
     }
+
     return {
         label: 'Administration',
         items: [

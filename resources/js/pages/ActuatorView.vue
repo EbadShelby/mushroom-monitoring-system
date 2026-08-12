@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import axios from 'axios';
-import { toast } from 'vue-sonner';
-import { useSensorStore } from '@/stores/useSensorStore';
-import type { ActuatorLog, LedSchedule, Thresholds, Paginated } from '@/types';
 import {
     Droplets,
     Wind,
@@ -18,6 +13,11 @@ import {
     ChevronRight,
     Settings,
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
+import { useSensorStore } from '@/stores/useSensorStore';
+import type { ActuatorLog, LedSchedule, Thresholds, Paginated } from '@/types';
 
 defineOptions({
     layout: {
@@ -45,6 +45,7 @@ const logsPage = ref(1);
 async function fetchLogs(p = 1) {
     logsLoading.value = true;
     logsPage.value = p;
+
     try {
         const res = await axios.get('/actuators', { params: { page: p }, headers: { 'X-Inertia': true } });
         logsData.value = res.data.props?.logs ?? logsData.value;
@@ -59,9 +60,12 @@ const toggling = ref<Record<string, boolean>>({ humidifier: false, fan: false, l
 async function toggleActuator(actuator: 'humidifier' | 'fan' | 'led', action: 'on' | 'off') {
     if (!canControl.value) {
         toast.error('Access denied. Only Admin or Faculty can control actuators.');
+
         return;
     }
+
     toggling.value[actuator] = true;
+
     try {
         await axios.post('/api/actuators/toggle', { actuator, action });
         toast.success(`${actuator} turned ${action}`);
@@ -78,6 +82,7 @@ const savingSchedule = ref(false);
 
 async function saveSchedule() {
     savingSchedule.value = true;
+
     try {
         await axios.put('/api/actuators/schedule', schedule.value);
         toast.success('LED schedule updated.');

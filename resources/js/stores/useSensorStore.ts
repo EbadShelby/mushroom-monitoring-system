@@ -1,4 +1,5 @@
-import { ref, onValue, type Unsubscribe } from 'firebase/database';
+import { ref, onValue  } from 'firebase/database';
+import type {Unsubscribe} from 'firebase/database';
 import { defineStore } from 'pinia';
 import { ref as vRef, computed } from 'vue';
 import { getDb } from '@/lib/firebase';
@@ -37,6 +38,7 @@ export const useSensorStore = defineStore('sensor', () => {
         if (offlineTimer) {
             clearTimeout(offlineTimer);
         }
+
         // ESP32 sends every 10 s; flag offline after 30 s of silence
         offlineTimer = setTimeout(() => {
             isConnected.value = false;
@@ -52,6 +54,7 @@ export const useSensorStore = defineStore('sensor', () => {
         if (!sensors.value.last_updated) {
             return 'No data yet';
         }
+
         return new Date(sensors.value.last_updated).toLocaleString('en-PH', {
             hour: '2-digit',
             minute: '2-digit',
@@ -61,61 +64,131 @@ export const useSensorStore = defineStore('sensor', () => {
 
     const temperatureStatus = computed((): 'normal' | 'warning' | 'critical' => {
         const temp = sensors.value.temperature;
-        if (temp === null) { return 'critical'; }
+
+        if (temp === null) {
+ return 'critical'; 
+}
+
         if (activeStage.value === 'colonization') {
-            if (temp < 22 || temp > 30) { return 'critical'; }
-            if (temp < 24 || temp > 28) { return 'warning'; }
+            if (temp < 22 || temp > 30) {
+ return 'critical'; 
+}
+
+            if (temp < 24 || temp > 28) {
+ return 'warning'; 
+}
         } else {
-            if (temp < 18 || temp > 26) { return 'critical'; }
-            if (temp < 20 || temp > 24) { return 'warning'; }
+            if (temp < 18 || temp > 26) {
+ return 'critical'; 
+}
+
+            if (temp < 20 || temp > 24) {
+ return 'warning'; 
+}
         }
+
         return 'normal';
     });
 
     const humidityStatus = computed((): 'normal' | 'warning' | 'critical' => {
         const hum = sensors.value.humidity;
-        if (hum === null) { return 'critical'; }
+
+        if (hum === null) {
+ return 'critical'; 
+}
+
         if (activeStage.value === 'colonization') {
-            if (hum < 65) { return 'critical'; }
-            if (hum < 70 || hum > 80) { return 'warning'; }
+            if (hum < 65) {
+ return 'critical'; 
+}
+
+            if (hum < 70 || hum > 80) {
+ return 'warning'; 
+}
         } else {
-            if (hum < 80) { return 'critical'; }
-            if (hum < 85 || hum > 95) { return 'warning'; }
+            if (hum < 80) {
+ return 'critical'; 
+}
+
+            if (hum < 85 || hum > 95) {
+ return 'warning'; 
+}
         }
+
         return 'normal';
     });
 
     const co2Status = computed((): 'normal' | 'warning' | 'critical' => {
         const co2 = sensors.value.co2_raw;
-        if (co2 === null) { return 'critical'; }
+
+        if (co2 === null) {
+ return 'critical'; 
+}
+
         if (activeStage.value === 'colonization') {
-            if (co2 > 6000) { return 'critical'; }
-            if (co2 > 5000) { return 'warning'; }
+            if (co2 > 6000) {
+ return 'critical'; 
+}
+
+            if (co2 > 5000) {
+ return 'warning'; 
+}
         } else {
-            if (co2 > 1500) { return 'critical'; }
-            if (co2 > 1000) { return 'warning'; }
+            if (co2 > 1500) {
+ return 'critical'; 
+}
+
+            if (co2 > 1000) {
+ return 'warning'; 
+}
         }
+
         return 'normal';
     });
 
     const lightStatus = computed((): 'normal' | 'warning' | 'critical' => {
         const light = sensors.value.light_level;
-        if (light === null) { return 'normal'; }
+
+        if (light === null) {
+ return 'normal'; 
+}
+
         if (activeStage.value === 'colonization') {
-            if (light > 300) { return 'critical'; }
-            if (light > 100) { return 'warning'; }
+            if (light > 300) {
+ return 'critical'; 
+}
+
+            if (light > 100) {
+ return 'warning'; 
+}
         } else {
-            if (light < 100 || light > 1000) { return 'critical'; }
-            if (light < 200 || light > 800) { return 'warning'; }
+            if (light < 100 || light > 1000) {
+ return 'critical'; 
+}
+
+            if (light < 200 || light > 800) {
+ return 'warning'; 
+}
         }
+
         return 'normal';
     });
 
     const soilStatus = computed((): 'normal' | 'warning' | 'critical' => {
         const soil = sensors.value.soil_moisture;
-        if (soil === null) { return 'normal'; }
-        if (soil < 50) { return 'critical'; }
-        if (soil < 55) { return 'warning'; }
+
+        if (soil === null) {
+ return 'normal'; 
+}
+
+        if (soil < 50) {
+ return 'critical'; 
+}
+
+        if (soil < 55) {
+ return 'warning'; 
+}
+
         return 'normal';
     });
 
@@ -136,6 +209,7 @@ export const useSensorStore = defineStore('sensor', () => {
                     isConnected.value = true;
                     resetOfflineTimer();
                 }
+
                 isLoading.value = false;
             },
             (error) => {
@@ -164,14 +238,17 @@ export const useSensorStore = defineStore('sensor', () => {
             unsubscribeSensors();
             unsubscribeSensors = null;
         }
+
         if (unsubscribeActuators) {
             unsubscribeActuators();
             unsubscribeActuators = null;
         }
+
         if (offlineTimer) {
             clearTimeout(offlineTimer);
             offlineTimer = null;
         }
+
         isConnected.value = false;
     }
 

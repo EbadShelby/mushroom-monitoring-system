@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import axios from 'axios';
-import { toast } from 'vue-sonner';
-import type { AppUser, SystemSettings as SystemSettingsType } from '@/types';
 import {
     Sliders,
     MessageSquare,
@@ -13,6 +9,10 @@ import {
     Microscope,
     Layers,
 } from '@lucide/vue';
+import axios from 'axios';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
+import type { AppUser, SystemSettings as SystemSettingsType } from '@/types';
 
 defineOptions({
     layout: {
@@ -45,6 +45,7 @@ const savingSettings = ref(false);
 
 async function saveSettings() {
     savingSettings.value = true;
+
     try {
         await axios.put('/api/settings', settingsForm.value);
         toast.success('Settings saved.');
