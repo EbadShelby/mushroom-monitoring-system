@@ -79,32 +79,35 @@ _All actuators use separate power rails — ESP32 only sends a relay signal. Rel
 The system automatically switches environmental target profiles based on the active cycle's **Growth Stage**:
 
 ### 1. Colonization Stage (Spawn Running Phase)
-*Mycelium spreads throughout the substrate bag — requires warmth, darkness, and high CO₂ tolerance.*
 
-| Environmental Factor | Target Range | Sensor | System Automation & Alert Logic |
-| :--- | :--- | :--- | :--- |
-| 🌡️ **Temperature** | **24–28°C** (Ideal: 25–27°C) | DHT22 | `< 24°C` → Low temp alert. `> 28°C` → Auto-activate intake fan & alert. |
-| 💧 **Humidity** | **70–80% RH** | DHT22 | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level** | **2,000–5,000 ppm** | MQ-135 | `> 5,000 ppm` → Auto-activate intake fan for fresh air & SMS alert. |
-| 💡 **Light Level** | **0–50 lux** (Dark/Dim) | BH1750 | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF. |
-| 🌱 **Substrate Moisture** | **60–65%** | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert. |
+_Mycelium spreads throughout the substrate bag — requires warmth, darkness, and high CO₂ tolerance._
+
+| Environmental Factor      | Target Range                 | Sensor     | System Automation & Alert Logic                                                   |
+| :------------------------ | :--------------------------- | :--------- | :-------------------------------------------------------------------------------- |
+| 🌡️ **Temperature**        | **24–28°C** (Ideal: 25–27°C) | DHT22      | `< 24°C` → Low temp alert. `> 28°C` → Auto-activate intake fan & alert.           |
+| 💧 **Humidity**           | **70–80% RH**                | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**          | MQ-135     | `> 5,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
+| 💡 **Light Level**        | **0–50 lux** (Dark/Dim)      | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
+| 🌱 **Substrate Moisture** | **60–65%**                   | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
 ---
 
 ### 2. Fruiting Stage (Mushroom Formation & Growth Phase)
-*Bags opened — requires cooler temps, high humidity, fresh air, and indirect light.*
 
-| Environmental Factor | Target Range | Sensor | System Automation & Alert Logic |
-| :--- | :--- | :--- | :--- |
-| 🌡️ **Temperature** | **20–24°C** (Ideal: 22–24°C) | DHT22 | `< 20°C` → Low temp alert. `> 24°C` → Auto-activate intake fan & alert. |
-| 💧 **Humidity** | **85–95% RH** | DHT22 | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level** | **600–1,000 ppm** | MQ-135 | `> 1,000 ppm` → Auto-activate intake fan for fresh air & SMS alert. |
-| 💡 **Light Level** | **200–800 lux** (Indirect) | BH1750 | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule. |
-| 🌱 **Substrate Moisture** | **55–65%** | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert. |
+_Bags opened — requires cooler temps, high humidity, fresh air, and indirect light._
+
+| Environmental Factor      | Target Range                 | Sensor     | System Automation & Alert Logic                                                   |
+| :------------------------ | :--------------------------- | :--------- | :-------------------------------------------------------------------------------- |
+| 🌡️ **Temperature**        | **20–24°C** (Ideal: 22–24°C) | DHT22      | `< 20°C` → Low temp alert. `> 24°C` → Auto-activate intake fan & alert.           |
+| 💧 **Humidity**           | **85–95% RH**                | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level**          | **600–1,000 ppm**            | MQ-135     | `> 1,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
+| 💡 **Light Level**        | **200–800 lux** (Indirect)   | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
+| 🌱 **Substrate Moisture** | **55–65%**                   | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
 ---
 
 ### ⚡ Actuator Interlock & Safety Logic
+
 - **Humidifier Interlock**: When the **Humidifier** is active, the **Intake Fan** is automatically overridden to **OFF** to prevent mist from being blown out of the chamber.
 - **Automatic Stage Switch**: Users can switch growth stages on the dashboard or cycles page, instantly updating live gauges, target indicators, Pinia status evaluators, and backend automation logic.
 
@@ -156,8 +159,68 @@ The system automatically switches environmental target profiles based on the act
     php artisan storage:link
     ```
 
-7. **Start Development Servers**
-    ```bash
-    php artisan serve
-    npm run dev
-    ```
+7. **Start Development Servers & System Services**
+
+    To run the complete system with ESP32 hardware and automated schedules, keep **3 separate terminals** open:
+
+    - **Terminal 1 — Laravel Server (LAN Listener)**
+
+        ```bash
+        php artisan serve --host=0.0.0.0 --port=8080
+        ```
+
+        _Note: `--host=0.0.0.0` is required so the ESP32 on your Wi-Fi network can POST data._
+
+    - **Terminal 2 — Vite Compiler**
+
+        ```bash
+        npm run dev
+        ```
+
+    - **Terminal 3 — Task Scheduler**
+        ```bash
+        php artisan schedule:work
+        ```
+        _Note: Enforces actuator schedules (e.g., LED lights) every minute._
+
+---
+
+## 🍄 Operational Guide: Cold Start to Live Data
+
+Follow these steps when powering up the physical mushroom monitoring setup:
+
+1. **Start System Server & Database (Apache & MySQL)**
+    - **Windows**: Open **XAMPP Control Panel** (or Laragon) and click **Start** for Apache and MySQL.
+    - **Linux**: Run `sudo systemctl start httpd mysqld php-fpm`.
+
+2. **Verify Host IP Address**
+    - **Linux / macOS**:
+        ```bash
+        hostname -I
+        ```
+    - **Windows (Command Prompt / PowerShell)**:
+        ```cmd
+        ipconfig
+        ```
+        _(Find the `IPv4 Address` for your connected Wi-Fi network)._
+
+    _If your host IP is not `192.168.254.138` (or the IP configured in your C++ code), update the endpoint URL in the ESP32 Arduino sketch and re-upload to the microcontroller._
+
+3. **Start the 3 Required Terminals**
+    - **Terminal 1 — Laravel API Server**: `php artisan serve --host=0.0.0.0 --port=8080`
+    - **Terminal 2 — Vite Asset Compiler**: `npm run dev`
+    - **Terminal 3 — Task Scheduler**: `php artisan schedule:work`
+
+4. **Access the Dashboard**
+    - Open browser: `http://localhost:8080` (or `http://192.168.254.138:8080`)
+    - Log in with your credentials.
+
+5. **Power On ESP32**
+    - Plug in the ESP32 board.
+    - ESP32 connects to Wi-Fi (`GlobeAtHome_50B8D`).
+    - MQ-135 sensor warms up for ~30 seconds.
+    - Microcontroller begins posting readings every 10–30 seconds.
+    - _(Optional)_ Monitor live status via Arduino IDE/PlatformIO Serial Monitor at **115200 baud**.
+
+6. **Live Dashboard Verified ✅**
+    - After ~35 seconds, the dashboard at `/dashboard` displays live temperature, humidity, CO₂, light, and soil moisture metrics updated via Firebase.
