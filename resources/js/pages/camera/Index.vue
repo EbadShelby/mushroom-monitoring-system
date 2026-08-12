@@ -224,15 +224,19 @@ function formatDate(d: string | null) {
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
             <div>
-                <h1 class="text-2xl font-bold text-white">Growth Photos</h1>
-                <p class="mt-1 text-sm text-slate-400">
+                <h1 class="text-2xl font-bold text-foreground dark:text-white">
+                    Growth Photos
+                </h1>
+                <p
+                    class="mt-1 text-sm text-muted-foreground dark:text-slate-400"
+                >
                     Daily mushroom documentation timeline
                 </p>
             </div>
             <button
                 v-if="userRole !== 'student'"
                 id="upload-photo-btn"
-                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95"
+                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
                 @click="showUpload = true"
             >
                 <Upload class="h-4 w-4" />
@@ -242,16 +246,19 @@ function formatDate(d: string | null) {
 
         <!-- Filter bar -->
         <div
-            class="flex flex-wrap items-end gap-4 rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur-sm"
+            class="flex flex-wrap items-end gap-4 rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
-            <Filter class="h-4 w-4 shrink-0 text-slate-400" />
+            <Filter
+                class="h-4 w-4 shrink-0 text-muted-foreground dark:text-slate-400"
+            />
             <div>
-                <label class="mb-1 block text-xs font-medium text-slate-400"
+                <label
+                    class="mb-1 block text-xs font-medium text-muted-foreground dark:text-slate-400"
                     >Growing Cycle</label
                 >
                 <select
                     v-model="filterCycle"
-                    class="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                    class="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     @change="applyFilters"
                 >
                     <option value="">All Cycles</option>
@@ -265,25 +272,28 @@ function formatDate(d: string | null) {
                 </select>
             </div>
             <div>
-                <label class="mb-1 block text-xs font-medium text-slate-400"
+                <label
+                    class="mb-1 block text-xs font-medium text-muted-foreground dark:text-slate-400"
                     >Date</label
                 >
                 <input
                     v-model="filterDate"
                     type="date"
-                    class="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                    class="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     style="color-scheme: dark"
                     @change="applyFilters"
                 />
             </div>
             <button
                 v-if="filterCycle || filterDate"
-                class="flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-400 transition hover:text-white"
+                class="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground dark:border-slate-700 dark:text-slate-400 dark:text-white"
                 @click="clearFilters"
             >
                 <X class="h-3.5 w-3.5" /> Clear
             </button>
-            <div class="ml-auto text-sm text-slate-400">
+            <div
+                class="ml-auto text-sm text-muted-foreground dark:text-slate-400"
+            >
                 {{ snapshots.length }} photo{{
                     snapshots.length !== 1 ? 's' : ''
                 }}
@@ -293,22 +303,28 @@ function formatDate(d: string | null) {
         <!-- Timeline -->
         <div
             v-if="snapshots.length === 0"
-            class="flex flex-col items-center gap-4 rounded-2xl border border-slate-700/50 bg-slate-800/50 py-20 text-center backdrop-blur-sm"
+            class="flex flex-col items-center gap-4 rounded-2xl border border-border/50 bg-card/50 py-20 text-center backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
             <div
-                class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-700/60"
+                class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60 dark:bg-muted dark:bg-slate-700/60"
             >
-                <Camera class="h-8 w-8 text-slate-500" />
+                <Camera
+                    class="h-8 w-8 text-muted-foreground/80 dark:text-slate-500"
+                />
             </div>
             <div>
-                <p class="font-semibold text-white">No photos found</p>
-                <p class="mt-1 text-sm text-slate-400">
+                <p class="font-semibold text-foreground dark:text-white">
+                    No photos found
+                </p>
+                <p
+                    class="mt-1 text-sm text-muted-foreground dark:text-slate-400"
+                >
                     Upload daily growth photos to start documenting.
                 </p>
             </div>
             <button
                 v-if="userRole !== 'student'"
-                class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-foreground hover:bg-emerald-500 dark:text-white"
                 @click="showUpload = true"
             >
                 Upload First Photo
@@ -319,15 +335,15 @@ function formatDate(d: string | null) {
             <div
                 v-for="group in groupedSnapshots"
                 :key="group.date"
-                class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-5 backdrop-blur-sm"
+                class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
             >
                 <div class="mb-4 flex items-center gap-2">
                     <CalendarDays class="h-4 w-4 text-emerald-400" />
-                    <h2 class="font-semibold text-white">
+                    <h2 class="font-semibold text-foreground dark:text-white">
                         {{ formatDate(group.date) }}
                     </h2>
                     <span
-                        class="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-400"
+                        class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground dark:bg-slate-700 dark:text-slate-400"
                         >{{ group.items.length }} photo{{
                             group.items.length !== 1 ? 's' : ''
                         }}</span
@@ -339,7 +355,7 @@ function formatDate(d: string | null) {
                     <div
                         v-for="snap in group.items"
                         :key="snap.id"
-                        class="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-slate-900 shadow-lg"
+                        class="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-muted/30 shadow-lg dark:bg-slate-900"
                         @click="openLightbox(snap)"
                     >
                         <img
@@ -353,12 +369,12 @@ function formatDate(d: string | null) {
                         >
                             <span
                                 v-if="snap.flush_number"
-                                class="text-xs font-bold text-white"
+                                class="text-xs font-bold text-foreground dark:text-white"
                                 >Flush {{ snap.flush_number }}</span
                             >
                             <span
                                 v-if="snap.notes"
-                                class="mt-0.5 line-clamp-2 text-xs text-slate-300"
+                                class="mt-0.5 line-clamp-2 text-xs text-foreground/80 dark:text-slate-300"
                                 >{{ snap.notes }}</span
                             >
                         </div>
@@ -367,7 +383,9 @@ function formatDate(d: string | null) {
                             class="absolute top-1.5 right-1.5 rounded-lg bg-red-500/90 p-1.5 opacity-0 shadow-lg transition group-hover:opacity-100"
                             @click.stop="deleteSnapshot(snap.id)"
                         >
-                            <Trash2 class="h-3 w-3 text-white" />
+                            <Trash2
+                                class="h-3 w-3 text-foreground dark:text-white"
+                            />
                         </button>
                     </div>
                 </div>
@@ -390,11 +408,11 @@ function formatDate(d: string | null) {
                 @click.self="showUpload = false"
             >
                 <div
-                    class="w-full max-w-lg rounded-2xl border border-slate-700/50 bg-slate-900 shadow-2xl"
+                    class="w-full max-w-lg rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
                 >
                     <!-- Header -->
                     <div
-                        class="flex items-center justify-between border-b border-slate-700/50 px-6 py-4"
+                        class="flex items-center justify-between border-b border-border/50 px-6 py-4 dark:border-border dark:border-slate-700/50"
                     >
                         <div class="flex items-center gap-3">
                             <div
@@ -402,12 +420,14 @@ function formatDate(d: string | null) {
                             >
                                 <Camera class="h-5 w-5 text-emerald-400" />
                             </div>
-                            <h2 class="text-lg font-semibold text-white">
+                            <h2
+                                class="text-lg font-semibold text-foreground dark:text-white"
+                            >
                                 Upload Growth Photo
                             </h2>
                         </div>
                         <button
-                            class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                            class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:text-white"
                             @click="showUpload = false"
                         >
                             <X class="h-4 w-4" />
@@ -420,13 +440,13 @@ function formatDate(d: string | null) {
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Growing Cycle
                                     <span class="text-red-400">*</span></label
                                 >
                                 <select
                                     v-model="uploadForm.growing_cycle_id"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 >
                                     <option value="">Select cycle...</option>
                                     <option
@@ -446,7 +466,7 @@ function formatDate(d: string | null) {
                             </div>
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Flush #
                                     <span class="text-red-400">*</span></label
                                 >
@@ -454,7 +474,7 @@ function formatDate(d: string | null) {
                                     v-model="uploadForm.flush_number"
                                     type="number"
                                     min="1"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                                 <p
                                     v-if="uploadErrors.flush_number"
@@ -468,14 +488,14 @@ function formatDate(d: string | null) {
                         <!-- Date -->
                         <div>
                             <label
-                                class="mb-1.5 block text-sm font-medium text-slate-300"
+                                class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                 >Capture Date
                                 <span class="text-red-400">*</span></label
                             >
                             <input
                                 v-model="uploadForm.captured_date"
                                 type="date"
-                                class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 style="color-scheme: dark"
                             />
                         </div>
@@ -483,7 +503,7 @@ function formatDate(d: string | null) {
                         <!-- Photo dropzone -->
                         <div>
                             <label
-                                class="mb-1.5 block text-sm font-medium text-slate-300"
+                                class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                 >Photo
                                 <span class="text-red-400">*</span></label
                             >
@@ -493,26 +513,28 @@ function formatDate(d: string | null) {
                                     :class="
                                         dropActive
                                             ? 'border-emerald-500 bg-emerald-500/5'
-                                            : 'border-slate-700 hover:border-slate-500'
+                                            : 'border-border hover:border-slate-500 dark:border-slate-700'
                                     "
                                     @dragover.prevent="dropActive = true"
                                     @dragleave="dropActive = false"
                                     @drop.prevent="onDrop"
                                 >
                                     <div
-                                        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-700/60"
+                                        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 dark:bg-muted dark:bg-slate-700/60"
                                     >
                                         <ImageIcon
-                                            class="h-6 w-6 text-slate-400"
+                                            class="h-6 w-6 text-muted-foreground dark:text-slate-400"
                                         />
                                     </div>
                                     <div>
                                         <p
-                                            class="text-sm font-medium text-slate-300"
+                                            class="text-sm font-medium text-foreground/80 dark:text-slate-300"
                                         >
                                             Drop photo here or click to browse
                                         </p>
-                                        <p class="mt-1 text-xs text-slate-500">
+                                        <p
+                                            class="mt-1 text-xs text-muted-foreground/80 dark:text-slate-500"
+                                        >
                                             JPG, PNG, WEBP up to 8MB
                                         </p>
                                     </div>
@@ -538,7 +560,9 @@ function formatDate(d: string | null) {
                                     class="absolute top-2 right-2 rounded-lg bg-red-500/90 p-1.5"
                                     @click="clearPhoto"
                                 >
-                                    <X class="h-4 w-4 text-white" />
+                                    <X
+                                        class="h-4 w-4 text-foreground dark:text-white"
+                                    />
                                 </button>
                             </div>
                             <p
@@ -552,21 +576,21 @@ function formatDate(d: string | null) {
                         <!-- Notes -->
                         <div>
                             <label
-                                class="mb-1.5 block text-sm font-medium text-slate-300"
+                                class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                 >Notes</label
                             >
                             <textarea
                                 v-model="uploadForm.notes"
                                 rows="2"
                                 placeholder="Observations about this photo..."
-                                class="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+                                class="w-full resize-none rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             />
                         </div>
 
                         <div class="flex gap-3 pt-1">
                             <button
                                 type="button"
-                                class="flex-1 rounded-xl border border-slate-700 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800"
+                                class="flex-1 rounded-xl border border-border py-2.5 text-sm text-foreground/80 transition hover:bg-card dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                                 @click="showUpload = false"
                             >
                                 Cancel
@@ -574,7 +598,7 @@ function formatDate(d: string | null) {
                             <button
                                 type="submit"
                                 :disabled="uploading"
-                                class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
+                                class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-foreground transition hover:bg-emerald-500 disabled:opacity-60 dark:text-white"
                             >
                                 <Loader2
                                     v-if="uploading"
@@ -606,13 +630,13 @@ function formatDate(d: string | null) {
                 @click="lightboxSnap = null"
             >
                 <button
-                    class="absolute top-4 right-4 rounded-full bg-slate-800/80 p-2 text-white backdrop-blur-sm hover:bg-slate-700"
+                    class="absolute top-4 right-4 rounded-full bg-card p-2 text-foreground backdrop-blur-sm hover:bg-muted dark:bg-slate-700 dark:bg-slate-800/80 dark:text-white"
                     @click="lightboxSnap = null"
                 >
                     <X class="h-5 w-5" />
                 </button>
                 <button
-                    class="absolute left-4 rounded-full bg-slate-800/80 p-2 text-white hover:bg-slate-700 disabled:opacity-30"
+                    class="absolute left-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-700 dark:bg-slate-800/80 dark:text-white"
                     :disabled="lightboxIdx === 0"
                     @click.stop="lightboxPrev"
                 >
@@ -628,28 +652,32 @@ function formatDate(d: string | null) {
                         class="max-h-[80vh] rounded-2xl object-contain shadow-2xl"
                     />
                     <div class="text-center">
-                        <p class="text-sm font-semibold text-white">
+                        <p
+                            class="text-sm font-semibold text-foreground dark:text-white"
+                        >
                             {{ formatDate(lightboxSnap.captured_date ?? null) }}
                         </p>
                         <p
                             v-if="lightboxSnap.flush_number"
-                            class="text-xs text-slate-400"
+                            class="text-xs text-muted-foreground dark:text-slate-400"
                         >
                             Flush {{ lightboxSnap.flush_number }}
                         </p>
                         <p
                             v-if="lightboxSnap.notes"
-                            class="mt-1 text-sm text-slate-300"
+                            class="mt-1 text-sm text-foreground/80 dark:text-slate-300"
                         >
                             {{ lightboxSnap.notes }}
                         </p>
                     </div>
-                    <p class="text-xs text-slate-500">
+                    <p
+                        class="text-xs text-muted-foreground/80 dark:text-slate-500"
+                    >
                         {{ lightboxIdx + 1 }} / {{ snapshots.length }}
                     </p>
                 </div>
                 <button
-                    class="absolute right-4 rounded-full bg-slate-800/80 p-2 text-white hover:bg-slate-700 disabled:opacity-30"
+                    class="absolute right-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-700 dark:bg-slate-800/80 dark:text-white"
                     :disabled="lightboxIdx === snapshots.length - 1"
                     @click.stop="lightboxNext"
                 >

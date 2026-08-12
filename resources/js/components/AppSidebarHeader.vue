@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSensorStore } from '@/stores/useSensorStore';
@@ -71,6 +72,9 @@ const roleLabel = computed(() => {
                 <span v-else-if="store.isConnected">Live</span>
                 <span v-else>Offline</span>
             </div>
+
+            <!-- Appearance Toggle -->
+            <AppearanceTabs />
 
             <!-- Role badge -->
             <span

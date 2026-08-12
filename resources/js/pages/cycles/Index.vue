@@ -182,17 +182,17 @@ function goToPage(url: string | null) {
 const statusConfig = {
     active: {
         label: 'Active',
-        class: 'bg-emerald-500/20 text-emerald-300 ring-emerald-500/30',
+        class: 'bg-emerald-100 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-500/30',
         icon: Clock,
     },
     completed: {
         label: 'Completed',
-        class: 'bg-blue-500/20 text-blue-300 ring-blue-500/30',
+        class: 'bg-blue-100 text-blue-700 ring-blue-600/20 dark:bg-blue-500/20 dark:text-blue-300 dark:ring-blue-500/30',
         icon: CheckCircle2,
     },
     cancelled: {
         label: 'Cancelled',
-        class: 'bg-red-500/20 text-red-300 ring-red-500/30',
+        class: 'bg-red-100 text-red-700 ring-red-600/20 dark:bg-red-500/20 dark:text-red-300 dark:ring-red-500/30',
         icon: XCircle,
     },
 } as const;
@@ -207,14 +207,14 @@ function statusCfg(status: string) {
 const stageConfig = {
     colonization: {
         label: 'Colonization',
-        class: 'bg-amber-500/20 text-amber-300 ring-amber-500/30',
+        class: 'bg-amber-100 text-amber-700 ring-amber-600/20 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-500/30',
         icon: Microscope,
         description:
             'Mycelium spreading through substrate. Dark, warm, high CO₂ OK.',
     },
     fruiting: {
         label: 'Fruiting',
-        class: 'bg-purple-500/20 text-purple-300 ring-purple-500/30',
+        class: 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-500/20 dark:text-purple-300 dark:ring-purple-500/30',
         icon: Layers,
         description:
             'Mushrooms forming. Needs light, fresh air, high humidity.',
@@ -250,15 +250,19 @@ function formatDate(d: string | null) {
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
             <div>
-                <h1 class="text-2xl font-bold text-white">Growing Cycles</h1>
-                <p class="mt-1 text-sm text-slate-400">
+                <h1 class="text-2xl font-bold text-foreground dark:text-white">
+                    Growing Cycles
+                </h1>
+                <p
+                    class="mt-1 text-sm text-muted-foreground dark:text-slate-400"
+                >
                     Manage oyster mushroom cultivation cycles
                 </p>
             </div>
             <button
                 v-if="userRole !== 'student'"
                 id="create-cycle-btn"
-                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95"
+                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
                 @click="showModal = true"
             >
                 <Plus class="h-4 w-4" />
@@ -271,14 +275,14 @@ function formatDate(d: string | null) {
             <div
                 v-for="(cfg, key) in stageConfig"
                 :key="key"
-                class="flex items-start gap-2.5 rounded-xl border border-slate-700/50 bg-slate-800/40 px-4 py-3 backdrop-blur-sm"
+                class="flex items-start gap-2.5 rounded-xl border border-border/50 bg-card/40 px-4 py-3 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/40"
             >
                 <div
                     class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
                     :class="
                         key === 'colonization'
-                            ? 'bg-amber-500/20'
-                            : 'bg-purple-500/20'
+                            ? 'bg-amber-100 dark:bg-amber-500/20'
+                            : 'bg-purple-100 dark:bg-purple-500/20'
                     "
                 >
                     <component
@@ -286,8 +290,8 @@ function formatDate(d: string | null) {
                         class="h-3.5 w-3.5"
                         :class="
                             key === 'colonization'
-                                ? 'text-amber-400'
-                                : 'text-purple-400'
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-purple-600 dark:text-purple-400'
                         "
                     />
                 </div>
@@ -296,8 +300,8 @@ function formatDate(d: string | null) {
                         class="text-xs font-semibold"
                         :class="
                             key === 'colonization'
-                                ? 'text-amber-300'
-                                : 'text-purple-300'
+                                ? 'text-amber-700 dark:text-amber-300'
+                                : 'text-purple-700 dark:text-purple-300'
                         "
                     >
                         {{ cfg.label }}
@@ -311,10 +315,12 @@ function formatDate(d: string | null) {
 
         <!-- Filter bar -->
         <div
-            class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur-sm"
+            class="flex flex-wrap items-center gap-3 rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
-            <Filter class="h-4 w-4 text-slate-400" />
-            <span class="text-sm text-slate-400">Filter by status:</span>
+            <Filter class="h-4 w-4 text-muted-foreground dark:text-slate-400" />
+            <span class="text-sm text-muted-foreground dark:text-slate-400"
+                >Filter by status:</span
+            >
             <div class="flex gap-2">
                 <button
                     v-for="opt in ['', 'active', 'completed', 'cancelled']"
@@ -322,8 +328,8 @@ function formatDate(d: string | null) {
                     class="rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition"
                     :class="
                         statusFilter === opt
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            ? 'bg-emerald-600 text-foreground dark:text-white'
+                            : 'bg-muted text-foreground/80 hover:bg-muted-foreground/20 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
                     "
                     @click="
                         statusFilter = opt;
@@ -335,7 +341,7 @@ function formatDate(d: string | null) {
             </div>
             <button
                 v-if="statusFilter"
-                class="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                class="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground dark:text-slate-400 dark:text-white"
                 @click="clearFilter"
             >
                 <X class="h-3 w-3" /> Clear
@@ -344,23 +350,29 @@ function formatDate(d: string | null) {
 
         <!-- Cycles table -->
         <div
-            class="overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm"
+            class="overflow-hidden rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
             <div
                 v-if="cycles.data.length === 0"
                 class="flex flex-col items-center gap-4 py-16 text-center"
             >
-                <div class="rounded-full bg-slate-700/60 p-5">
+                <div
+                    class="rounded-full bg-muted/60 p-5 dark:bg-muted dark:bg-slate-700/60"
+                >
                     <Sprout class="h-10 w-10 text-emerald-400" />
                 </div>
                 <div>
-                    <p class="font-semibold text-white">No cycles found</p>
-                    <p class="mt-1 text-sm text-slate-400">
+                    <p class="font-semibold text-foreground dark:text-white">
+                        No cycles found
+                    </p>
+                    <p
+                        class="mt-1 text-sm text-muted-foreground dark:text-slate-400"
+                    >
                         Start your first growing cycle to get started.
                     </p>
                 </div>
                 <button
-                    class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                    class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-foreground hover:bg-emerald-500 dark:text-white"
                     @click="showModal = true"
                 >
                     Create First Cycle
@@ -369,49 +381,53 @@ function formatDate(d: string | null) {
 
             <table v-else class="w-full">
                 <thead>
-                    <tr class="border-b border-slate-700/50 bg-slate-900/50">
+                    <tr
+                        class="border-b border-border/50 bg-muted/30 dark:border-border dark:border-slate-700/50 dark:bg-slate-900/50"
+                    >
                         <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
                             Cycle
                         </th>
                         <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
                             Variety
                         </th>
                         <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
                             Stage
                         </th>
                         <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
                             Start Date
                         </th>
                         <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
                             End Date
                         </th>
                         <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
                             Status
                         </th>
                         <th
-                            class="px-5 py-3.5 text-right text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            class="px-5 py-3.5 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
                             Actions
                         </th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-700/30">
+                <tbody
+                    class="divide-y divide-border/50 dark:divide-slate-700/30"
+                >
                     <tr
                         v-for="cycle in cycles.data"
                         :key="cycle.id"
-                        class="group transition hover:bg-slate-700/20"
+                        class="group transition hover:bg-muted dark:bg-slate-700/20"
                     >
                         <td class="px-5 py-4">
                             <div class="flex items-center gap-3">
@@ -421,19 +437,23 @@ function formatDate(d: string | null) {
                                     <Sprout class="h-4 w-4 text-emerald-400" />
                                 </div>
                                 <div>
-                                    <p class="font-semibold text-white">
+                                    <p
+                                        class="font-semibold text-foreground dark:text-white"
+                                    >
                                         {{ cycle.name }}
                                     </p>
                                     <p
                                         v-if="cycle.day_count"
-                                        class="text-xs text-slate-400"
+                                        class="text-xs text-muted-foreground dark:text-slate-400"
                                     >
                                         Day {{ cycle.day_count }}
                                     </p>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-5 py-4 text-sm text-slate-300">
+                        <td
+                            class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
+                        >
                             {{ cycle.mushroom_variety }}
                         </td>
                         <td class="px-5 py-4">
@@ -451,7 +471,9 @@ function formatDate(d: string | null) {
                                 {{ stageCfg(cycle.growing_stage).label }}
                             </span>
                         </td>
-                        <td class="px-5 py-4 text-sm text-slate-300">
+                        <td
+                            class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
+                        >
                             <div class="flex items-center gap-1.5">
                                 <CalendarDays
                                     class="h-3.5 w-3.5 text-slate-500"
@@ -459,7 +481,9 @@ function formatDate(d: string | null) {
                                 {{ formatDate(cycle.start_date) }}
                             </div>
                         </td>
-                        <td class="px-5 py-4 text-sm text-slate-300">
+                        <td
+                            class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
+                        >
                             {{ formatDate(cycle.end_date) }}
                         </td>
                         <td class="px-5 py-4">
@@ -478,7 +502,7 @@ function formatDate(d: string | null) {
                             <div class="flex items-center justify-end gap-2">
                                 <Link
                                     :href="cyclesApi.show(cycle.id)"
-                                    class="flex items-center gap-1.5 rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-600"
+                                    class="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted-foreground/20 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                                 >
                                     <Eye class="h-3.5 w-3.5" />
                                     View
@@ -493,8 +517,8 @@ function formatDate(d: string | null) {
                                     class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition disabled:opacity-50"
                                     :class="
                                         cycle.growing_stage === 'colonization'
-                                            ? 'bg-purple-600/20 text-purple-300 ring-purple-500/30 hover:bg-purple-600/30'
-                                            : 'bg-amber-600/20 text-amber-300 ring-amber-500/30 hover:bg-amber-600/30'
+                                            ? 'bg-purple-100 text-purple-700 ring-purple-600/20 hover:bg-purple-200 dark:bg-purple-600/20 dark:text-purple-300 dark:ring-purple-500/30 dark:hover:bg-purple-600/30'
+                                            : 'bg-amber-100 text-amber-700 ring-amber-600/20 hover:bg-amber-200 dark:bg-amber-600/20 dark:text-amber-300 dark:ring-amber-500/30 dark:hover:bg-amber-600/30'
                                     "
                                     :title="`Switch to ${cycle.growing_stage === 'colonization' ? 'Fruiting' : 'Colonization'} stage`"
                                     @click="switchStage(cycle)"
@@ -520,7 +544,7 @@ function formatDate(d: string | null) {
                                         userRole !== 'student'
                                     "
                                     :disabled="actioning === cycle.id"
-                                    class="flex items-center gap-1.5 rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs font-medium text-blue-300 ring-1 ring-blue-500/30 transition hover:bg-blue-600/30 disabled:opacity-50"
+                                    class="flex items-center gap-1.5 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 ring-1 ring-blue-600/20 transition hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-600/20 dark:text-blue-300 dark:ring-blue-500/30 dark:hover:bg-blue-600/30"
                                     @click="endCycle(cycle)"
                                 >
                                     <SquareCheck class="h-3.5 w-3.5" />
@@ -532,7 +556,7 @@ function formatDate(d: string | null) {
                                         userRole !== 'student'
                                     "
                                     :disabled="actioning === cycle.id"
-                                    class="flex items-center gap-1.5 rounded-lg bg-red-600/20 px-3 py-1.5 text-xs font-medium text-red-300 ring-1 ring-red-500/30 transition hover:bg-red-600/30 disabled:opacity-50"
+                                    class="flex items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 ring-1 ring-red-600/20 transition hover:bg-red-200 disabled:opacity-50 dark:bg-red-600/20 dark:text-red-300 dark:ring-red-500/30 dark:hover:bg-red-600/30"
                                     @click="cancelCycle(cycle)"
                                 >
                                     <Ban class="h-3.5 w-3.5" />
@@ -547,16 +571,16 @@ function formatDate(d: string | null) {
             <!-- Pagination -->
             <div
                 v-if="cycles.last_page > 1"
-                class="flex items-center justify-between border-t border-slate-700/50 px-5 py-3"
+                class="flex items-center justify-between border-t border-border/50 px-5 py-3 dark:border-border dark:border-slate-700/50"
             >
-                <p class="text-xs text-slate-400">
+                <p class="text-xs text-muted-foreground dark:text-slate-400">
                     Showing {{ cycles.from }}–{{ cycles.to }} of
                     {{ cycles.total }} cycles
                 </p>
                 <div class="flex gap-1">
                     <button
                         :disabled="cycles.current_page === 1"
-                        class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 disabled:opacity-40"
+                        class="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted disabled:opacity-40 dark:bg-slate-700 dark:text-slate-400"
                         @click="goToPage(cycles.links[0]?.url)"
                     >
                         <ChevronLeft class="h-4 w-4" />
@@ -568,15 +592,15 @@ function formatDate(d: string | null) {
                         class="min-w-[32px] rounded-lg px-2 py-1 text-xs font-medium transition"
                         :class="
                             link.active
-                                ? 'bg-emerald-600 text-white'
-                                : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+                                ? 'bg-emerald-600 text-foreground dark:text-white'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:text-white'
                         "
                         @click="goToPage(link.url)"
                         v-html="link.label"
                     />
                     <button
                         :disabled="cycles.current_page === cycles.last_page"
-                        class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 disabled:opacity-40"
+                        class="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted disabled:opacity-40 dark:bg-slate-700 dark:text-slate-400"
                         @click="
                             goToPage(cycles.links[cycles.links.length - 1]?.url)
                         "
@@ -611,11 +635,11 @@ function formatDate(d: string | null) {
                 >
                     <div
                         v-if="showModal"
-                        class="w-full max-w-lg rounded-2xl border border-slate-700/50 bg-slate-900 shadow-2xl"
+                        class="w-full max-w-lg rounded-2xl border border-border/50 bg-slate-900 shadow-2xl dark:border-border dark:border-slate-700/50"
                     >
                         <!-- Modal header -->
                         <div
-                            class="flex items-center justify-between border-b border-slate-700/50 px-6 py-4"
+                            class="flex items-center justify-between border-b border-border/50 px-6 py-4 dark:border-border dark:border-slate-700/50"
                         >
                             <div class="flex items-center gap-3">
                                 <div
@@ -625,12 +649,14 @@ function formatDate(d: string | null) {
                                         class="h-5 w-5 text-emerald-400"
                                     />
                                 </div>
-                                <h2 class="text-lg font-semibold text-white">
+                                <h2
+                                    class="text-lg font-semibold text-foreground dark:text-white"
+                                >
                                     New Growing Cycle
                                 </h2>
                             </div>
                             <button
-                                class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                                class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:text-white"
                                 @click="showModal = false"
                             >
                                 <X class="h-4 w-4" />
@@ -644,7 +670,7 @@ function formatDate(d: string | null) {
                         >
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Cycle Name
                                     <span class="text-red-400">*</span></label
                                 >
@@ -652,7 +678,7 @@ function formatDate(d: string | null) {
                                     v-model="form.name"
                                     type="text"
                                     placeholder="e.g. Batch 2024-A"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                                 <p
                                     v-if="formErrors.name"
@@ -664,14 +690,14 @@ function formatDate(d: string | null) {
 
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Mushroom Variety
                                     <span class="text-red-400">*</span></label
                                 >
                                 <input
                                     v-model="form.mushroom_variety"
                                     type="text"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                                 <p
                                     v-if="formErrors.mushroom_variety"
@@ -683,7 +709,7 @@ function formatDate(d: string | null) {
 
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Substrate Type
                                     <span class="text-red-400">*</span></label
                                 >
@@ -691,7 +717,7 @@ function formatDate(d: string | null) {
                                     v-model="form.substrate_type"
                                     type="text"
                                     placeholder="e.g. Rice straw, Sawdust"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                                 <p
                                     v-if="formErrors.substrate_type"
@@ -704,7 +730,7 @@ function formatDate(d: string | null) {
                             <!-- Starting Stage -->
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Starting Stage
                                     <span class="text-red-400">*</span></label
                                 >
@@ -720,9 +746,9 @@ function formatDate(d: string | null) {
                                         :class="
                                             form.growing_stage === stage
                                                 ? stage === 'colonization'
-                                                    ? 'border-amber-500/60 bg-amber-500/10 text-amber-300'
-                                                    : 'border-purple-500/60 bg-purple-500/10 text-purple-300'
-                                                : 'border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-600'
+                                                    ? 'border-amber-500/60 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
+                                                    : 'border-purple-500/60 bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300'
+                                                : 'border-border bg-card text-muted-foreground hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600'
                                         "
                                         @click="form.growing_stage = stage"
                                     >
@@ -732,9 +758,9 @@ function formatDate(d: string | null) {
                                             :class="
                                                 form.growing_stage === stage
                                                     ? stage === 'colonization'
-                                                        ? 'text-amber-400'
-                                                        : 'text-purple-400'
-                                                    : 'text-slate-500'
+                                                        ? 'text-amber-600 dark:text-amber-400'
+                                                        : 'text-purple-600 dark:text-purple-400'
+                                                    : 'text-slate-400 dark:text-slate-500'
                                             "
                                         />
                                         <div>
@@ -761,14 +787,14 @@ function formatDate(d: string | null) {
 
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Start Date
                                     <span class="text-red-400">*</span></label
                                 >
                                 <input
                                     v-model="form.start_date"
                                     type="date"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                     style="color-scheme: dark"
                                 />
                                 <p
@@ -781,21 +807,21 @@ function formatDate(d: string | null) {
 
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Notes</label
                                 >
                                 <textarea
                                     v-model="form.notes"
                                     rows="3"
                                     placeholder="Optional notes about this batch..."
-                                    class="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                                    class="w-full resize-none rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                             </div>
 
                             <div class="flex gap-3 pt-2">
                                 <button
                                     type="button"
-                                    class="flex-1 rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+                                    class="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-card dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                                     @click="showModal = false"
                                 >
                                     Cancel
@@ -803,7 +829,7 @@ function formatDate(d: string | null) {
                                 <button
                                     type="submit"
                                     :disabled="creating"
-                                    class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500 disabled:opacity-60"
+                                    class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg transition hover:bg-emerald-500 disabled:opacity-60 dark:text-white"
                                 >
                                     <span
                                         v-if="creating"

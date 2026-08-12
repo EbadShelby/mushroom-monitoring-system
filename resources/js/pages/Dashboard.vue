@@ -18,6 +18,7 @@ import {
     Microscope,
     Layers,
     ArrowRightLeft,
+    X,
 } from '@lucide/vue';
 import type { ApexOptions } from 'apexcharts';
 import axios from 'axios';
@@ -26,6 +27,8 @@ import { toast } from 'vue-sonner';
 import VueApexCharts from 'vue3-apexcharts';
 import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
+
+const showLightbox = ref(false);
 import type { GrowingCycle, CameraSnapshot, AlertLog } from '@/types';
 
 defineOptions({
@@ -283,8 +286,8 @@ function alertStatusClass(status: string) {
                             class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ring-1 ring-inset"
                             :class="
                                 isColonization
-                                    ? 'bg-amber-500/15 text-amber-400 ring-amber-500/30'
-                                    : 'bg-purple-500/15 text-purple-400 ring-purple-500/30'
+                                    ? 'bg-amber-100 text-amber-700 ring-amber-600/20 dark:bg-amber-500/15 dark:text-amber-400 dark:ring-amber-500/30'
+                                    : 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-500/15 dark:text-purple-400 dark:ring-purple-500/30'
                             "
                         >
                             <component
@@ -316,10 +319,10 @@ function alertStatusClass(status: string) {
                     class="flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-medium shadow-sm backdrop-blur-md transition-all duration-300"
                     :class="
                         store.isLoading
-                            ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400'
+                            ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-500'
                             : store.isConnected
-                              ? 'border-primary/30 bg-primary/10 text-primary-foreground dark:text-primary'
-                              : 'border-destructive/30 bg-destructive/10 text-destructive-foreground dark:text-destructive'
+                              ? 'border-primary/30 bg-primary/10 text-primary'
+                              : 'border-destructive/30 bg-destructive/10 text-destructive'
                     "
                 >
                     <span class="relative flex h-3 w-3">
@@ -355,7 +358,7 @@ function alertStatusClass(status: string) {
             <!-- Alert Banner -->
             <div
                 v-if="anyWarning && store.isConnected"
-                class="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground shadow-sm backdrop-blur-md dark:text-destructive"
+                class="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm backdrop-blur-md dark:text-destructive"
             >
                 <AlertTriangle class="h-4 w-4 shrink-0" />
                 <span class="font-medium"
@@ -1055,8 +1058,8 @@ function alertStatusClass(status: string) {
                                         class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ring-1 ring-inset"
                                         :class="
                                             isColonization
-                                                ? 'bg-amber-500/20 text-amber-400 ring-amber-500/30'
-                                                : 'bg-purple-500/20 text-purple-400 ring-purple-500/30'
+                                                ? 'bg-amber-100 text-amber-700 ring-amber-600/20 dark:bg-amber-500/20 dark:text-amber-400 dark:ring-amber-500/30'
+                                                : 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-500/20 dark:text-purple-400 dark:ring-purple-500/30'
                                         "
                                     >
                                         <component
@@ -1151,7 +1154,8 @@ function alertStatusClass(status: string) {
                     <div v-else>
                         <!-- Always show sample image as thumbnail (dummy) -->
                         <div
-                            class="overflow-hidden rounded-lg border border-border/50"
+                            class="cursor-pointer overflow-hidden rounded-lg border border-border/50 ring-offset-background transition-all hover:ring-2 hover:ring-emerald-500/50"
+                            @click="showLightbox = true"
                         >
                             <img
                                 src="/sample-image.png"
@@ -1242,4 +1246,35 @@ function alertStatusClass(status: string) {
             </div>
         </div>
     </div>
+
+    <!-- Fullscreen Image Lightbox -->
+    <Teleport to="body">
+        <Transition
+            enter-active-class="transition duration-200"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition duration-150"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+        >
+            <div
+                v-if="showLightbox"
+                class="fixed inset-0 z-[100] flex items-center justify-center"
+                style="background: rgba(0, 0, 0, 0.93)"
+                @click.self="showLightbox = false"
+            >
+                <button
+                    class="absolute top-4 right-4 rounded-full bg-card p-2 text-foreground backdrop-blur-sm hover:bg-muted dark:bg-slate-800/80 dark:text-white dark:hover:bg-slate-700"
+                    @click="showLightbox = false"
+                >
+                    <X class="h-5 w-5" />
+                </button>
+                <img
+                    src="/sample-image.png"
+                    alt="Latest mushroom snapshot"
+                    class="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl ring-1 ring-white/10"
+                />
+            </div>
+        </Transition>
+    </Teleport>
 </template>

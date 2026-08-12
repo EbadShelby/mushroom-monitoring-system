@@ -64,17 +64,17 @@ const userRole = computed(
 const statusConfig = {
     active: {
         label: 'Active',
-        class: 'bg-emerald-500/20 text-emerald-300 ring-emerald-500/30',
+        class: 'bg-emerald-100 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-500/30',
         icon: Clock,
     },
     completed: {
         label: 'Completed',
-        class: 'bg-blue-500/20 text-blue-300 ring-blue-500/30',
+        class: 'bg-blue-100 text-blue-700 ring-blue-600/20 dark:bg-blue-500/20 dark:text-blue-300 dark:ring-blue-500/30',
         icon: CheckCircle2,
     },
     cancelled: {
         label: 'Cancelled',
-        class: 'bg-red-500/20 text-red-300 ring-red-500/30',
+        class: 'bg-red-100 text-red-700 ring-red-600/20 dark:bg-red-500/20 dark:text-red-300 dark:ring-red-500/30',
         icon: XCircle,
     },
 } as const;
@@ -294,7 +294,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
         <div>
             <Link
                 :href="cycles.index()"
-                class="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white"
+                class="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground dark:text-slate-400 dark:text-white"
             >
                 <ChevronLeft class="h-4 w-4" /> Back to Cycles
             </Link>
@@ -309,7 +309,9 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     </div>
                     <div>
                         <div class="flex items-center gap-3">
-                            <h1 class="text-2xl font-bold text-white">
+                            <h1
+                                class="text-2xl font-bold text-foreground dark:text-white"
+                            >
                                 {{ cycle.name }}
                             </h1>
                             <span
@@ -323,7 +325,9 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 {{ statusCfg(cycle.status).label }}
                             </span>
                         </div>
-                        <p class="mt-1 text-sm text-slate-400">
+                        <p
+                            class="mt-1 text-sm text-muted-foreground dark:text-slate-400"
+                        >
                             {{ cycle.mushroom_variety }} &bull;
                             {{ cycle.substrate_type }}
                         </p>
@@ -332,7 +336,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <a
                     :href="reportUrl"
                     target="_blank"
-                    class="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:bg-blue-500 active:scale-95"
+                    class="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-blue-900/40 transition hover:bg-blue-500 active:scale-95 dark:text-white"
                 >
                     <FileText class="h-4 w-4" />
                     Generate Report
@@ -343,50 +347,58 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
         <!-- Cycle meta cards -->
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div
-                class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur-sm"
+                class="rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
             >
                 <p
-                    class="text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                    class="text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                 >
                     Day
                 </p>
-                <p class="mt-1 text-3xl font-bold text-white">
+                <p
+                    class="mt-1 text-3xl font-bold text-foreground dark:text-white"
+                >
                     {{ cycle.day_count }}
                 </p>
             </div>
             <div
-                class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur-sm"
+                class="rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
             >
                 <p
-                    class="text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                    class="text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                 >
                     Start Date
                 </p>
-                <p class="mt-1 text-sm font-semibold text-white">
+                <p
+                    class="mt-1 text-sm font-semibold text-foreground dark:text-white"
+                >
                     {{ formatDate(cycle.start_date) }}
                 </p>
             </div>
             <div
-                class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur-sm"
+                class="rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
             >
                 <p
-                    class="text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                    class="text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                 >
                     End Date
                 </p>
-                <p class="mt-1 text-sm font-semibold text-white">
+                <p
+                    class="mt-1 text-sm font-semibold text-foreground dark:text-white"
+                >
                     {{ formatDate(cycle.end_date) }}
                 </p>
             </div>
             <div
-                class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur-sm"
+                class="rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
             >
                 <p
-                    class="text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                    class="text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                 >
                     Total Readings
                 </p>
-                <p class="mt-1 text-3xl font-bold text-white">
+                <p
+                    class="mt-1 text-3xl font-bold text-foreground dark:text-white"
+                >
                     {{ breachSummary?.total_readings?.toLocaleString() ?? '—' }}
                 </p>
             </div>
@@ -395,9 +407,9 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
         <!-- Notes -->
         <div
             v-if="cycle.notes"
-            class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur-sm"
+            class="rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
-            <p class="text-sm text-slate-300">
+            <p class="text-sm text-foreground/80 dark:text-slate-300">
                 <span class="font-semibold text-slate-200">Notes: </span
                 >{{ cycle.notes }}
             </p>
@@ -405,10 +417,10 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
 
         <!-- Threshold Breaches -->
         <div
-            class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-5 backdrop-blur-sm"
+            class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
             <h2
-                class="mb-4 flex items-center gap-2 text-base font-semibold text-white"
+                class="mb-4 flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
             >
                 <AlertTriangle class="h-4 w-4 text-amber-400" />
                 Threshold Breach Summary
@@ -417,14 +429,14 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <div
                     v-for="i in 4"
                     :key="i"
-                    class="h-20 animate-pulse rounded-2xl bg-slate-700/40"
+                    class="h-20 animate-pulse rounded-2xl bg-muted dark:bg-slate-700/40"
                 />
             </div>
             <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div
                     v-for="card in breachCards"
                     :key="card.label"
-                    class="rounded-2xl border border-slate-700/30 p-4"
+                    class="rounded-2xl border border-border p-4 dark:border-slate-700/30"
                     :class="card.bg"
                 >
                     <div class="mb-2 flex items-center gap-2">
@@ -433,9 +445,10 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             class="h-4 w-4"
                             :class="card.color"
                         />
-                        <span class="text-xs text-slate-400">{{
-                            card.label
-                        }}</span>
+                        <span
+                            class="text-xs text-muted-foreground dark:text-slate-400"
+                            >{{ card.label }}</span
+                        >
                     </div>
                     <p
                         class="text-3xl font-bold"
@@ -447,7 +460,9 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     >
                         {{ card.value.toLocaleString() }}
                     </p>
-                    <p class="mt-1 text-xs text-slate-500">
+                    <p
+                        class="mt-1 text-xs text-muted-foreground/80 dark:text-slate-500"
+                    >
                         breaches &bull; target {{ card.range }}
                     </p>
                 </div>
@@ -456,10 +471,10 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
 
         <!-- Daily Sensor Average Charts -->
         <div
-            class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-5 backdrop-blur-sm"
+            class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
             <h2
-                class="mb-4 flex items-center gap-2 text-base font-semibold text-white"
+                class="mb-4 flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
             >
                 <Activity class="h-4 w-4 text-emerald-400" />
                 Daily Sensor Averages
@@ -468,22 +483,23 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <div
                     v-for="i in 4"
                     :key="i"
-                    class="h-40 animate-pulse rounded-2xl bg-slate-700/40"
+                    class="h-40 animate-pulse rounded-2xl bg-muted dark:bg-slate-700/40"
                 />
             </div>
             <div
                 v-else-if="dailyAverages.length === 0"
-                class="py-10 text-center text-sm text-slate-500"
+                class="py-10 text-center text-sm text-muted-foreground/80 dark:text-slate-500"
             >
                 No sensor readings recorded for this cycle yet.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div
-                    class="rounded-2xl border border-slate-700/30 bg-slate-900/60 p-4"
+                    class="rounded-2xl border border-border bg-muted/30 p-4 dark:border-slate-700/30 dark:bg-slate-900/60"
                 >
                     <div class="mb-2 flex items-center gap-2">
                         <Thermometer class="h-4 w-4 text-orange-400" />
-                        <span class="text-sm font-medium text-slate-300"
+                        <span
+                            class="text-sm font-medium text-foreground/80 dark:text-slate-300"
                             >Temperature (°C)</span
                         >
                     </div>
@@ -494,11 +510,12 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     />
                 </div>
                 <div
-                    class="rounded-2xl border border-slate-700/30 bg-slate-900/60 p-4"
+                    class="rounded-2xl border border-border bg-muted/30 p-4 dark:border-slate-700/30 dark:bg-slate-900/60"
                 >
                     <div class="mb-2 flex items-center gap-2">
                         <Droplets class="h-4 w-4 text-cyan-400" />
-                        <span class="text-sm font-medium text-slate-300"
+                        <span
+                            class="text-sm font-medium text-foreground/80 dark:text-slate-300"
                             >Humidity (%)</span
                         >
                     </div>
@@ -509,11 +526,12 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     />
                 </div>
                 <div
-                    class="rounded-2xl border border-slate-700/30 bg-slate-900/60 p-4"
+                    class="rounded-2xl border border-border bg-muted/30 p-4 dark:border-slate-700/30 dark:bg-slate-900/60"
                 >
                     <div class="mb-2 flex items-center gap-2">
                         <Wind class="h-4 w-4 text-purple-400" />
-                        <span class="text-sm font-medium text-slate-300"
+                        <span
+                            class="text-sm font-medium text-foreground/80 dark:text-slate-300"
                             >CO₂ (ppm)</span
                         >
                     </div>
@@ -524,11 +542,12 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     />
                 </div>
                 <div
-                    class="rounded-2xl border border-slate-700/30 bg-slate-900/60 p-4"
+                    class="rounded-2xl border border-border bg-muted/30 p-4 dark:border-slate-700/30 dark:bg-slate-900/60"
                 >
                     <div class="mb-2 flex items-center gap-2">
                         <Sun class="h-4 w-4 text-amber-400" />
-                        <span class="text-sm font-medium text-slate-300"
+                        <span
+                            class="text-sm font-medium text-foreground/80 dark:text-slate-300"
                             >Light Level (lux)</span
                         >
                     </div>
@@ -543,11 +562,11 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
 
         <!-- Measurement History -->
         <div
-            class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-5 backdrop-blur-sm"
+            class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
             <div class="mb-4 flex items-center justify-between">
                 <h2
-                    class="flex items-center gap-2 text-base font-semibold text-white"
+                    class="flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
                 >
                     <FlaskConical class="h-4 w-4 text-emerald-400" />
                     Measurement History
@@ -564,57 +583,59 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <div
                     v-for="i in 3"
                     :key="i"
-                    class="h-10 animate-pulse rounded-xl bg-slate-700/40"
+                    class="h-10 animate-pulse rounded-xl bg-muted dark:bg-slate-700/40"
                 />
             </div>
             <div
                 v-else-if="measurements.length === 0"
-                class="py-8 text-center text-sm text-slate-500"
+                class="py-8 text-center text-sm text-muted-foreground/80 dark:text-slate-500"
             >
                 No measurements recorded yet. Add the first one!
             </div>
             <div v-else class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="border-b border-slate-700/50">
+                        <tr
+                            class="border-b border-border/50 dark:border-border dark:border-slate-700/50"
+                        >
                             <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Date
                             </th>
                             <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Flush
                             </th>
                             <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Weight (g)
                             </th>
                             <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Height (cm)
                             </th>
                             <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Cap Diam. (cm)
                             </th>
                             <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Fruiting Bodies
                             </th>
                             <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Logged By
                             </th>
                             <th
                                 v-if="userRole !== 'student'"
-                                class="pb-2.5 text-right text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                                class="pb-2.5 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
                                 Actions
                             </th>
@@ -624,9 +645,11 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                         <tr
                             v-for="m in measurements"
                             :key="m.id"
-                            class="group hover:bg-slate-700/10"
+                            class="group hover:bg-muted dark:bg-slate-700/10"
                         >
-                            <td class="py-3 pr-4 text-slate-300">
+                            <td
+                                class="py-3 pr-4 text-foreground/80 dark:text-slate-300"
+                            >
                                 {{ formatDate(m.observed_date) }}
                             </td>
                             <td class="py-3 pr-4">
@@ -640,16 +663,24 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             >
                                 {{ m.weight_g ?? '—' }}
                             </td>
-                            <td class="py-3 pr-4 text-slate-300">
+                            <td
+                                class="py-3 pr-4 text-foreground/80 dark:text-slate-300"
+                            >
                                 {{ m.height_cm ?? '—' }}
                             </td>
-                            <td class="py-3 pr-4 text-slate-300">
+                            <td
+                                class="py-3 pr-4 text-foreground/80 dark:text-slate-300"
+                            >
                                 {{ m.cap_diameter_cm ?? '—' }}
                             </td>
-                            <td class="py-3 pr-4 text-slate-300">
+                            <td
+                                class="py-3 pr-4 text-foreground/80 dark:text-slate-300"
+                            >
                                 {{ m.fruiting_body_count ?? '—' }}
                             </td>
-                            <td class="py-3 pr-4 text-slate-300">
+                            <td
+                                class="py-3 pr-4 text-foreground/80 dark:text-slate-300"
+                            >
                                 {{ m.user?.name ?? '—' }}
                             </td>
                             <td
@@ -657,7 +688,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 class="py-3 text-right"
                             >
                                 <button
-                                    class="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+                                    class="rounded-lg p-1.5 text-muted-foreground/80 transition hover:bg-red-500/10 hover:text-red-400 dark:text-slate-500"
                                     @click="deleteMeasurement(m.id)"
                                 >
                                     <Trash2 class="h-3.5 w-3.5" />
@@ -671,18 +702,18 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
 
         <!-- Camera Snapshot Timeline -->
         <div
-            class="rounded-2xl border border-slate-700/50 bg-slate-800/50 p-5 backdrop-blur-sm"
+            class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
             <div class="mb-4 flex items-center justify-between">
                 <h2
-                    class="flex items-center gap-2 text-base font-semibold text-white"
+                    class="flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
                 >
                     <Camera class="h-4 w-4 text-emerald-400" />
                     Growth Photo Timeline
                 </h2>
                 <Link
                     :href="`/camera?cycle_id=${cycle.id}`"
-                    class="flex items-center gap-1.5 rounded-xl bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-600"
+                    class="flex items-center gap-1.5 rounded-xl bg-muted px-3 py-1.5 text-xs font-medium text-foreground/80 transition hover:bg-slate-600 dark:bg-slate-700 dark:text-slate-300"
                 >
                     View All Photos
                 </Link>
@@ -691,22 +722,26 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <div
                     v-for="i in 8"
                     :key="i"
-                    class="aspect-square animate-pulse rounded-xl bg-slate-700/40"
+                    class="aspect-square animate-pulse rounded-xl bg-muted dark:bg-slate-700/40"
                 />
             </div>
             <div v-else-if="snapshots.length === 0" class="py-10 text-center">
                 <div
-                    class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-700/50"
+                    class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 dark:bg-muted dark:bg-slate-700/50"
                 >
-                    <Camera class="h-7 w-7 text-slate-500" />
+                    <Camera
+                        class="h-7 w-7 text-muted-foreground/80 dark:text-slate-500"
+                    />
                 </div>
-                <p class="text-sm text-slate-500">
+                <p class="text-sm text-muted-foreground/80 dark:text-slate-500">
                     No photos uploaded for this cycle yet.
                 </p>
             </div>
             <div v-else class="space-y-5">
                 <div v-for="group in groupedSnapshots" :key="group.date">
-                    <p class="mb-2 text-xs font-semibold text-slate-400">
+                    <p
+                        class="mb-2 text-xs font-semibold text-muted-foreground dark:text-slate-400"
+                    >
                         {{ formatDate(group.date) }}
                     </p>
                     <div
@@ -715,7 +750,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                         <div
                             v-for="snap in group.items"
                             :key="snap.id"
-                            class="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-slate-900"
+                            class="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-muted/30 dark:bg-slate-900"
                             @click="openLightbox(snap)"
                         >
                             <img
@@ -729,7 +764,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 <div class="p-2">
                                     <p
                                         v-if="snap.flush_number"
-                                        class="text-xs font-semibold text-white"
+                                        class="text-xs font-semibold text-foreground dark:text-white"
                                     >
                                         Flush {{ snap.flush_number }}
                                     </p>
@@ -740,7 +775,9 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 class="absolute top-1 right-1 rounded-lg bg-red-500/80 p-1 opacity-0 transition group-hover:opacity-100"
                                 @click.stop="deleteSnapshot(snap.id)"
                             >
-                                <Trash2 class="h-3 w-3 text-white" />
+                                <Trash2
+                                    class="h-3 w-3 text-foreground dark:text-white"
+                                />
                             </button>
                         </div>
                     </div>
@@ -764,16 +801,18 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 @click.self="showMeasureModal = false"
             >
                 <div
-                    class="w-full max-w-md rounded-2xl border border-slate-700/50 bg-slate-900 shadow-2xl"
+                    class="w-full max-w-md rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
                 >
                     <div
-                        class="flex items-center justify-between border-b border-slate-700/50 px-6 py-4"
+                        class="flex items-center justify-between border-b border-border/50 px-6 py-4 dark:border-border dark:border-slate-700/50"
                     >
-                        <h2 class="text-lg font-semibold text-white">
+                        <h2
+                            class="text-lg font-semibold text-foreground dark:text-white"
+                        >
                             Add Measurement
                         </h2>
                         <button
-                            class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700"
+                            class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted dark:bg-slate-700 dark:text-slate-400"
                             @click="showMeasureModal = false"
                         >
                             <X class="h-4 w-4" />
@@ -786,20 +825,20 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Date
                                     <span class="text-red-400">*</span></label
                                 >
                                 <input
                                     v-model="measureForm.observed_date"
                                     type="date"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                     style="color-scheme: dark"
                                 />
                             </div>
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Flush #
                                     <span class="text-red-400">*</span></label
                                 >
@@ -807,14 +846,14 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                     v-model.number="measureForm.flush_number"
                                     type="number"
                                     min="1"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Weight (g)</label
                                 >
                                 <input
@@ -823,12 +862,12 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                     step="0.1"
                                     min="0"
                                     placeholder="0.0"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                             </div>
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Fruiting Bodies</label
                                 >
                                 <input
@@ -838,14 +877,14 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                     type="number"
                                     min="0"
                                     placeholder="0"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Height (cm)</label
                                 >
                                 <input
@@ -854,12 +893,12 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                     step="0.1"
                                     min="0"
                                     placeholder="0.0"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                             </div>
                             <div>
                                 <label
-                                    class="mb-1.5 block text-sm font-medium text-slate-300"
+                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Cap Diam. (cm)</label
                                 >
                                 <input
@@ -868,25 +907,25 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                     step="0.1"
                                     min="0"
                                     placeholder="0.0"
-                                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                             </div>
                         </div>
                         <div>
                             <label
-                                class="mb-1.5 block text-sm font-medium text-slate-300"
+                                class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                 >Notes</label
                             >
                             <textarea
                                 v-model="measureForm.notes"
                                 rows="2"
-                                class="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                class="w-full resize-none rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             />
                         </div>
                         <div class="flex gap-3 pt-1">
                             <button
                                 type="button"
-                                class="flex-1 rounded-xl border border-slate-700 py-2.5 text-sm text-slate-300 hover:bg-slate-800"
+                                class="flex-1 rounded-xl border border-border py-2.5 text-sm text-foreground/80 hover:bg-card dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                                 @click="showMeasureModal = false"
                             >
                                 Cancel
@@ -894,7 +933,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <button
                                 type="submit"
                                 :disabled="savingMeasure"
-                                class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+                                class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-foreground hover:bg-emerald-500 disabled:opacity-60 dark:text-white"
                             >
                                 <span
                                     v-if="savingMeasure"
@@ -924,7 +963,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 @click="lightboxSrc = null"
             >
                 <button
-                    class="absolute top-4 right-4 rounded-full bg-slate-800/80 p-2 text-white backdrop-blur-sm hover:bg-slate-700"
+                    class="absolute top-4 right-4 rounded-full bg-card p-2 text-foreground backdrop-blur-sm hover:bg-muted dark:bg-slate-700 dark:bg-slate-800/80 dark:text-white"
                 >
                     <X class="h-5 w-5" />
                 </button>
