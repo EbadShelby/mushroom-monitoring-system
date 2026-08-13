@@ -54,7 +54,7 @@ defineProps<{
             <!-- Top: Logo + school -->
             <div class="relative z-10 flex items-center gap-3">
                 <div
-                    class="flex size-10 items-center justify-center rounded-xl bg-white/20 p-1 backdrop-blur"
+                    class="flex size-10 items-center justify-center rounded-full bg-white/20 p-1 backdrop-blur"
                 >
                     <AppLogoIcon class="size-8 object-contain" />
                 </div>
@@ -140,7 +140,7 @@ defineProps<{
             <!-- Mobile logo (only shows on small screens) -->
             <div class="mb-8 flex flex-col items-center gap-2 lg:hidden">
                 <div
-                    class="flex size-12 items-center justify-center rounded-xl bg-emerald-700/10 p-1 shadow dark:bg-emerald-950/40"
+                    class="flex size-12 items-center justify-center rounded-full bg-emerald-700/10 p-1 shadow dark:bg-emerald-950/40"
                 >
                     <AppLogoIcon class="size-9 object-contain" />
                 </div>

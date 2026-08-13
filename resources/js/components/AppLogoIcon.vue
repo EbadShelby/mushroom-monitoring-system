@@ -14,8 +14,9 @@ defineProps<Props>();
 
 <template>
     <img
-        src="/oyster-mushroom.png"
+        src="/logo.png"
         alt="MycoSense Logo"
+        class="rounded-full"
         :class="className"
         v-bind="$attrs"
     />
