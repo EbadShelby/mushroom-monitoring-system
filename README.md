@@ -126,7 +126,7 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
 | Requirement | Minimum Version | Notes |
 | :----------------------------------- | :-------------- | :--------------------------------------------------------------- |
-| **PHP** | 8.2+ | PHP 8.5 recommended. Extensions: `pdo_mysql`, `mbstring`, `xml`, `curl`, `zip`, `bcmath`, `openssl` |
+| **PHP** | 8.2+ | PHP 8.5 recommended |
 | **Composer** | 2.x | PHP dependency manager |
 | **Node.js** | 18.x LTS+ | Node 20 LTS recommended |
 | **npm** | 9.x+ | Bundled with Node.js |
