@@ -115,7 +115,7 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
 - **Admin**: Full access — User management, settings, thresholds, and all logs.
 - **Faculty**: Start/end cycles, log measurements, upload growth photos, control actuators, generate reports, and receive SMS alerts.
-- **Student**: View dashboard, view growth documentation, view measurements, and analyze historical data.
+- **Student**: View dashboard, view growth documentation, view measurements (read-only — cannot log or delete), and analyze historical data.
 
 ## Setup & Installation (Local Development)
 

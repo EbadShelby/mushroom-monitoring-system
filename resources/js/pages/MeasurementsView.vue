@@ -128,7 +128,8 @@ async function deleteMeasurement(id: number) {
                         Measurements & Harvests
                     </h1>
                     <p class="mt-1 text-muted-foreground">
-                        Log daily measurements and harvest yields.
+                        <template v-if="userRole === 'student'">View logged measurements and harvest data.</template>
+                        <template v-else>Log daily measurements and harvest yields.</template>
                     </p>
                 </div>
                 <button

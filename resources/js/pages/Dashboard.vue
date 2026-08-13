@@ -296,8 +296,8 @@ function alertStatusClass(status: string) {
                             />
                             {{
                                 isColonization
-                                    ? 'Colonization Stage (Spawn Running)'
-                                    : 'Fruiting Stage (Mushroom Formation)'
+                                    ? 'Colonization Stage'
+                                    : 'Fruiting Stage'
                             }}
                         </span>
                     </div>

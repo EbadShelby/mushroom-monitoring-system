@@ -18,7 +18,9 @@ class MeasurementController extends Controller
             ->orderByDesc('id')
             ->paginate(15);
 
-        $cycles = GrowingCycle::where('status', 'active')->get(['id', 'name']);
+        $cycles = auth()->user()->role !== 'student'
+            ? GrowingCycle::where('status', 'active')->get(['id', 'name'])
+            : [];
 
         return Inertia::render('MeasurementsView', [
             'measurements' => $measurements,

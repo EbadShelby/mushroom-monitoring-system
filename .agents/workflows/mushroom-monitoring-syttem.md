@@ -94,7 +94,7 @@ Laravel API (SINGLE entry point — all data flows through here)
 ## User Roles
 - Admin: full access — user management, settings, thresholds, all logs
 - Faculty: start/end cycles, log measurements, upload growth photos, control actuators, generate reports, receive SMS
-- Student: view dashboard, view growth docs, log measurements, analyze historical data
+- Student: view dashboard, view growth docs, view measurements (read-only — cannot log or delete), analyze historical data
 
 ## Database Tables (MySQL)
 - users (id, name, email, password, role, contact_number, timestamps)
