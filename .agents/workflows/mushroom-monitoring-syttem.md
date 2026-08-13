@@ -111,18 +111,26 @@ All thresholds are configurable per-stage in Settings and stored with keys like 
 
 ### Humidifier (Relay 1)
 - Humidity **< low threshold** AND humidifier currently OFF → command `on` + SMS alert
-- Humidity **≥ high threshold** AND humidifier currently ON → command `off`
-- Redundant writes suppressed: ON is only commanded if not already on
+- Humidity **≥ high threshold** AND humidifier currently ON → command `off` (no SMS — normal operation)
+- If humidity still below threshold AND humidifier already on → **no SMS**. Alert already sent when it turned on.
 
-### Fan (Relay 3) — Unified Resolution
-Fan state is resolved once after all sensors are evaluated:
+### Fan (Relay 3) — Unified Resolution with Hysteresis
+Fan state resolved once after all sensors evaluated. Hysteresis deadband prevents rapid cycling:
 
 ```
-$needsFan = ($tempHigh || $co2High) && $fanAllowed
+FAN_HYSTERESIS = { temp: 1.0°C, co2: 100 ppm }
 
-if humidifierWillBeOn && fanCurrentlyOn  → command fan: off  (interlock)
-elif $needsFan && !fanCurrentlyOn        → command fan: on
-elif !$needsFan && !humidifier && fanCurrentlyOn → command fan: off
+$tempHigh  = temp > temp_max
+$tempClear = temp ≤ (temp_max - 1°C)       ← hysteresis deadband
+$co2High   = co2 > co2_max
+$co2Clear  = co2 ≤ (co2_max - 100 ppm)    ← hysteresis deadband
+
+$needsFan = ($tempHigh || $co2High) && $fanAllowed
+$allClear = $tempClear && $co2Clear
+
+if humidifierWillBeOn && fanCurrentlyOn → command fan: off  (interlock)
+elif $needsFan && !fanCurrentlyOn       → command fan: on
+elif $allClear && !humidifier && fanCurrentlyOn → command fan: off
 else → null (no change)
 ```
 
@@ -130,6 +138,12 @@ else → null (no change)
 - Humidifier is currently on
 - Humidifier will be turned on this cycle
 - Humidifier was turned off within the last 5 minutes
+
+### SMS Alert Rules
+- **Humidifier**: SMS only when humidifier is commanded ON (not while already running and recovering)
+- **Fan (temp/CO₂)**: SMS only when `fanAllowed = true`. If fan is blocked by interlock, no SMS — it's non-actionable
+- **Humidifier reaching high threshold**: no SMS — it's doing its job correctly
+- **Cooldown**: 15-minute per-sensor window in `SmsService`
 
 ### LED (Relay 2)
 - Controlled by `led:schedule` cron (every minute)

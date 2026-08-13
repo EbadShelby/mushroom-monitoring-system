@@ -12,8 +12,8 @@ class ThresholdService
     private const COLONIZATION_DEFAULTS = [
         'temp_min' => 24.0,  // ideal 25–27°C
         'temp_max' => 28.0,
-        'humidity_low' => 70.0,  // alert below 70%
-        'humidity_high' => 80.0,  // deactivate humidifier at 80%
+        'humidity_low' => 70.0,  // humidifier ON below 70%
+        'humidity_high' => 80.0,  // humidifier OFF at 80%
         'co2_max' => 5000,  // high CO₂ acceptable during colonization
         'light_max' => 100.0, // keep dark/very dim — alert if > 100 lux
         'soil_warning' => 55,    // substrate moisture warning
@@ -24,13 +24,27 @@ class ThresholdService
     private const FRUITING_DEFAULTS = [
         'temp_min' => 20.0,  // ideal 22–24°C
         'temp_max' => 24.0,
-        'humidity_low' => 85.0,  // alert below 85%
-        'humidity_high' => 95.0,  // deactivate humidifier at 95%
+        'humidity_low' => 85.0,  // humidifier ON below 85%
+        'humidity_high' => 95.0,  // humidifier OFF at 95%
         'co2_max' => 1000,  // keep below 1000 ppm for fruiting
         'light_min' => 200.0, // need indirect light — alert if < 200 lux
         'light_max' => 800.0, // alert if > 800 lux
         'soil_warning' => 55,    // substrate moisture warning
         'soil_critical' => 50,    // substrate moisture critical
+    ];
+
+    /**
+     * Hysteresis margins for fan deactivation.
+     *
+     * The fan turns ON when a threshold is exceeded, but turns OFF only when the
+     * reading drops BELOW the threshold by this margin. This prevents rapid
+     * on/off cycling when readings hover right at the boundary.
+     *
+     * e.g. fan turns ON when CO₂ > 1000 ppm, but only turns OFF when ≤ 900 ppm.
+     */
+    private const FAN_HYSTERESIS = [
+        'temp' => 1.0,   // °C below temp_max before fan turns off
+        'co2' => 100,    // ppm below co2_max before fan turns off
     ];
 
     /** @var array<string, mixed> */
@@ -86,6 +100,17 @@ class ThresholdService
      * caller to apply). The service itself performs no Firebase writes or DB logs —
      * all side-effects are handled by the caller (SensorController).
      *
+     * ── Alert philosophy ────────────────────────────────────────────────────────
+     * Alerts are only generated when there is something actionable or genuinely
+     * abnormal. Specifically:
+     *   - Humidifier: SMS only when humidity is LOW (actionable). The humidifier
+     *     turning off at the high threshold is normal operation — no SMS.
+     *   - Fan: SMS only when the fan is actually commanded ON. If the fan is
+     *     blocked by the humidifier interlock (fanAllowed = false), no SMS is
+     *     sent — the alert would be non-actionable and would repeat every 15 min.
+     *   - Fan hysteresis: fan turns off only when readings drop below the threshold
+     *     minus a deadband margin, preventing rapid on/off cycling.
+     *
      * @param  array<string, mixed>  $reading  { temperature, humidity, co2_raw, light_level, soil_moisture }
      * @param  GrowingCycle|null  $cycle  The active growing cycle (stage determines thresholds)
      * @return array{
@@ -106,7 +131,7 @@ class ThresholdService
         $humidifierCurrentlyOn = ($currentActuators['humidifier'] ?? 'off') === 'on';
         $fanCurrentlyOn = ($currentActuators['fan'] ?? 'off') === 'on';
 
-        // ─── Determine desired humidifier state ───────────────────────────────
+        // ─── Humidifier ────────────────────────────────────────────────────────
         // null = no change, 'on' = turn on, 'off' = turn off
         $desiredHumidifier = null;
 
@@ -114,28 +139,32 @@ class ThresholdService
             $humidity = (float) $reading['humidity'];
 
             if ($humidity < $t['humidity_low']) {
-                // Only command ON if it's not already on (avoid redundant writes)
                 if (! $humidifierCurrentlyOn) {
+                    // Humidifier is off and needs to turn on — command it and alert
                     $desiredHumidifier = 'on';
-                }
 
-                $alerts[] = $this->alert(
-                    sensor: 'humidity',
-                    value: $humidity,
-                    threshold: "below {$t['humidity_low']}%",
-                    message: "💧 [CotSU Mushroom | {$stageLabel}] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
-                );
+                    $alerts[] = $this->alert(
+                        sensor: 'humidity',
+                        value: $humidity,
+                        threshold: "below {$t['humidity_low']}%",
+                        message: "💧 [CotSU Mushroom | {$stageLabel}] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
+                    );
+                }
+                // If humidifier is already on and humidity is still recovering — no alert.
+                // An SMS was already sent when it turned on. Sending again would be spam.
             } elseif ($humidity >= $t['humidity_high'] && $humidifierCurrentlyOn) {
-                // Humidity reached upper bound — turn humidifier off
+                // Humidity reached the upper bound — turn humidifier off.
+                // This is normal operation (humidifier did its job), NOT an alert condition.
                 $desiredHumidifier = 'off';
             }
         }
 
-        // ─── Fan Interlock + Cooldown Logic ───────────────────────────────────
+        // ─── Fan Interlock + Cooldown ──────────────────────────────────────────
         // Fan is blocked when:
         //   (a) humidifier is currently on, OR
         //   (b) humidifier will be turned on by this evaluation, OR
         //   (c) humidifier was turned off less than 5 minutes ago
+        //       (allows humidity to build before ventilation disperses it)
         $humidifierWillBeOn = $humidifierCurrentlyOn || $desiredHumidifier === 'on';
 
         $fanAllowed = true;
@@ -155,6 +184,7 @@ class ThresholdService
 
         // ─── Temperature ──────────────────────────────────────────────────────
         $tempHigh = false;
+        $tempClear = true; // used for hysteresis — temp is safely below threshold
 
         if (isset($reading['temperature'])) {
             $temp = (float) $reading['temperature'];
@@ -168,43 +198,53 @@ class ThresholdService
                 );
             } elseif ($temp > $t['temp_max']) {
                 $tempHigh = true;
+                $tempClear = false;
 
-                $message = $fanAllowed
-                    ? "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Intake fan activated to cool the chamber."
-                    : "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Fan activation delayed to allow humidity to build up.";
-
-                $alerts[] = $this->alert(
-                    sensor: 'temperature',
-                    value: $temp,
-                    threshold: "above {$t['temp_max']}°C",
-                    message: $message,
-                );
+                // Only alert + message if the fan will actually turn on.
+                // If fanAllowed = false, the fan is blocked by the humidifier —
+                // sending an SMS would be non-actionable and would repeat every 15 min.
+                if ($fanAllowed || $fanCurrentlyOn) {
+                    $alerts[] = $this->alert(
+                        sensor: 'temperature',
+                        value: $temp,
+                        threshold: "above {$t['temp_max']}°C",
+                        message: "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Intake fan activated to cool the chamber.",
+                    );
+                }
+            } else {
+                // Temperature is in range — check hysteresis deadband for fan deactivation.
+                // Fan only turns off when temp is at least FAN_HYSTERESIS['temp'] below the max.
+                $tempClear = $temp <= ($t['temp_max'] - self::FAN_HYSTERESIS['temp']);
             }
         }
 
         // ─── CO₂ ──────────────────────────────────────────────────────────────
         $co2High = false;
+        $co2Clear = true; // used for hysteresis — co2 is safely below threshold
 
         if (isset($reading['co2_raw'])) {
             $co2 = (int) $reading['co2_raw'];
 
             if ($co2 > $t['co2_max']) {
                 $co2High = true;
+                $co2Clear = false;
 
                 $co2Label = $stage === 'colonization'
                     ? "above {$t['co2_max']} ppm (colonization ceiling)"
                     : "above {$t['co2_max']} ppm (fruiting requires fresh air)";
 
-                $message = $fanAllowed
-                    ? "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Intake fan activated for fresh air."
-                    : "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm. Fan activation delayed to allow humidity to build up.";
-
-                $alerts[] = $this->alert(
-                    sensor: 'co2',
-                    value: $co2,
-                    threshold: $co2Label,
-                    message: $message,
-                );
+                // Same principle as temperature: only alert if fan is actually going to act.
+                if ($fanAllowed || $fanCurrentlyOn) {
+                    $alerts[] = $this->alert(
+                        sensor: 'co2',
+                        value: $co2,
+                        threshold: $co2Label,
+                        message: "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Intake fan activated for fresh air.",
+                    );
+                }
+            } else {
+                // CO₂ in range — apply hysteresis deadband before allowing fan off
+                $co2Clear = $co2 <= ($t['co2_max'] - self::FAN_HYSTERESIS['co2']);
             }
         }
 
@@ -213,7 +253,6 @@ class ThresholdService
             $light = (float) $reading['light_level'];
 
             if ($stage === 'colonization') {
-                // Colonization: keep dark — alert if light exceeds max
                 if ($light > $t['light_max']) {
                     $alerts[] = $this->alert(
                         sensor: 'light',
@@ -223,7 +262,6 @@ class ThresholdService
                     );
                 }
             } else {
-                // Fruiting: needs 200–800 lux indirect light
                 if ($light < $t['light_min']) {
                     $alerts[] = $this->alert(
                         sensor: 'light',
@@ -264,21 +302,30 @@ class ThresholdService
         }
 
         // ─── Unified Fan Resolution ────────────────────────────────────────────
-        // Determine the single desired fan state based on ALL conditions.
-        // This replaces the previous split per-sensor fan logic which left
-        // the temperature-triggered fan permanently on.
+        // Fan state is decided ONCE here, after all sensors are evaluated.
+        //
+        // Turn-on: fan is needed ($needsFan) and currently off.
+        // Turn-off: uses hysteresis — both temp AND co2 must be clearly below
+        //   their respective thresholds (by FAN_HYSTERESIS margin) before the fan
+        //   turns off. This prevents rapid on/off cycling when readings hover at
+        //   the boundary.
+        // Interlock: if humidifier is (or will be) on, fan is forced off.
         $desiredFan = null;
 
         $needsFan = ($tempHigh || $co2High) && $fanAllowed;
+
+        // Both conditions must be clearly in the safe zone before allowing fan off.
+        // If a sensor value is absent, treat that dimension as clear (safe default).
+        $allConditionsClear = $tempClear && $co2Clear;
 
         if ($humidifierWillBeOn && $fanCurrentlyOn) {
             // Interlock: humidifier is (or will be) on — force fan off immediately
             $desiredFan = 'off';
         } elseif ($needsFan && ! $fanCurrentlyOn) {
-            // One or both triggers are active and fan is allowed — turn on
+            // Trigger(s) active and fan is allowed — turn on
             $desiredFan = 'on';
-        } elseif (! $needsFan && ! $humidifierWillBeOn && $fanCurrentlyOn) {
-            // All conditions cleared and no interlock — turn fan off
+        } elseif ($allConditionsClear && ! $humidifierWillBeOn && $fanCurrentlyOn) {
+            // All readings have dropped safely below their thresholds — turn fan off
             $desiredFan = 'off';
         }
 
