@@ -106,9 +106,12 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
 ---
 
-### ⚡ Actuator Interlock & Safety Logic
+### ⚡ Actuator Interlock, Safety & Override Logic
 
-- **Humidifier Interlock**: When the **Humidifier** is active, the **Intake Fan** is automatically overridden to **OFF** to prevent mist from being blown out of the chamber.
+- **Humidifier Interlock**: When the **Humidifier** is active (or recently turned off), the **Intake Fan** is automatically overridden to **OFF** to prevent mist from being blown out of the chamber before humidity builds.
+- **Hysteresis Deadband**: To prevent the fan from rapidly cycling on and off at threshold boundaries, it only turns off when the temperature drops 1°C below the maximum, and CO₂ drops 100 ppm below the maximum.
+- **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
+- **Smart SMS Alerts**: Non-actionable alerts are suppressed (e.g. if the fan is blocked by the humidifier, it won't spam SMS). Humidifier alerts only trigger on activation, not while recovering.
 - **Automatic Stage Switch**: Users can switch growth stages on the dashboard or cycles page, instantly updating live gauges, target indicators, Pinia status evaluators, and backend automation logic.
 
 ## User Roles
@@ -116,6 +119,74 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 - **Admin**: Full access — User management, settings, thresholds, and all logs.
 - **Faculty**: Start/end cycles, log measurements, upload growth photos, control actuators, generate reports, and receive SMS alerts.
 - **Student**: View dashboard, view growth documentation, view measurements (read-only — cannot log or delete), and analyze historical data.
+
+## System Requirements
+
+### Software Requirements
+
+| Requirement | Minimum Version | Notes |
+| :----------------------------------- | :-------------- | :--------------------------------------------------------------- |
+| **PHP** | 8.2+ | PHP 8.5 recommended. Extensions: `pdo_mysql`, `mbstring`, `xml`, `curl`, `zip`, `bcmath`, `openssl` |
+| **Composer** | 2.x | PHP dependency manager |
+| **Node.js** | 18.x LTS+ | Node 20 LTS recommended |
+| **npm** | 9.x+ | Bundled with Node.js |
+| **MySQL** | 8.0+ | MariaDB 10.6+ also compatible |
+| **Apache / Nginx** | Any recent | Or use `php artisan serve` for local development |
+| **Git** | 2.x+ | For cloning the repository |
+| **Arduino IDE** | 2.x | Or PlatformIO (VS Code extension) for ESP32 firmware flashing |
+
+> **Windows users**: [XAMPP](https://www.apachefriends.org/) (PHP 8.2+, MySQL 8) or [Laragon](https://laragon.org/) satisfies the Apache + MySQL + PHP stack in a single installer.
+
+> **Linux users**: Use your distribution's package manager (e.g., `apt`, `dnf`) or [Laravel Herd](https://herd.laravel.com/linux) for a managed PHP environment.
+
+---
+
+### Host Machine Hardware Requirements
+
+| Component | Minimum | Recommended |
+| :---------- | :------------- | :------------- |
+| **CPU** | Dual-core 1.5 GHz | Quad-core 2.0 GHz+ |
+| **RAM** | 4 GB | 8 GB |
+| **Storage** | 5 GB free | 20 GB free (for growth photo uploads over multiple cycles) |
+| **OS** | Windows 10, Ubuntu 20.04, macOS 12 | Windows 11, Ubuntu 22.04/24.04, macOS 14 |
+| **Wi-Fi** | 802.11n (2.4 GHz) | 802.11ac or better |
+
+---
+
+### Network Requirements
+
+- The host machine and the **ESP32 must be on the same local Wi-Fi network** (same subnet / router) for the microcontroller's HTTP POST calls to reach the Laravel server.
+- Laravel must be served with `--host=0.0.0.0` so it binds to the LAN interface, not just `localhost`.
+- Outbound internet access is required for:
+  - **Firebase Realtime Database** — real-time sensor value sync
+  - **Semaphore SMS API** — push alerts to registered contacts
+  - **Composer / npm** — pulling dependencies on first install
+
+---
+
+### Firebase Requirements
+
+- A **Firebase project** with **Realtime Database** enabled (Spark plan is sufficient).
+- A **service account** JSON key for server-side writes (Laravel backend).
+- A **web app** registered in the Firebase project for client-side SDK config (Vue.js dashboard).
+- Realtime Database rules must allow authenticated reads; unauthenticated writes are locked down — the Laravel service account bypasses rules via Admin SDK.
+
+---
+
+### ESP32 Firmware Dependencies (Arduino / PlatformIO)
+
+| Library | Purpose |
+| :------------------------------ | :--------------------------------- |
+| `DHT sensor library` (Adafruit) | DHT22 temperature + humidity |
+| `Adafruit Unified Sensor` | Required by DHT library |
+| `BH1750` (Christopher Laws) | Light level sensor (I2C) |
+| `ArduinoJson` | Serialize sensor payload to JSON |
+| `WiFi.h` | Built-in ESP32 Wi-Fi stack |
+| `HTTPClient.h` | Built-in ESP32 HTTP client |
+
+> All libraries are available through the Arduino Library Manager or `platformio.ini` `lib_deps`.
+
+---
 
 ## Setup & Installation (Local Development)
 
