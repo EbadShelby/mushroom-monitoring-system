@@ -12,12 +12,21 @@ import {
     ChevronLeft,
     ChevronRight,
     Settings,
+    Lock,
+    LockOpen,
+    ShieldAlert,
 } from '@lucide/vue';
 import axios from 'axios';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import { useSensorStore } from '@/stores/useSensorStore';
-import type { ActuatorLog, LedSchedule, Thresholds, Paginated } from '@/types';
+import type {
+    ActuatorLog,
+    ActuatorOverrides,
+    LedSchedule,
+    Thresholds,
+    Paginated,
+} from '@/types';
 
 defineOptions({
     layout: {
@@ -29,6 +38,7 @@ const props = defineProps<{
     logs?: Paginated<ActuatorLog>;
     ledSchedule: LedSchedule;
     thresholds: Thresholds;
+    overrides: ActuatorOverrides;
 }>();
 
 const page = usePage();
@@ -41,7 +51,7 @@ const canControl = computed(() =>
 
 const store = useSensorStore();
 
-// Logs pagination
+// ── Logs pagination ──────────────────────────────────────────────────────────
 const logsData = ref<Paginated<ActuatorLog> | null>(props.logs ?? null);
 const logsLoading = ref(false);
 const logsPage = ref(1);
@@ -61,7 +71,7 @@ async function fetchLogs(p = 1) {
     }
 }
 
-// Actuator toggle
+// ── Actuator toggle ──────────────────────────────────────────────────────────
 const toggling = ref<Record<string, boolean>>({
     humidifier: false,
     fan: false,
@@ -92,7 +102,60 @@ async function toggleActuator(
     }
 }
 
-// LED Schedule edit
+// ── Manual Override ──────────────────────────────────────────────────────────
+const overrideState = ref<ActuatorOverrides>({ ...props.overrides });
+const lockingOverride = ref<Record<string, boolean>>({
+    humidifier: false,
+    fan: false,
+    led: false,
+});
+
+const anyOverrideActive = computed(() =>
+    Object.values(overrideState.value).some(Boolean),
+);
+
+const activeOverrideNames = computed(() =>
+    (
+        Object.entries(overrideState.value) as [
+            keyof ActuatorOverrides,
+            boolean,
+        ][]
+    )
+        .filter(([, v]) => v)
+        .map(([k]) => actuators.find((a) => a.key === k)?.label ?? k)
+        .join(', '),
+);
+
+async function toggleOverride(actuator: 'humidifier' | 'fan' | 'led') {
+    if (!canControl.value) {
+        toast.error('Access denied. Only Admin or Faculty can set overrides.');
+
+        return;
+    }
+
+    lockingOverride.value[actuator] = true;
+    const newActive = !overrideState.value[actuator];
+
+    try {
+        await axios.post('/api/actuators/override', {
+            actuator,
+            active: newActive,
+        });
+        overrideState.value[actuator] = newActive;
+
+        toast.success(
+            newActive
+                ? `🔒 Override ON — automation paused for ${actuator}.`
+                : `🔓 Override OFF — automation resumed for ${actuator}.`,
+        );
+    } catch {
+        toast.error('Failed to update override.');
+    } finally {
+        lockingOverride.value[actuator] = false;
+    }
+}
+
+// ── LED Schedule ─────────────────────────────────────────────────────────────
 const schedule = ref({ ...props.ledSchedule });
 const savingSchedule = ref(false);
 
@@ -109,7 +172,7 @@ async function saveSchedule() {
     }
 }
 
-// Actuator metadata
+// ── Actuator metadata ────────────────────────────────────────────────────────
 const actuators = [
     {
         key: 'humidifier' as const,
@@ -166,6 +229,7 @@ const triggerLabels: Record<string, string> = {
     auto: 'Auto',
     manual: 'Manual',
     schedule: 'Schedule',
+    automatic: 'Auto',
 };
 </script>
 
@@ -198,15 +262,58 @@ const triggerLabels: Record<string, string> = {
                 </div>
             </div>
 
+            <!-- Override Active Banner -->
+            <div
+                v-if="anyOverrideActive"
+                class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-4"
+            >
+                <ShieldAlert
+                    class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500"
+                />
+                <div>
+                    <p
+                        class="text-sm font-semibold text-amber-600 dark:text-amber-400"
+                    >
+                        Manual Override Active
+                    </p>
+                    <p
+                        class="mt-0.5 text-xs text-amber-600/80 dark:text-amber-400/80"
+                    >
+                        Automation is paused for:
+                        <strong>{{ activeOverrideNames }}</strong
+                        >. The system will not automatically adjust these relays
+                        until the override is removed.
+                    </p>
+                </div>
+            </div>
+
             <!-- Actuator Status Cards -->
             <div class="grid gap-6 md:grid-cols-3">
                 <div
                     v-for="act in actuators"
                     :key="act.key"
                     class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+                    :class="
+                        overrideState[act.key]
+                            ? 'border-amber-500/40 shadow-amber-500/5'
+                            : ''
+                    "
                 >
                     <!-- Status dot -->
-                    <div class="absolute top-4 right-4">
+                    <div class="absolute top-4 right-4 flex items-center gap-2">
+                        <!-- Override lock indicator -->
+                        <div
+                            v-if="overrideState[act.key]"
+                            class="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5"
+                        >
+                            <Lock class="h-3 w-3 text-amber-500" />
+                            <span
+                                class="text-[10px] font-bold tracking-wider text-amber-500 uppercase"
+                                >Override</span
+                            >
+                        </div>
+
+                        <!-- Live state dot -->
                         <div
                             v-if="getActuatorState(act.key) === 'on'"
                             class="relative flex h-3 w-3"
@@ -288,6 +395,32 @@ const triggerLabels: Record<string, string> = {
                             Turn OFF
                         </button>
                     </div>
+
+                    <!-- Override toggle -->
+                    <div v-if="canControl" class="mt-3">
+                        <button
+                            :id="`btn-${act.key}-override`"
+                            @click="toggleOverride(act.key)"
+                            :disabled="lockingOverride[act.key]"
+                            class="flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                            :class="
+                                overrideState[act.key]
+                                    ? 'border-amber-500/50 bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:text-amber-400'
+                                    : 'border-border/50 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground'
+                            "
+                        >
+                            <Lock
+                                v-if="overrideState[act.key]"
+                                class="h-3.5 w-3.5"
+                            />
+                            <LockOpen v-else class="h-3.5 w-3.5" />
+                            {{
+                                overrideState[act.key]
+                                    ? 'Override Active — Click to Resume Auto'
+                                    : 'Lock to Manual'
+                            }}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -347,6 +480,13 @@ const triggerLabels: Record<string, string> = {
                             (schedule.off_hour - schedule.on_hour + 24) % 24
                         }}h light)
                     </p>
+                    <div
+                        v-if="overrideState.led"
+                        class="mt-3 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400"
+                    >
+                        <Lock class="h-3.5 w-3.5 flex-shrink-0" />
+                        LED override is active — the schedule is paused.
+                    </div>
                     <button
                         v-if="canControl"
                         id="btn-save-schedule"

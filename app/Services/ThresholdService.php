@@ -82,9 +82,16 @@ class ThresholdService
     /**
      * Evaluate all sensor readings against stage-appropriate thresholds.
      *
+     * Returns alerts (for SMS dispatch) and desired actuator commands (for the
+     * caller to apply). The service itself performs no Firebase writes or DB logs —
+     * all side-effects are handled by the caller (SensorController).
+     *
      * @param  array<string, mixed>  $reading  { temperature, humidity, co2_raw, light_level, soil_moisture }
      * @param  GrowingCycle|null  $cycle  The active growing cycle (stage determines thresholds)
-     * @return list<array{sensor: string, value: float|int, threshold: string, message: string, actuator: string|null, actuator_action: string|null}>
+     * @return array{
+     *   alerts: list<array{sensor: string, value: float|int, threshold: string, message: string}>,
+     *   commands: array{humidifier: string|null, fan: string|null}
+     * }
      */
     public function evaluate(array $reading, ?GrowingCycle $cycle = null): array
     {
@@ -94,27 +101,48 @@ class ThresholdService
 
         $alerts = [];
 
-        // Load current actuator states from Firebase once to avoid redundant writes
+        // Load current actuator states from Firebase once
         $currentActuators = $this->firebase->getActuators();
+        $humidifierCurrentlyOn = ($currentActuators['humidifier'] ?? 'off') === 'on';
+        $fanCurrentlyOn = ($currentActuators['fan'] ?? 'off') === 'on';
 
-        // ─── Actuator Interlock Logic ─────────────────────────────────────────────
-        $humidifierOn = ($currentActuators['humidifier'] ?? 'off') === 'on';
-        $fanOn = ($currentActuators['fan'] ?? 'off') === 'on';
+        // ─── Determine desired humidifier state ───────────────────────────────
+        // null = no change, 'on' = turn on, 'off' = turn off
+        $desiredHumidifier = null;
 
-        // 1. Turn off fan if humidifier is on
-        if ($humidifierOn && $fanOn) {
-            $this->firebase->setActuator('fan', 'off');
-            $this->logActuatorCommand('fan', 'off', 'humidifier_override');
-            $fanOn = false; // Update local state
-            $currentActuators['fan'] = 'off';
+        if (isset($reading['humidity'])) {
+            $humidity = (float) $reading['humidity'];
+
+            if ($humidity < $t['humidity_low']) {
+                // Only command ON if it's not already on (avoid redundant writes)
+                if (! $humidifierCurrentlyOn) {
+                    $desiredHumidifier = 'on';
+                }
+
+                $alerts[] = $this->alert(
+                    sensor: 'humidity',
+                    value: $humidity,
+                    threshold: "below {$t['humidity_low']}%",
+                    message: "💧 [CotSU Mushroom | {$stageLabel}] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
+                );
+            } elseif ($humidity >= $t['humidity_high'] && $humidifierCurrentlyOn) {
+                // Humidity reached upper bound — turn humidifier off
+                $desiredHumidifier = 'off';
+            }
         }
 
-        // 2. Determine if fan is allowed to turn on (delay after humidifier turns off)
+        // ─── Fan Interlock + Cooldown Logic ───────────────────────────────────
+        // Fan is blocked when:
+        //   (a) humidifier is currently on, OR
+        //   (b) humidifier will be turned on by this evaluation, OR
+        //   (c) humidifier was turned off less than 5 minutes ago
+        $humidifierWillBeOn = $humidifierCurrentlyOn || $desiredHumidifier === 'on';
+
         $fanAllowed = true;
-        if ($humidifierOn) {
+
+        if ($humidifierWillBeOn) {
             $fanAllowed = false;
         } else {
-            // Check if humidifier was turned off recently (e.g., within 5 minutes)
             $lastHumidifierOff = ActuatorLog::where('actuator', 'humidifier')
                 ->where('action', 'off')
                 ->latest('triggered_at')
@@ -125,7 +153,9 @@ class ThresholdService
             }
         }
 
-        // ─── Temperature ──────────────────────────────────────────────────────────
+        // ─── Temperature ──────────────────────────────────────────────────────
+        $tempHigh = false;
+
         if (isset($reading['temperature'])) {
             $temp = (float) $reading['temperature'];
 
@@ -135,90 +165,50 @@ class ThresholdService
                     value: $temp,
                     threshold: "below {$t['temp_min']}°C",
                     message: "⚠️ [CotSU Mushroom | {$stageLabel}] Temperature LOW: {$temp}°C (min: {$t['temp_min']}°C). Check heating.",
-                    actuator: null,
-                    actuatorAction: null,
                 );
             } elseif ($temp > $t['temp_max']) {
-                $message = "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Intake fan activated to cool the chamber.";
-                if (! $fanAllowed) {
-                    $message = "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Fan activation delayed to allow humidity to build up.";
-                }
+                $tempHigh = true;
+
+                $message = $fanAllowed
+                    ? "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Intake fan activated to cool the chamber."
+                    : "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Fan activation delayed to allow humidity to build up.";
 
                 $alerts[] = $this->alert(
                     sensor: 'temperature',
                     value: $temp,
                     threshold: "above {$t['temp_max']}°C",
                     message: $message,
-                    actuator: $fanAllowed ? 'fan' : null,
-                    actuatorAction: $fanAllowed ? 'on' : null,
                 );
-            }
-
-            // Auto-deactivate fan when temp drops back to safe range
-            if ($temp <= $t['temp_max'] && ($currentActuators['fan'] ?? 'off') === 'on') {
-                // Fan may also be on for CO₂ — only deactivate if CO₂ is also safe
-                // (handled in CO₂ section below)
             }
         }
 
-        // ─── Humidity ─────────────────────────────────────────────────────────────
-        if (isset($reading['humidity'])) {
-            $humidity = (float) $reading['humidity'];
+        // ─── CO₂ ──────────────────────────────────────────────────────────────
+        $co2High = false;
 
-            if ($humidity < $t['humidity_low']) {
-                $alerts[] = $this->alert(
-                    sensor: 'humidity',
-                    value: $humidity,
-                    threshold: "below {$t['humidity_low']}%",
-                    message: "💧 [CotSU Mushroom | {$stageLabel}] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
-                    actuator: 'humidifier',
-                    actuatorAction: 'on',
-                );
-            }
-
-            // Auto-deactivate humidifier when humidity is high enough
-            if ($humidity >= $t['humidity_high'] && ($currentActuators['humidifier'] ?? 'off') === 'on') {
-                $this->firebase->setActuator('humidifier', 'off');
-                $this->logActuatorCommand('humidifier', 'off', 'automatic');
-            }
-        }
-
-        // ─── CO₂ ──────────────────────────────────────────────────────────────────
         if (isset($reading['co2_raw'])) {
             $co2 = (int) $reading['co2_raw'];
 
             if ($co2 > $t['co2_max']) {
+                $co2High = true;
+
                 $co2Label = $stage === 'colonization'
                     ? "above {$t['co2_max']} ppm (colonization ceiling)"
                     : "above {$t['co2_max']} ppm (fruiting requires fresh air)";
 
-                $message = "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Intake fan activated for fresh air.";
-                if (! $fanAllowed) {
-                    $message = "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm. Fan activation delayed to allow humidity to build up.";
-                }
+                $message = $fanAllowed
+                    ? "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Intake fan activated for fresh air."
+                    : "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm. Fan activation delayed to allow humidity to build up.";
 
                 $alerts[] = $this->alert(
                     sensor: 'co2',
                     value: $co2,
                     threshold: $co2Label,
                     message: $message,
-                    actuator: $fanAllowed ? 'fan' : null,
-                    actuatorAction: $fanAllowed ? 'on' : null,
                 );
-            }
-
-            // Auto-deactivate fan when CO₂ drops back below threshold
-            if ($co2 <= $t['co2_max'] && ($currentActuators['fan'] ?? 'off') === 'on') {
-                // Also check temp is not still high before turning fan off
-                $tempSafe = ! isset($reading['temperature']) || (float) $reading['temperature'] <= $t['temp_max'];
-                if ($tempSafe) {
-                    $this->firebase->setActuator('fan', 'off');
-                    $this->logActuatorCommand('fan', 'off', 'automatic');
-                }
             }
         }
 
-        // ─── Light Level ──────────────────────────────────────────────────────────
+        // ─── Light Level ──────────────────────────────────────────────────────
         if (isset($reading['light_level'])) {
             $light = (float) $reading['light_level'];
 
@@ -230,8 +220,6 @@ class ThresholdService
                         value: $light,
                         threshold: "above {$t['light_max']} lux",
                         message: "💡 [CotSU Mushroom | Colonization] Light too HIGH: {$light} lux (max: {$t['light_max']} lux). Colonization requires darkness.",
-                        actuator: null,
-                        actuatorAction: null,
                     );
                 }
             } else {
@@ -242,8 +230,6 @@ class ThresholdService
                         value: $light,
                         threshold: "below {$t['light_min']} lux",
                         message: "💡 [CotSU Mushroom | Fruiting] Light too LOW: {$light} lux (min: {$t['light_min']} lux). Fruiting needs indirect light.",
-                        actuator: null,
-                        actuatorAction: null,
                     );
                 } elseif ($light > $t['light_max']) {
                     $alerts[] = $this->alert(
@@ -251,14 +237,12 @@ class ThresholdService
                         value: $light,
                         threshold: "above {$t['light_max']} lux",
                         message: "💡 [CotSU Mushroom | Fruiting] Light too HIGH: {$light} lux (max: {$t['light_max']} lux). Reduce direct light exposure.",
-                        actuator: null,
-                        actuatorAction: null,
                     );
                 }
             }
         }
 
-        // ─── Soil Moisture ────────────────────────────────────────────────────────
+        // ─── Soil Moisture ────────────────────────────────────────────────────
         if (isset($reading['soil_moisture'])) {
             $soil = (int) $reading['soil_moisture'];
 
@@ -268,8 +252,6 @@ class ThresholdService
                     value: $soil,
                     threshold: "below {$t['soil_critical']}% (CRITICAL)",
                     message: "🌱 [CotSU Mushroom | {$stageLabel}] Substrate Moisture CRITICAL: {$soil}%. Immediate watering required!",
-                    actuator: null,
-                    actuatorAction: null,
                 );
             } elseif ($soil < $t['soil_warning']) {
                 $alerts[] = $this->alert(
@@ -277,13 +259,36 @@ class ThresholdService
                     value: $soil,
                     threshold: "below {$t['soil_warning']}% (DRY)",
                     message: "🌱 [CotSU Mushroom | {$stageLabel}] Substrate Moisture LOW: {$soil}%. Please water the substrate soon.",
-                    actuator: null,
-                    actuatorAction: null,
                 );
             }
         }
 
-        return $alerts;
+        // ─── Unified Fan Resolution ────────────────────────────────────────────
+        // Determine the single desired fan state based on ALL conditions.
+        // This replaces the previous split per-sensor fan logic which left
+        // the temperature-triggered fan permanently on.
+        $desiredFan = null;
+
+        $needsFan = ($tempHigh || $co2High) && $fanAllowed;
+
+        if ($humidifierWillBeOn && $fanCurrentlyOn) {
+            // Interlock: humidifier is (or will be) on — force fan off immediately
+            $desiredFan = 'off';
+        } elseif ($needsFan && ! $fanCurrentlyOn) {
+            // One or both triggers are active and fan is allowed — turn on
+            $desiredFan = 'on';
+        } elseif (! $needsFan && ! $humidifierWillBeOn && $fanCurrentlyOn) {
+            // All conditions cleared and no interlock — turn fan off
+            $desiredFan = 'off';
+        }
+
+        return [
+            'alerts' => $alerts,
+            'commands' => [
+                'humidifier' => $desiredHumidifier,
+                'fan' => $desiredFan,
+            ],
+        ];
     }
 
     /**
@@ -301,23 +306,19 @@ class ThresholdService
     }
 
     /**
-     * @return array{sensor: string, value: float|int, threshold: string, message: string, actuator: string|null, actuator_action: string|null}
+     * @return array{sensor: string, value: float|int, threshold: string, message: string}
      */
     private function alert(
         string $sensor,
         float|int $value,
         string $threshold,
         string $message,
-        ?string $actuator,
-        ?string $actuatorAction,
     ): array {
         return [
             'sensor' => $sensor,
             'value' => $value,
             'threshold' => $threshold,
             'message' => $message,
-            'actuator' => $actuator,
-            'actuator_action' => $actuatorAction,
         ];
     }
 }

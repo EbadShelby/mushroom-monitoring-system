@@ -15,6 +15,14 @@ class EnforceLedSchedule extends Command
 
     public function handle(FirebaseService $firebase): int
     {
+        // Respect manual override — if the operator has locked the LED relay,
+        // skip the schedule entirely so they retain full control.
+        if (Setting::get('override_led') === '1') {
+            $this->line('LED override active — skipping schedule.');
+
+            return self::SUCCESS;
+        }
+
         $onHour = (int) Setting::get('led_on_hour', 6);
         $offHour = (int) Setting::get('led_off_hour', 18);
         $currentHour = (int) now()->format('G');

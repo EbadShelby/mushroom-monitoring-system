@@ -33,6 +33,11 @@ class ActuatorController extends Controller
                 'soil_warning' => (int) Setting::get('threshold_soil_warning', 30),
                 'soil_critical' => (int) Setting::get('threshold_soil_critical', 20),
             ],
+            'overrides' => [
+                'humidifier' => Setting::get('override_humidifier') === '1',
+                'fan' => Setting::get('override_fan') === '1',
+                'led' => Setting::get('override_led') === '1',
+            ],
         ]);
     }
 
@@ -59,6 +64,32 @@ class ActuatorController extends Controller
         ]);
 
         return response()->json(['success' => true, 'actuator' => $actuator, 'action' => $action]);
+    }
+
+    /**
+     * Toggle the manual override for a relay.
+     *
+     * When override is active for an actuator, the automation pipeline (ThresholdService)
+     * will skip all automatic commands for that relay, giving the operator full manual control.
+     * The LED schedule cron also respects this override flag.
+     */
+    public function toggleOverride(Request $request): JsonResponse
+    {
+        $request->validate([
+            'actuator' => ['required', 'string', 'in:humidifier,fan,led'],
+            'active' => ['required', 'boolean'],
+        ]);
+
+        $actuator = $request->input('actuator');
+        $active = $request->boolean('active');
+
+        Setting::set("override_{$actuator}", $active ? '1' : '0');
+
+        return response()->json([
+            'success' => true,
+            'actuator' => $actuator,
+            'override_active' => $active,
+        ]);
     }
 
     public function schedule(Request $request): JsonResponse

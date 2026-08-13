@@ -111,6 +111,12 @@ export interface Thresholds {
     soil_critical: number;
 }
 
+export interface ActuatorOverrides {
+    humidifier: boolean;
+    fan: boolean;
+    led: boolean;
+}
+
 export interface SensorReading {
     id: number;
     recorded_at: string;

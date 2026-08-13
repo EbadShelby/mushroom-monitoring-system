@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
+use App\Models\Setting;
 use App\Services\FirebaseService;
 use App\Services\SmsService;
 use App\Services\ThresholdService;
@@ -25,6 +26,10 @@ class SensorController extends Controller
      * Entry point for the ESP32. Validates incoming sensor payload, persists it
      * to MySQL, syncs the latest values to Firebase, checks thresholds and sends
      * SMS alerts / triggers actuator commands as needed.
+     *
+     * Actuator commands returned by ThresholdService are applied here — not inside
+     * the service — so that all Firebase writes and logging are consolidated in one
+     * place. Commands are skipped for any actuator with an active manual override.
      */
     public function store(Request $request): JsonResponse
     {
@@ -63,35 +68,51 @@ class SensorController extends Controller
             'last_updated' => now()->toISOString(),
         ]);
 
-        // ── 4. Evaluate thresholds and dispatch alerts / actuator commands ────
-        $alerts = $this->threshold->evaluate($data, $activeCycle);
+        // ── 4. Evaluate thresholds ─────────────────────────────────────────────
+        $result = $this->threshold->evaluate($data, $activeCycle);
 
-        foreach ($alerts as $alert) {
-            // Send SMS alert (with built-in cooldown)
+        // ── 5. Dispatch SMS alerts ─────────────────────────────────────────────
+        foreach ($result['alerts'] as $alert) {
             $this->sms->sendAlert([
                 'sensor' => $alert['sensor'],
                 'value' => $alert['value'],
                 'threshold' => $alert['threshold'],
                 'message' => $alert['message'],
             ]);
+        }
 
-            // Trigger actuator if specified
-            if ($alert['actuator'] && $alert['actuator_action']) {
-                $this->firebase->setActuator($alert['actuator'], $alert['actuator_action']);
+        // ── 6. Apply actuator commands ─────────────────────────────────────────
+        // Skip any actuator that has an active manual override (set via the UI).
+        // This prevents automation from overwriting manual control during demos
+        // or whenever the operator needs direct relay control.
+        $commandsApplied = 0;
 
-                $this->threshold->logActuatorCommand(
-                    actuator: $alert['actuator'],
-                    action: $alert['actuator_action'],
-                    trigger: 'automatic',
-                );
+        foreach ($result['commands'] as $actuator => $desiredState) {
+            if ($desiredState === null) {
+                continue; // no change needed
             }
+
+            if (Setting::get("override_{$actuator}") === '1') {
+                continue; // manual override active — automation is paused for this relay
+            }
+
+            $this->firebase->setActuator($actuator, $desiredState);
+
+            $this->threshold->logActuatorCommand(
+                actuator: $actuator,
+                action: $desiredState,
+                trigger: 'automatic',
+            );
+
+            $commandsApplied++;
         }
 
         return response()->json([
             'success' => true,
             'reading_id' => $reading->id,
             'cycle_id' => $activeCycle?->id,
-            'alerts_triggered' => count($alerts),
+            'alerts_triggered' => count($result['alerts']),
+            'commands_applied' => $commandsApplied,
             'recorded_at' => $reading->recorded_at,
         ], 201);
     }

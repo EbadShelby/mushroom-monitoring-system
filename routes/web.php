@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Actuators
         Route::get('actuators', [ActuatorController::class, 'index'])->name('actuators');
         Route::post('api/actuators/toggle', [ActuatorController::class, 'toggle'])->name('actuators.toggle');
+        Route::post('api/actuators/override', [ActuatorController::class, 'toggleOverride'])->name('actuators.override');
         Route::put('api/actuators/schedule', [ActuatorController::class, 'schedule'])->name('actuators.schedule');
 
         // Alert Logs (SMS)

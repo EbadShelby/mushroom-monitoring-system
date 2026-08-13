@@ -1,5 +1,5 @@
 ---
-description: IoT system monitoring oyster mushroom cultivation at CotSU. ESP32 sends sensor data to Laravel, stored in MySQL and Firebase. Vue.js dashboard shows live readings, automates actuators, sends SMS alerts, and generates cycle reports.
+description: IoT system monitoring oyster mushroom cultivation at CotSU. ESP32 sends sensor data to Laravel, stored in MySQL and Firebase. Vue.js dashboard shows live readings, automates actuators (with manual override), sends SMS alerts, and generates cycle reports.
 ---
 
 # IoT Mushroom Monitoring System — Project Rules
@@ -13,7 +13,7 @@ description: IoT system monitoring oyster mushroom cultivation at CotSU. ESP32 s
 ## Tech Stack — Never Deviate From This
 
 ### Frontend
-- Framework: Vue.js 3 (Composition API, <script setup> syntax only)
+- Framework: Vue.js 3 (Composition API, `<script setup>` syntax only)
 - Routing: Inertia.js v3 (no Vue Router — Inertia handles all navigation)
 - Styling: Tailwind CSS v4 (utility classes only — no custom CSS unless absolutely necessary)
 - UI Components: Reka UI + Lucide Icons (@lucide/vue)
@@ -26,7 +26,7 @@ description: IoT system monitoring oyster mushroom cultivation at CotSU. ESP32 s
 
 ### Backend
 - Framework: Laravel 13
-- Language: PHP 
+- Language: PHP
 - Auth: Laravel Fortify (already configured via starter kit)
 - PDF: barryvdh/laravel-dompdf
 - SMS: Semaphore API (PH-based, endpoint: https://api.semaphore.co/api/v4/messages)
@@ -35,73 +35,143 @@ description: IoT system monitoring oyster mushroom cultivation at CotSU. ESP32 s
 
 ### Database
 - Primary: MySQL (all permanent data — readings, cycles, measurements, logs)
-- Real-time: Firebase Realtime Database (latest sensor values only — not history)
+- Real-time: Firebase Realtime Database (latest sensor values + current actuator states only — not history)
 
 ### Hardware
 - Microcontroller: ESP32 WROOM-32U 38-pin (CP2102, Type-C)
 - Programming: Arduino IDE, C++
-- Communication: HTTP POST to Laravel API every 30 seconds
+- Communication: HTTP POST to Laravel API every ~10 seconds
 
 ## System Architecture
 
 ```
 ESP32 (sensors + actuators)
         │
-        │ HTTP POST /api/sensor-data every 30 seconds
+        │ HTTP POST /api/sensor-data every ~10 seconds
         ▼
 Laravel API (SINGLE entry point — all data flows through here)
         │
         ├── Save to MySQL (permanent storage)
-        └── Push latest values to Firebase (real-time dashboard)
-                │
-                ▼
-        Vue.js Dashboard (via Inertia.js)
-                │
-                ├── Live sensor cards ← Firebase
-                └── Historical charts ← MySQL via Laravel API
+        ├── Push latest sensor values to Firebase (real-time)
+        ├── ThresholdService::evaluate() — PURE, no side-effects
+        │       └── Returns: { alerts[], commands{humidifier, fan} }
+        ├── SmsService::sendAlert() — sends SMS for each alert
+        └── Apply actuator commands to Firebase (if no override active)
+                └── Skips any relay with override_{actuator} = '1'
+
+ESP32 polls GET /api/actuator-commands every ~10 seconds
+        └── Reads current actuator states from Firebase → flips physical relays
+
+Vue.js Dashboard (via Inertia.js + Firebase SDK)
+        ├── Live sensor cards ← Firebase real-time listener
+        ├── Live actuator states ← Firebase real-time listener
+        └── Historical charts ← MySQL via Laravel API
 ```
+
+## Growing Stages
+Each cycle has a `growing_stage` of either `colonization` or `fruiting`. The active cycle's stage determines which threshold set is used.
+
+- **Colonization** — Spawn running. Dark, warm, high CO₂ tolerated.
+- **Fruiting** — Mushrooms forming. Needs indirect light, fresh air, high humidity, cooler temps.
+
+New cycles default to `colonization`. Faculty/Admin switch stage via the Cycles page.
 
 ## Sensors and GPIO Pins
 - DHT22 (temperature + humidity) → GPIO 4
-- MQ-135 (CO2 / air quality) → GPIO 34
+- MQ-135 (CO₂ / air quality) → GPIO 34
 - BH1750 (light level, I2C) → SDA: GPIO 21, SCL: GPIO 22
 - Capacitive soil moisture → GPIO 35
 
 ## Actuators and Relay Channels
-- Humidifier (ultrasonic mist maker) → Relay channel 1 → GPIO 26
-- LED grow light strip (5V USB) → Relay channel 2 → GPIO 27
-- Cooling fan (5V USB) → Relay channel 3 → GPIO 14
+- **Relay 1** — Humidifier (ultrasonic mist maker) → GPIO 14
+- **Relay 2** — LED grow light strip (5V USB) → GPIO 27
+- **Relay 3** — Cooling fan (5V USB) → GPIO 26
 - All actuators use separate power rails — ESP32 only sends relay signal
 - Relay is active LOW (LOW = ON, HIGH = OFF)
 
-## Threshold Values (Gray Oyster Mushroom — Pleurotus sajor-caju)
-- Temperature: 24–30°C (alert below 24 or above 30)
-- Humidity: 80–95% (alert below 80)
-- CO2: below 1000 ppm during fruiting (alert above 1000)
-- Light: 50–1000 lux during fruiting, dark during colonization
-- Soil moisture dry: below 30% (warning SMS)
-- Soil moisture critical: below 20% (auto-trigger pump + urgent SMS)
+## Threshold Values — Colonization Stage
+- Temperature: 24–28°C — alert below 24°C or above 28°C
+- Humidity: 70–80% RH — alert below 70%, auto-deactivate humidifier at 80%
+- CO₂: below 5,000 ppm — alert above 5,000 ppm
+- Light: 0–100 lux (keep dark) — alert if above 100 lux
+- Substrate moisture: warning below 55%, critical below 50%
 
-## Automation Logic
-- Humidity < 80% → auto-activate humidifier via relay + send SMS alert
-- Humidity >= 90% → auto-deactivate humidifier
-- Soil moisture < 30% → warning SMS only (no actuator)
-- Soil moisture < 20% (critical) → urgent SMS only (no actuator)
-- CO2 > 1000 ppm → auto-activate cooling fan via relay + send SMS
-- LED grow light → controlled by schedule (12hr on / 12hr off) set by admin
-- All actuator activations logged to actuator_logs table
+## Threshold Values — Fruiting Stage
+- Temperature: 20–24°C — alert below 20°C or above 24°C
+- Humidity: 85–95% RH — alert below 85%, auto-deactivate humidifier at 95%
+- CO₂: below 1,000 ppm — alert above 1,000 ppm
+- Light: 200–800 lux indirect — alert below 200 lux or above 800 lux
+- Substrate moisture: warning below 55%, critical below 50%
+
+All thresholds are configurable per-stage in Settings and stored with keys like `threshold_col_temp_min`, `threshold_fruit_humidity_low`.
+
+## Automation Logic (Stage-Aware)
+
+`ThresholdService::evaluate()` is **pure** — reads Firebase for current relay states, returns decisions, performs no writes. All Firebase writes and DB logs happen in `SensorController::store()`.
+
+### Humidifier (Relay 1)
+- Humidity **< low threshold** AND humidifier currently OFF → command `on` + SMS alert
+- Humidity **≥ high threshold** AND humidifier currently ON → command `off`
+- Redundant writes suppressed: ON is only commanded if not already on
+
+### Fan (Relay 3) — Unified Resolution
+Fan state is resolved once after all sensors are evaluated:
+
+```
+$needsFan = ($tempHigh || $co2High) && $fanAllowed
+
+if humidifierWillBeOn && fanCurrentlyOn  → command fan: off  (interlock)
+elif $needsFan && !fanCurrentlyOn        → command fan: on
+elif !$needsFan && !humidifier && fanCurrentlyOn → command fan: off
+else → null (no change)
+```
+
+**Fan interlock** — fan blocked when:
+- Humidifier is currently on
+- Humidifier will be turned on this cycle
+- Humidifier was turned off within the last 5 minutes
+
+### LED (Relay 2)
+- Controlled by `led:schedule` cron (every minute)
+- Admin sets `led_on_hour` / `led_off_hour` in Settings
+- Supports overnight ranges (e.g. 22:00 → 06:00)
+- Skips write if already in correct state (dedup)
+
+### Manual Override
+- Each relay can be locked via Actuator Control page (admin/faculty only)
+- Sets `override_{actuator}` = `'1'` in settings table
+- SensorController skips automation commands for overridden relays
+- LED cron skips if `override_led = '1'`
+- Override is persistent (survives restarts), cleared manually
+- Manual ON/OFF buttons always work regardless of override
 
 ## User Roles
-- Admin: full access — user management, settings, thresholds, all logs
-- Faculty: start/end cycles, log measurements, upload growth photos, control actuators, generate reports, receive SMS
-- Student: view dashboard, view growth docs, view measurements (read-only — cannot log or delete), analyze historical data
+- Admin: full access — user management, settings, thresholds, all logs, actuator override
+- Faculty: start/end cycles, switch stage, log measurements, upload photos, control actuators, set override, generate reports, receive SMS
+- Student: view-only — dashboard, growth docs, measurements, historical data
+
+## Settings Table Keys
+Override keys (set to `'1'` when active):
+- `override_humidifier`, `override_fan`, `override_led`
+
+LED schedule:
+- `led_on_hour`, `led_off_hour`
+
+Threshold keys — colonization (`col`):
+- `threshold_col_temp_min/max`, `threshold_col_humidity_low/high`, `threshold_col_co2_max`
+- `threshold_col_light_max`, `threshold_col_soil_warning/critical`
+
+Threshold keys — fruiting (`fruit`):
+- `threshold_fruit_temp_min/max`, `threshold_fruit_humidity_low/high`, `threshold_fruit_co2_max`
+- `threshold_fruit_light_min/max`, `threshold_fruit_soil_warning/critical`
 
 ## Database Tables (MySQL)
 - users (id, name, email, password, role, contact_number, timestamps)
-- growing_cycles (id, name, mushroom_variety, substrate_type, start_date, end_date, status, notes, timestamps)
+- growing_cycles (id, name, mushroom_variety, substrate_type, start_date, end_date, status, growing_stage, notes, timestamps)
 - sensor_readings (id, growing_cycle_id, temperature, humidity, co2_raw, light_level, soil_moisture, soil_status, recorded_at, timestamps)
-- mushroom_measurements (id, growing_cycle_id, user_id, observed_date, flush_number, height_cm, cap_diameter_cm, fruiting_body_count, photo_path, notes, timestamps)
+- mushroom_measurements (id, growing_cycle_id, user_id, observed_date, flush_number, weight_g, height_cm, cap_diameter_cm, fruiting_body_count, notes, timestamps)
 - actuator_logs (id, actuator, action, trigger, triggered_by, triggered_at, timestamps)
+  - `trigger`: `'automatic'` | `'manual'` | `'schedule'`
 - alert_logs (id, sensor, value_at_alert, threshold_exceeded, recipient_number, message, status, sent_at, timestamps)
 - user_logs (id, user_id, action, details, ip_address, performed_at, timestamps)
 - camera_snapshots (id, growing_cycle_id, file_path, file_name, captured_at, timestamps)
@@ -120,60 +190,46 @@ Laravel API (SINGLE entry point — all data flows through here)
     "last_updated": ""
   },
   "actuators": {
-    "pump": "off",
+    "humidifier": "off",
     "led": "off",
     "fan": "off"
   }
 }
 ```
 
-## Laravel API Endpoints
-- POST   /api/sensor-data           (ESP32 sends readings)
-- GET    /api/actuator-commands      (ESP32 polls for pending commands)
-- POST   /api/camera/snapshot        (stores CCTV snapshot)
-- GET    /api/sensor-readings        (historical data for charts)
-- GET    /api/growing-cycles         (cycle list)
-- POST   /api/growing-cycles         (create cycle)
-- GET    /api/growing-cycles/{id}    (cycle detail)
-- PUT    /api/growing-cycles/{id}    (update cycle)
-- POST   /api/measurements           (add measurement)
-- GET    /api/measurements           (measurement list)
-- POST   /api/actuators/command      (manual actuator toggle from dashboard)
-- GET    /api/alert-logs             (SMS alert history)
-- GET    /api/user-logs              (user activity — admin only)
-- GET    /api/settings               (system settings)
-- POST   /api/settings               (update settings)
-- GET    /api/reports/{cycleId}      (generate and download PDF report)
+## Web Routes (authenticated, admin/faculty)
+- POST  `api/actuators/toggle`    → manual relay ON/OFF
+- POST  `api/actuators/override`  → set/clear manual override per relay
+- PUT   `api/actuators/schedule`  → update LED on/off hours
 
-## Mushroom Growth Documentation
-- Camera: CCTV (not ESP32-CAM)
-- Upload method: Manual — faculty uploads photos daily via dashboard
-- Upload frequency: Once per day (daily documentation)
-- Each upload linked to: active growing cycle + current date + flush number
-- Stored in: Laravel storage/app/public/snapshots/
-- Displayed as: chronological photo timeline per growing cycle
-- No automatic snapshot capture — all manual uploads by faculty
+## Laravel API Endpoints (ESP32)
+- POST  `/api/sensor-data`        — ESP32 sends readings; triggers threshold evaluation
+- GET   `/api/actuator-commands`  — ESP32 polls current relay states from Firebase
+
+## Artisan Commands
+- `led:schedule` — runs every minute; enforces LED schedule; skips if `override_led = '1'`
 
 ## Pages (Vue.js via Inertia.js)
 - /login → LoginView
-- /dashboard → DashboardView (live monitoring)
+- /dashboard → DashboardView (live monitoring — current stage badge)
 - /historical → HistoricalView (charts + data table)
-- /cycles → GrowingCyclesView (list)
+- /cycles → GrowingCyclesView (stage badge + switch-stage)
 - /cycles/{id} → CycleDetailView (detail + report)
 - /measurements → MeasurementsView
 - /camera → CameraView (growth photo timeline)
-- /actuators → ActuatorView (control + logs)
+- /actuators → ActuatorView (relay control + manual override + log history)
 - /alerts → AlertLogsView
 - /user-logs → UserLogsView (admin only)
-- /settings → SettingsView (admin only)
+- /settings → SettingsView (admin only — per-stage threshold sections)
 
 ## Code Style Rules
-- Vue: always use <script setup lang="ts"> syntax
+- Vue: always use `<script setup lang="ts">` syntax
 - Vue: use Composition API only — no Options API
 - Laravel: use Eloquent relationships — no raw SQL queries
 - Always use Laravel's Http facade for external API calls (Semaphore, Firebase)
 - Never expose API keys in frontend code — always use Laravel .env
-- All monetary or sensitive config values go in .env
 - Use Laravel's built-in Storage facade for all file operations
 - Always return JSON responses from API endpoints
-
+- **`ThresholdService::evaluate()` must remain pure** — no Firebase writes, no DB logs inside it
+- All automatic actuator writes go through `SensorController::store()`
+- All manual actuator writes go through `ActuatorController::toggle()`
