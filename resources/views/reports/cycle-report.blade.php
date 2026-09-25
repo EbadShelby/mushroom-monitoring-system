@@ -83,7 +83,7 @@
     <div class="breach-grid">
         <div class="breach-card {{ $breachSummary['temperature'] === 0 ? 'ok' : '' }}">
             <div class="breach-num">{{ number_format($breachSummary['temperature']) }}</div>
-            <div class="breach-label">Temperature Breaches<br>(outside 24–30°C)</div>
+            <div class="breach-label">Temperature Breaches<br>(outside 28–30°C)</div>
         </div>
         <div class="breach-card {{ $breachSummary['humidity'] === 0 ? 'ok' : '' }}">
             <div class="breach-num">{{ number_format($breachSummary['humidity']) }}</div>

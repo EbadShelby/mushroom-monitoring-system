@@ -40,7 +40,7 @@ class ReportController extends Controller
 
         $breachSummary = [
             'temperature' => $readings->filter(
-                fn ($r) => $r->temperature !== null && ($r->temperature < 24 || $r->temperature > 30)
+                fn ($r) => $r->temperature !== null && ($r->temperature < 28 || $r->temperature > 30)
             )->count(),
             'humidity' => $readings->filter(fn ($r) => $r->humidity !== null && $r->humidity < 80)->count(),
             'co2' => $readings->filter(fn ($r) => $r->co2_raw !== null && $r->co2_raw > 1000)->count(),

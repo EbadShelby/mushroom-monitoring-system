@@ -71,19 +71,19 @@ export const useSensorStore = defineStore('sensor', () => {
             }
 
             if (activeStage.value === 'colonization') {
-                if (temp < 22 || temp > 30) {
+                if (temp < 26 || temp > 32) {
                     return 'critical';
                 }
 
-                if (temp < 24 || temp > 28) {
+                if (temp < 28 || temp > 30) {
                     return 'warning';
                 }
             } else {
-                if (temp < 18 || temp > 26) {
+                if (temp < 26 || temp > 32) {
                     return 'critical';
                 }
 
-                if (temp < 20 || temp > 24) {
+                if (temp < 28 || temp > 30) {
                     return 'warning';
                 }
             }

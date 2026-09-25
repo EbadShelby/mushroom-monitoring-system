@@ -84,7 +84,7 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 
 | Environmental Factor      | Target Range                 | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :--------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **24–28°C** (Ideal: 25–27°C) | DHT22      | `< 24°C` → Low temp alert. `> 28°C` → Auto-activate intake fan & alert.           |
+| 🌡️ **Temperature**        | **28–30°C**                  | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
 | 💧 **Humidity**           | **70–80% RH**                | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**          | MQ-135     | `> 5,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
 | 💡 **Light Level**        | **0–50 lux** (Dark/Dim)      | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
@@ -94,11 +94,11 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 
 ### 2. Fruiting Stage (Mushroom Formation & Growth Phase)
 
-_Bags opened — requires cooler temps, high humidity, fresh air, and indirect light._
+_Bags opened — requires high humidity, fresh air, and indirect light._
 
 | Environmental Factor      | Target Range                 | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :--------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **20–24°C** (Ideal: 22–24°C) | DHT22      | `< 20°C` → Low temp alert. `> 24°C` → Auto-activate intake fan & alert.           |
+| 🌡️ **Temperature**        | **28–30°C**                  | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
 | 💧 **Humidity**           | **85–95% RH**                | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **600–1,000 ppm**            | MQ-135     | `> 1,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
 | 💡 **Light Level**        | **200–800 lux** (Indirect)   | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |

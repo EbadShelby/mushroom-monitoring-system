@@ -85,8 +85,8 @@ class GrowingCycleController extends Controller
 
                 // Use stage-appropriate breach boundaries
                 $isColonization = $cycle->growing_stage === 'colonization';
-                $tempMin = $isColonization ? 24 : 20;
-                $tempMax = $isColonization ? 28 : 24;
+                $tempMin = $isColonization ? 28 : 28;
+                $tempMax = $isColonization ? 30 : 30;
                 $humLow = $isColonization ? 70 : 85;
                 $co2Max = $isColonization ? 5000 : 1000;
                 $soilWarn = 55;
