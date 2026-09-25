@@ -135,9 +135,7 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 | **Git** | 2.x+ | For cloning the repository |
 | **Arduino IDE** | 2.x | Or PlatformIO (VS Code extension) for ESP32 firmware flashing |
 
-> **Windows users**: [XAMPP](https://www.apachefriends.org/) (PHP 8.2+, MySQL 8) or [Laragon](https://laragon.org/) satisfies the Apache + MySQL + PHP stack in a single installer.
-
-> **Linux users**: Use your distribution's package manager (e.g., `apt`, `dnf`) or [Laravel Herd](https://herd.laravel.com/linux) for a managed PHP environment.
+> **Recommended Setup**: [XAMPP](https://www.apachefriends.org/) (PHP 8.2+, MySQL 8) or [Laragon](https://laragon.org/) satisfies the Apache + MySQL + PHP stack in a single Windows installer.
 
 ---
 
@@ -148,7 +146,7 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 | **CPU** | Dual-core 1.5 GHz | Quad-core 2.0 GHz+ |
 | **RAM** | 4 GB | 8 GB |
 | **Storage** | 5 GB free | 20 GB free (for growth photo uploads over multiple cycles) |
-| **OS** | Windows 10, Ubuntu 20.04, macOS 12 | Windows 11, Ubuntu 22.04/24.04, macOS 14 |
+| **OS** | Windows 10 (64-bit) | Windows 11 (64-bit) |
 | **Wi-Fi** | 802.11n (2.4 GHz) | 802.11ac or better |
 
 ---
@@ -188,9 +186,9 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
 ---
 
-## Setup & Installation (Local Development)
+## Setup & Installation (Windows)
 
-1. **Clone the repository**
+1. **Clone the repository** (using Command Prompt, PowerShell, or Git Bash)
 
     ```bash
     git clone https://github.com/your-org/mushroom-monitoring-system.git
@@ -211,10 +209,12 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
 4. **Environment Configuration**
 
-    ```bash
-    cp .env.example .env
+    In Command Prompt:
+    ```cmd
+    copy .env.example .env
     php artisan key:generate
     ```
+    *(or `cp .env.example .env` in PowerShell / Git Bash)*
 
     _Update your `.env` file with the correct MySQL credentials, Firebase credentials, and Semaphore API key._
 
@@ -232,24 +232,25 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
 7. **Start Development Servers & System Services**
 
-    To run the complete system with ESP32 hardware and automated schedules, keep **3 separate terminals** open:
+    To run the complete system with ESP32 hardware and automated schedules, open **3 separate Command Prompt or PowerShell terminals**:
 
     - **Terminal 1 — Laravel Server (LAN Listener)**
 
-        ```bash
+        ```cmd
         php artisan serve --host=0.0.0.0 --port=8080
         ```
 
         _Note: `--host=0.0.0.0` is required so the ESP32 on your Wi-Fi network can POST data._
 
-    - **Terminal 2 — Composer compiler**
+    - **Terminal 2 — Vite / Frontend Compiler**
 
-        ```bash
+        ```cmd
         composer run dev
         ```
 
     - **Terminal 3 — Task Scheduler**
-        ```bash
+
+        ```cmd
         php artisan schedule:work
         ```
         _Note: Enforces actuator schedules (e.g., LED lights) every minute._
@@ -260,20 +261,15 @@ _Bags opened — requires cooler temps, high humidity, fresh air, and indirect l
 
 Follow these steps when powering up the physical mushroom monitoring setup:
 
-1. **Start System Server & Database (Apache & MySQL)**
-    - **Windows**: Open **XAMPP Control Panel** (or Laragon) and click **Start** for Apache and MySQL.
-    - **Linux**: Run `sudo systemctl start httpd mysqld php-fpm`.
+1. **Start Database & Web Server (Apache & MySQL)**
+    - Open **XAMPP Control Panel** (or Laragon) and click **Start** for **Apache** and **MySQL**.
 
 2. **Verify Host IP Address**
-    - **Linux / macOS**:
-        ```bash
-        hostname -I
-        ```
-    - **Windows (Command Prompt / PowerShell)**:
+    - Open Command Prompt or PowerShell:
         ```cmd
         ipconfig
         ```
-        _(Find the `IPv4 Address` for your connected Wi-Fi network)._
+    - Find the `IPv4 Address` under your connected Wi-Fi adapter (e.g., `192.168.254.xxx`).
 
     _If your host IP is not `192.168.254.138` (or the IP configured in your C++ code), update the endpoint URL in the ESP32 Arduino sketch and re-upload to the microcontroller._
 
