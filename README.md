@@ -2,7 +2,7 @@
 
 An IoT system designed for monitoring and automating the cultivation environment of Gray Oyster Mushrooms (_Pleurotus sajor-caju_). This system was developed for Cotabato State University — BS Agriculture Program.
 
-The system uses an ESP32 microcontroller to collect environmental data from various sensors (temperature, humidity, CO2, light, and soil moisture) and automatically controls actuators (cooling fan, humidifier, grow light) based on specific thresholds. The data is sent to a Laravel backend, where it is stored in MySQL for historical tracking and pushed to a Firebase Realtime Database for live dashboard monitoring built with Vue.js.
+The system uses an ESP32 microcontroller to collect environmental data from various sensors (temperature, humidity, CO2, light, and soil moisture) and automatically controls actuators (ventilation fans [intake & exhaust push-pull], humidifier, grow light) based on specific thresholds. The data is sent to a Laravel backend, where it is stored in MySQL for historical tracking and pushed to a Firebase Realtime Database for live dashboard monitoring built with Vue.js.
 
 ## System Architecture
 
@@ -108,7 +108,8 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
-- **Humidifier Interlock**: When the **Humidifier** is active (or recently turned off), the **Ventilation Fans** are automatically overridden to **OFF** to prevent mist from being blown out of the chamber before humidity builds.
+- **Humidifier Interlock & Emergency Override**: When the **Humidifier** is active (or within a 2-minute post-mist settling window), the **Ventilation Fans** are held **OFF** to preserve mist. However, **Emergency Override** triggers if temperature reaches ≥ 32°C or CO₂ reaches ≥ 2,000 ppm (fruiting), instantly overriding the humidifier and forcing ventilation fans ON.
+- **Humidifier Failsafe Runtime**: Continuous humidifier operation is capped at 15 minutes with a mandatory 3-minute resting period, protecting the mist maker from overheating and alerting if the water reservoir runs dry.
 - **Hysteresis Deadband**: To prevent the fans from rapidly cycling on and off at threshold boundaries, they only turn off when the temperature drops 1°C below the maximum, and CO₂ drops 100 ppm below the maximum.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
 - **Smart SMS Alerts**: Non-actionable alerts are suppressed (e.g. if the fan is blocked by the humidifier, it won't spam SMS). Humidifier alerts only trigger on activation, not while recovering.

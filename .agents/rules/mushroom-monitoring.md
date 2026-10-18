@@ -84,7 +84,7 @@ New cycles default to `colonization`. Faculty/Admin can switch the stage via the
 ## Actuators and Relay Channels
 - Humidifier (ultrasonic mist maker) → **Relay 1** → GPIO 14
 - LED grow light strip (5V USB) → **Relay 2** → GPIO 27
-- Cooling fan (5V USB) → **Relay 3** → GPIO 26
+- Ventilation fans (Intake & Exhaust push-pull, 5V USB wired in parallel) → **Relay 3** → GPIO 26
 - All actuators use separate power rails — ESP32 only sends relay signal
 - Relay is active LOW (LOW = ON, HIGH = OFF)
 
@@ -146,10 +146,10 @@ else → null (no change)
 
 Example: fan turns ON when CO₂ > 1000 ppm, but only turns OFF when CO₂ ≤ 900 ppm.
 
-**Fan interlock** — fan blocked when:
-- Humidifier is currently on
-- Humidifier will be turned on this cycle
-- Humidifier was turned off within the last 5 minutes
+**Fan interlock & Emergency Override**:
+- Normal interlock: ventilation blocked when humidifier is ON, turning ON, or turned off within the last 2 minutes (mist settling window).
+- **Emergency Override**: Critical heat (≥ 32°C) or dangerous CO₂ (≥ 2,000 ppm fruiting / ≥ 6,000 ppm colonization) bypasses the humidifier interlock, shuts down the humidifier, and forces ventilation fans ON.
+- **Humidifier Failsafe**: Max continuous run time capped at 15 minutes to protect the ultrasonic mist maker and detect dry water tanks. Mandatory rest period of 3 minutes before restarting.
 
 ### SMS Alert Rules
 - **Humidifier**: SMS sent only when humidifier is commanded ON (not while already running)

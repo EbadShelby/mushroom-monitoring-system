@@ -134,10 +134,10 @@ elif $allClear && !humidifier && fanCurrentlyOn → command fan: off
 else → null (no change)
 ```
 
-**Fan interlock** — fan blocked when:
-- Humidifier is currently on
-- Humidifier will be turned on this cycle
-- Humidifier was turned off within the last 5 minutes
+**Fan interlock & Emergency Override**:
+- Normal interlock: ventilation blocked when humidifier is ON, turning ON, or turned off within the last 2 minutes (mist settling window).
+- **Emergency Override**: Critical heat (≥ 32°C) or dangerous CO₂ (≥ 2,000 ppm fruiting / ≥ 6,000 ppm col) bypasses the humidifier interlock, shuts down the humidifier, and forces ventilation fans ON.
+- **Humidifier Failsafe**: Max continuous run time capped at 15 minutes to protect the ultrasonic mist maker and detect dry water tanks. Rest period of 3 minutes before restarting.
 
 ### SMS Alert Rules
 - **Humidifier**: SMS only when humidifier is commanded ON (not while already running and recovering)
