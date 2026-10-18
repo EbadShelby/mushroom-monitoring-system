@@ -41,7 +41,7 @@ Laravel API (SINGLE entry point — all data flows through here)
 ### Backend
 
 - **Framework**: Laravel 13
-- **Language**: PHP 8.5
+- **Language**: PHP 8.4 above
 - **Authentication**: Laravel Fortify
 - **PDF Generation**: `barryvdh/laravel-dompdf`
 - **SMS API**: Semaphore API (PH-based)
@@ -82,13 +82,13 @@ The system automatically switches environmental target profiles based on the act
 
 _Mycelium spreads throughout the substrate bag — requires warmth, darkness, and high CO₂ tolerance._
 
-| Environmental Factor      | Target Range                 | Sensor     | System Automation & Alert Logic                                                   |
-| :------------------------ | :--------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–30°C**                  | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
-| 💧 **Humidity**           | **70–80% RH**                | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**          | MQ-135     | `> 5,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
-| 💡 **Light Level**        | **0–50 lux** (Dark/Dim)      | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
-| 🌱 **Substrate Moisture** | **60–65%**                   | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
+| Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                   |
+| :------------------------ | :---------------------- | :--------- | :-------------------------------------------------------------------------------- |
+| 🌡️ **Temperature**        | **28–30°C**             | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
+| 💧 **Humidity**           | **70–80% RH**           | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
+| 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
+| 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
 ---
 
@@ -96,13 +96,13 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 
 _Bags opened — requires high humidity, fresh air, and indirect light._
 
-| Environmental Factor      | Target Range                 | Sensor     | System Automation & Alert Logic                                                   |
-| :------------------------ | :--------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–30°C**                  | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
-| 💧 **Humidity**           | **85–95% RH**                | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **600–1,000 ppm**            | MQ-135     | `> 1,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
-| 💡 **Light Level**        | **200–800 lux** (Indirect)   | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
-| 🌱 **Substrate Moisture** | **55–65%**                   | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
+| Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                   |
+| :------------------------ | :------------------------- | :--------- | :-------------------------------------------------------------------------------- |
+| 🌡️ **Temperature**        | **28–30°C**                | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
+| 💧 **Humidity**           | **85–95% RH**              | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
+| 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
+| 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
 ---
 
@@ -124,16 +124,16 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 ### Software Requirements
 
-| Requirement | Minimum Version | Notes |
-| :----------------------------------- | :-------------- | :--------------------------------------------------------------- |
-| **PHP** | 8.2+ | PHP 8.5 recommended |
-| **Composer** | 2.x | PHP dependency manager |
-| **Node.js** | 18.x LTS+ | Node 20 LTS recommended |
-| **npm** | 9.x+ | Bundled with Node.js |
-| **MySQL** | 8.0+ | MariaDB 10.6+ also compatible |
-| **Apache / Nginx** | Any recent | Or use `php artisan serve` for local development |
-| **Git** | 2.x+ | For cloning the repository |
-| **Arduino IDE** | 2.x | Or PlatformIO (VS Code extension) for ESP32 firmware flashing |
+| Requirement        | Minimum Version | Notes                                                         |
+| :----------------- | :-------------- | :------------------------------------------------------------ |
+| **PHP**            | 8.2+            | PHP 8.5 recommended                                           |
+| **Composer**       | 2.x             | PHP dependency manager                                        |
+| **Node.js**        | 18.x LTS+       | Node 20 LTS recommended                                       |
+| **npm**            | 9.x+            | Bundled with Node.js                                          |
+| **MySQL**          | 8.0+            | MariaDB 10.6+ also compatible                                 |
+| **Apache / Nginx** | Any recent      | Or use `php artisan serve` for local development              |
+| **Git**            | 2.x+            | For cloning the repository                                    |
+| **Arduino IDE**    | 2.x             | Or PlatformIO (VS Code extension) for ESP32 firmware flashing |
 
 > **Recommended Setup**: [XAMPP](https://www.apachefriends.org/) (PHP 8.2+, MySQL 8) or [Laragon](https://laragon.org/) satisfies the Apache + MySQL + PHP stack in a single Windows installer.
 
@@ -141,13 +141,13 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 ### Host Machine Hardware Requirements
 
-| Component | Minimum | Recommended |
-| :---------- | :------------- | :------------- |
-| **CPU** | Dual-core 1.5 GHz | Quad-core 2.0 GHz+ |
-| **RAM** | 4 GB | 8 GB |
-| **Storage** | 5 GB free | 20 GB free (for growth photo uploads over multiple cycles) |
-| **OS** | Windows 10 (64-bit) | Windows 11 (64-bit) |
-| **Wi-Fi** | 802.11n (2.4 GHz) | 802.11ac or better |
+| Component   | Minimum             | Recommended                                                |
+| :---------- | :------------------ | :--------------------------------------------------------- |
+| **CPU**     | Dual-core 1.5 GHz   | Quad-core 2.0 GHz+                                         |
+| **RAM**     | 4 GB                | 8 GB                                                       |
+| **Storage** | 5 GB free           | 20 GB free (for growth photo uploads over multiple cycles) |
+| **OS**      | Windows 10 (64-bit) | Windows 11 (64-bit)                                        |
+| **Wi-Fi**   | 802.11n (2.4 GHz)   | 802.11ac or better                                         |
 
 ---
 
@@ -156,9 +156,9 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 - The host machine and the **ESP32 must be on the same local Wi-Fi network** (same subnet / router) for the microcontroller's HTTP POST calls to reach the Laravel server.
 - Laravel must be served with `--host=0.0.0.0` so it binds to the LAN interface, not just `localhost`.
 - Outbound internet access is required for:
-  - **Firebase Realtime Database** — real-time sensor value sync
-  - **Semaphore SMS API** — push alerts to registered contacts
-  - **Composer / npm** — pulling dependencies on first install
+    - **Firebase Realtime Database** — real-time sensor value sync
+    - **Semaphore SMS API** — push alerts to registered contacts
+    - **Composer / npm** — pulling dependencies on first install
 
 ---
 
@@ -173,14 +173,14 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 ### ESP32 Firmware Dependencies (Arduino / PlatformIO)
 
-| Library | Purpose |
-| :------------------------------ | :--------------------------------- |
-| `DHT sensor library` (Adafruit) | DHT22 temperature + humidity |
-| `Adafruit Unified Sensor` | Required by DHT library |
-| `BH1750` (Christopher Laws) | Light level sensor (I2C) |
-| `ArduinoJson` | Serialize sensor payload to JSON |
-| `WiFi.h` | Built-in ESP32 Wi-Fi stack |
-| `HTTPClient.h` | Built-in ESP32 HTTP client |
+| Library                         | Purpose                          |
+| :------------------------------ | :------------------------------- |
+| `DHT sensor library` (Adafruit) | DHT22 temperature + humidity     |
+| `Adafruit Unified Sensor`       | Required by DHT library          |
+| `BH1750` (Christopher Laws)     | Light level sensor (I2C)         |
+| `ArduinoJson`                   | Serialize sensor payload to JSON |
+| `WiFi.h`                        | Built-in ESP32 Wi-Fi stack       |
+| `HTTPClient.h`                  | Built-in ESP32 HTTP client       |
 
 > All libraries are available through the Arduino Library Manager or `platformio.ini` `lib_deps`.
 
@@ -210,11 +210,13 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 4. **Environment Configuration**
 
     In Command Prompt:
+
     ```cmd
     copy .env.example .env
     php artisan key:generate
     ```
-    *(or `cp .env.example .env` in PowerShell / Git Bash)*
+
+    _(or `cp .env.example .env` in PowerShell / Git Bash)_
 
     _Update your `.env` file with the correct MySQL credentials, Firebase credentials, and Semaphore API key._
 
@@ -253,6 +255,7 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
         ```cmd
         php artisan schedule:work
         ```
+
         _Note: Enforces actuator schedules (e.g., LED lights) every minute._
 
 ---

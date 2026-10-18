@@ -157,7 +157,7 @@ function inputClass() {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="24"
+                                    placeholder="28"
                                 />
                             </div>
                             <div class="space-y-1">
@@ -174,7 +174,7 @@ function inputClass() {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="28"
+                                    placeholder="30"
                                 />
                             </div>
                             <div class="space-y-1">
@@ -315,7 +315,7 @@ function inputClass() {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="20"
+                                    placeholder="28"
                                 />
                             </div>
                             <div class="space-y-1">
@@ -332,7 +332,7 @@ function inputClass() {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="24"
+                                    placeholder="30"
                                 />
                             </div>
                             <div class="space-y-1">
