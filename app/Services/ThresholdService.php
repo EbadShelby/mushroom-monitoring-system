@@ -208,7 +208,7 @@ class ThresholdService
                         sensor: 'temperature',
                         value: $temp,
                         threshold: "above {$t['temp_max']}°C",
-                        message: "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Intake fan activated to cool the chamber.",
+                        message: "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Ventilation fans (intake & exhaust) activated to cool the chamber.",
                     );
                 }
             } else {
@@ -239,7 +239,7 @@ class ThresholdService
                         sensor: 'co2',
                         value: $co2,
                         threshold: $co2Label,
-                        message: "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Intake fan activated for fresh air.",
+                        message: "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Ventilation fans (intake & exhaust) activated for fresh air exchange.",
                     );
                 }
             } else {

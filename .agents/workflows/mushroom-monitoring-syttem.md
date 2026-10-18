@@ -85,7 +85,7 @@ New cycles default to `colonization`. Faculty/Admin switch stage via the Cycles 
 ## Actuators and Relay Channels
 - **Relay 1** — Humidifier (ultrasonic mist maker) → GPIO 14
 - **Relay 2** — LED grow light strip (5V USB) → GPIO 27
-- **Relay 3** — Cooling fan (5V USB) → GPIO 26
+- **Relay 3** — Ventilation fans (Intake & Exhaust push-pull, 5V USB wired in parallel) → GPIO 26
 - All actuators use separate power rails — ESP32 only sends relay signal
 - Relay is active LOW (LOW = ON, HIGH = OFF)
 

@@ -70,7 +70,7 @@ Laravel API (SINGLE entry point — all data flows through here)
 
 _All actuators use separate power rails — ESP32 only sends a relay signal. Relay is active LOW (LOW = ON, HIGH = OFF)._
 
-- **Cooling Fan** (5V USB) → Relay N4 → GPIO 26
+- **Ventilation Fans** (Intake & Exhaust push-pull, 5V USB wired in parallel) → Relay N1 → GPIO 26
 - **Humidifier** (Ultrasonic Mist Maker) → Relay N3 → GPIO 14
 - **LED Grow Light Strip** (5V USB) → Relay N2 → GPIO 27
 
@@ -84,9 +84,9 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 
 | Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :---------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–30°C**             | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
+| 🌡️ **Temperature**        | **28–30°C**             | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate ventilation fans & alert.     |
 | 💧 **Humidity**           | **70–80% RH**           | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
+| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → Auto-activate ventilation fans for fresh air & SMS alert.         |
 | 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
 | 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
@@ -98,9 +98,9 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 | Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–30°C**                | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate intake fan & alert.           |
+| 🌡️ **Temperature**        | **28–30°C**                | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate ventilation fans & alert.     |
 | 💧 **Humidity**           | **85–95% RH**              | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → Auto-activate intake fan for fresh air & SMS alert.               |
+| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → Auto-activate ventilation fans for fresh air & SMS alert.         |
 | 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
 | 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
@@ -108,8 +108,8 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
-- **Humidifier Interlock**: When the **Humidifier** is active (or recently turned off), the **Intake Fan** is automatically overridden to **OFF** to prevent mist from being blown out of the chamber before humidity builds.
-- **Hysteresis Deadband**: To prevent the fan from rapidly cycling on and off at threshold boundaries, it only turns off when the temperature drops 1°C below the maximum, and CO₂ drops 100 ppm below the maximum.
+- **Humidifier Interlock**: When the **Humidifier** is active (or recently turned off), the **Ventilation Fans** are automatically overridden to **OFF** to prevent mist from being blown out of the chamber before humidity builds.
+- **Hysteresis Deadband**: To prevent the fans from rapidly cycling on and off at threshold boundaries, they only turn off when the temperature drops 1°C below the maximum, and CO₂ drops 100 ppm below the maximum.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
 - **Smart SMS Alerts**: Non-actionable alerts are suppressed (e.g. if the fan is blocked by the humidifier, it won't spam SMS). Humidifier alerts only trigger on activation, not while recovering.
 - **Automatic Stage Switch**: Users can switch growth stages on the dashboard or cycles page, instantly updating live gauges, target indicators, Pinia status evaluators, and backend automation logic.

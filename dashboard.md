@@ -464,10 +464,10 @@ onUnmounted(() => store.stopListening());
                             </div>
                         </div>
                         <div class="mt-4">
-                            <h4 class="text-lg font-semibold">Cooling Fan</h4>
+                            <h4 class="text-lg font-semibold">Ventilation Fans</h4>
                             <div class="mt-2 flex items-center justify-between">
                                 <span class="text-sm text-muted-foreground"
-                                    >Relay 3</span
+                                    >Relay 3 (Intake &amp; Exhaust)</span
                                 >
                                 <span
                                     class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase"

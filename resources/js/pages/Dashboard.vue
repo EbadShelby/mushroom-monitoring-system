@@ -935,13 +935,13 @@ function alertStatusClass(status: string) {
                                 <h4
                                     class="text-lg font-semibold text-foreground"
                                 >
-                                    Intake Fan
+                                    Ventilation Fans
                                 </h4>
                                 <div
                                     class="mt-2 flex items-center justify-between"
                                 >
                                     <span class="text-sm text-muted-foreground"
-                                        >Relay 3</span
+                                        >Relay 3 (Intake &amp; Exhaust)</span
                                     >
                                     <span
                                         class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase transition-colors"

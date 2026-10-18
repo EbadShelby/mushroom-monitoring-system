@@ -183,8 +183,8 @@ const actuators = [
     },
     {
         key: 'fan' as const,
-        label: 'Intake Fan',
-        relay: 'Relay 3',
+        label: 'Ventilation Fans',
+        relay: 'Relay 3 (Intake & Exhaust)',
         icon: Wind,
         color: 'purple',
     },
@@ -537,7 +537,7 @@ const triggerLabels: Record<string, string> = {
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >Temp Max (intake fan ON)</span
+                                >Temp Max (ventilation ON)</span
                             >
                             <span class="font-semibold text-foreground"
                                 >{{ thresholds.temp_max }}°C</span
@@ -547,7 +547,7 @@ const triggerLabels: Record<string, string> = {
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >CO₂ Max (intake fan ON)</span
+                                >CO₂ Max (ventilation ON)</span
                             >
                             <span class="font-semibold text-foreground"
                                 >{{ thresholds.co2_max }} ppm</span

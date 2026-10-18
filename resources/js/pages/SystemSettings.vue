@@ -215,7 +215,7 @@ function inputClass() {
                                 <label
                                     for="col-co2"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >CO₂ Max — Fan ON (ppm)</label
+                                    >CO₂ Max — Ventilation ON (ppm)</label
                                 >
                                 <input
                                     id="col-co2"
@@ -373,7 +373,7 @@ function inputClass() {
                                 <label
                                     for="fruit-co2"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >CO₂ Max — Fan ON (ppm)</label
+                                    >CO₂ Max — Ventilation ON (ppm)</label
                                 >
                                 <input
                                     id="fruit-co2"
