@@ -10,8 +10,8 @@ class ThresholdService
 {
     // ─── Stage: Colonization (spawn running — mycelium spreads through substrate) ─
     private const COLONIZATION_DEFAULTS = [
-        'temp_min' => 28.0,  // ideal 28–30°C
-        'temp_max' => 30.0,
+        'temp_min' => 28.0,  // ideal 28–32°C
+        'temp_max' => 32.0,
         'humidity_low' => 70.0,  // humidifier ON below 70%
         'humidity_high' => 80.0,  // humidifier OFF at 80%
         'co2_max' => 5000,  // high CO₂ acceptable during colonization
@@ -22,8 +22,8 @@ class ThresholdService
 
     // ─── Stage: Fruiting (mushrooms forming and growing) ──────────────────────────
     private const FRUITING_DEFAULTS = [
-        'temp_min' => 28.0,  // ideal 28–30°C
-        'temp_max' => 30.0,
+        'temp_min' => 28.0,  // ideal 28–32°C
+        'temp_max' => 32.0,
         'humidity_low' => 85.0,  // humidifier ON below 85%
         'humidity_high' => 95.0,  // humidifier OFF at 95%
         'co2_max' => 1000,  // keep below 1000 ppm for fruiting
@@ -70,7 +70,7 @@ class ThresholdService
      * Dangerous heat or toxic CO2 buildup takes absolute priority over humidity.
      */
     private const EMERGENCY_THRESHOLDS = [
-        'temp' => 32.0,           // °C: extreme heat kills pinheads and stalls mycelium
+        'temp' => 35.0,           // °C: extreme heat kills pinheads and stalls mycelium
         'co2_fruit' => 2000,      // ppm: severe CO2 in fruiting causing severe deformities
         'co2_colonization' => 6000, // ppm: critical asphyxiation level
     ];
@@ -138,7 +138,7 @@ class ThresholdService
      *     sent — the alert would be non-actionable and would repeat every 15 min.
      *   - Fan hysteresis: fan turns off only when readings drop below the threshold
      *     minus a deadband margin, preventing rapid on/off cycling.
-     *   - Emergency Override: Critical heat (≥ 32°C) or toxic CO₂ (≥ 2000 ppm fruiting)
+     *   - Emergency Override: Critical heat (≥ 35°C) or toxic CO₂ (≥ 2000 ppm fruiting)
      *     bypasses the humidifier interlock, shuts down the humidifier, and forces
      *     ventilation push-pull fans ON.
      *
@@ -163,7 +163,7 @@ class ThresholdService
         $fanCurrentlyOn = ($currentActuators['fan'] ?? 'off') === 'on';
 
         // ─── Emergency Environmental Check ─────────────────────────────────────
-        // Severe heat (≥ 32°C) or dangerous CO₂ buildup (≥ 2000 ppm fruiting / ≥ 6000 ppm col)
+        // Severe heat (≥ 35°C) or dangerous CO₂ buildup (≥ 2000 ppm fruiting / ≥ 6000 ppm col)
         // threatens mushroom survival. Life-support ventilation takes precedence over humidity.
         $emergencyVentilation = false;
 

@@ -84,7 +84,7 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 
 | Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :---------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–30°C**             | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate ventilation fans & alert.     |
+| 🌡️ **Temperature**        | **28–32°C**             | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → Auto-activate ventilation fans & alert.     |
 | 💧 **Humidity**           | **70–80% RH**           | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → Auto-activate ventilation fans for fresh air & SMS alert.         |
 | 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
@@ -98,7 +98,7 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 | Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–30°C**                | DHT22      | `< 28°C` → Low temp alert. `> 30°C` → Auto-activate ventilation fans & alert.     |
+| 🌡️ **Temperature**        | **28–32°C**                | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → Auto-activate ventilation fans & alert.     |
 | 💧 **Humidity**           | **85–95% RH**              | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → Auto-activate ventilation fans for fresh air & SMS alert.         |
 | 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
@@ -108,7 +108,7 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
-- **Humidifier Interlock & Emergency Override**: When the **Humidifier** is active (or within a 2-minute post-mist settling window), the **Ventilation Fans** are held **OFF** to preserve mist. However, **Emergency Override** triggers if temperature reaches ≥ 32°C or CO₂ reaches ≥ 2,000 ppm (fruiting), instantly overriding the humidifier and forcing ventilation fans ON.
+- **Humidifier Interlock & Emergency Override**: When the **Humidifier** is active (or within a 2-minute post-mist settling window), the **Ventilation Fans** are held **OFF** to preserve mist. However, **Emergency Override** triggers if temperature reaches ≥ 35°C or CO₂ reaches ≥ 2,000 ppm (fruiting), instantly overriding the humidifier and forcing ventilation fans ON.
 - **Humidifier Failsafe Runtime**: Continuous humidifier operation is capped at 15 minutes with a mandatory 3-minute resting period, protecting the mist maker from overheating and alerting if the water reservoir runs dry.
 - **Hysteresis Deadband**: To prevent the fans from rapidly cycling on and off at threshold boundaries, they only turn off when the temperature drops 1°C below the maximum, and CO₂ drops 100 ppm below the maximum.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.

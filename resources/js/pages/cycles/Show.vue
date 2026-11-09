@@ -153,7 +153,7 @@ const breachCards = computed(() => [
     {
         label: 'Temperature',
         value: props.breachSummary?.temperature ?? 0,
-        range: '28–30°C',
+        range: '28–32°C',
         icon: Thermometer,
         color: 'text-orange-400',
         bg: 'bg-orange-500/10',

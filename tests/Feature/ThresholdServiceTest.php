@@ -84,7 +84,7 @@ test('emergency heat overrides humidifier interlock and forces ventilation fans 
     $result = $service->evaluate([
         'humidity' => 70.0,
         'co2_raw' => 800,
-        'temperature' => 32.5, // exceeds 32.0°C emergency ceiling
+        'temperature' => 35.5, // exceeds 35.0°C emergency ceiling
     ], $cycle);
 
     expect($result['commands']['humidifier'])->toBe('off');

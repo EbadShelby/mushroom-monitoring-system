@@ -432,7 +432,7 @@ function alertStatusClass(status: string) {
                         class="relative z-10 mt-4 flex items-center justify-between text-sm"
                     >
                         <span class="font-medium text-muted-foreground"
-                            >Target: 28–30°C</span
+                            >Target: 28–32°C</span
                         >
                         <div
                             v-if="store.temperatureStatus !== 'normal'"
