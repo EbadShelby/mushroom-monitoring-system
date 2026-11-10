@@ -89,7 +89,7 @@ class GrowingCycleController extends Controller
                 $tempMax = $isColonization ? 32 : 32;
                 $humLow = $isColonization ? 70 : 85;
                 $co2Max = $isColonization ? 5000 : 1000;
-                $soilWarn = 55;
+                $soilWarn = 40;
 
                 return [
                     'temperature' => $readings->filter(

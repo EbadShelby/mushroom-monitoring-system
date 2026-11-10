@@ -22,6 +22,8 @@ class ActuatorController extends Controller
         $activeCycle = GrowingCycle::where('status', 'active')->latest('start_date')->first();
         $stageThresholds = $this->thresholdService->thresholdsForStage($activeCycle?->growing_stage ?? 'fruiting');
 
+        $humidityBand = $this->thresholdService->humidityControlBand($stageThresholds);
+
         return Inertia::render('ActuatorView', [
             'logs' => Inertia::defer(fn () => ActuatorLog::query()
                 ->orderByDesc('triggered_at')
@@ -37,6 +39,8 @@ class ActuatorController extends Controller
                 'temp_max' => (float) $stageThresholds['temp_max'],
                 'humidity_low' => (float) $stageThresholds['humidity_low'],
                 'humidity_high' => (float) $stageThresholds['humidity_high'],
+                'humidifier_on_at' => $humidityBand['on_at'],
+                'humidifier_off_at' => $humidityBand['off_at'],
                 'co2_max' => (int) $stageThresholds['co2_max'],
                 'soil_warning' => (int) $stageThresholds['soil_warning'],
                 'soil_critical' => (int) $stageThresholds['soil_critical'],

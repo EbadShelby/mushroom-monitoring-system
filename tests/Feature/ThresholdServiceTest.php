@@ -126,3 +126,39 @@ test('humidifier stall alert fires when humidity stays low after 5 minutes of mi
     expect($result['commands']['humidifier'])->toBeNull();
     expect(collect($result['alerts'])->contains(fn ($a) => str_contains($a['message'], 'after 5 mins of misting')))->toBeTrue();
 });
+
+dataset('humidity control band (fruiting 85-95)', [
+    'off, 87 turns on early, no SMS' => ['off', 87.0, 'on', false],
+    'off, 88 inside band does nothing' => ['off', 88.0, null, false],
+    'off, 84 turns on with SMS' => ['off', 84.0, 'on', true],
+    'on, 93 keeps running' => ['on', 93.0, null, false],
+    'on, 94 turns off before 95' => ['on', 94.0, 'off', false],
+]);
+
+test('humidifier uses an inner control band so humidity stays in range', function (string $state, float $humidity, ?string $command, bool $sendsSms) {
+    $this->firebase->shouldReceive('getActuators')->once()->andReturn(['humidifier' => $state]);
+
+    if ($state === 'on') {
+        ActuatorLog::create([
+            'actuator' => 'humidifier',
+            'action' => 'on',
+            'trigger' => 'automatic',
+            'triggered_by' => 'system',
+            'triggered_at' => now()->subMinute(),
+        ]);
+    }
+
+    $cycle = GrowingCycle::create([
+        'name' => 'Test Cycle',
+        'mushroom_variety' => 'Gray Oyster',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+        'growing_stage' => 'fruiting',
+    ]);
+
+    $result = (new ThresholdService($this->firebase))->evaluate(['humidity' => $humidity], $cycle);
+
+    expect($result['commands']['humidifier'])->toBe($command)
+        ->and(collect($result['alerts'])->contains('sensor', 'humidity'))->toBe($sendsSms);
+})->with('humidity control band (fruiting 85-95)');

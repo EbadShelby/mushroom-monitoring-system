@@ -16,8 +16,8 @@ class ThresholdService
         'humidity_high' => 80.0,  // humidifier OFF at 80%
         'co2_max' => 5000,  // high CO₂ acceptable during colonization
         'light_max' => 100.0, // keep dark/very dim — alert if > 100 lux
-        'soil_warning' => 55,    // substrate moisture warning
-        'soil_critical' => 50,    // substrate moisture critical
+        'soil_warning' => 40,    // substrate moisture warning (matches firmware SOIL_DRY)
+        'soil_critical' => 25,    // substrate moisture critical (matches firmware SOIL_CRITICAL)
     ];
 
     // ─── Stage: Fruiting (mushrooms forming and growing) ──────────────────────────
@@ -29,8 +29,8 @@ class ThresholdService
         'co2_max' => 1000,  // keep below 1000 ppm for fruiting
         'light_min' => 200.0, // need indirect light — alert if < 200 lux
         'light_max' => 800.0, // alert if > 800 lux
-        'soil_warning' => 55,    // substrate moisture warning
-        'soil_critical' => 50,    // substrate moisture critical
+        'soil_warning' => 40,    // substrate moisture warning (matches firmware SOIL_DRY)
+        'soil_critical' => 25,    // substrate moisture critical (matches firmware SOIL_CRITICAL)
     ];
 
     /**
@@ -177,18 +177,25 @@ class ThresholdService
         if (! $humidifierRuntimeExceeded && isset($reading['humidity'])) {
             $humidity = (float) $reading['humidity'];
 
-            if ($humidity < $t['humidity_low']) {
+            // Control band sits inside the alert band so humidity is corrected
+            // before it leaves the target range.
+            ['on_at' => $turnOnAt, 'off_at' => $turnOffAt] = $this->humidityControlBand($t);
+
+            if ($humidity <= $turnOnAt) {
                 if (! $humidifierCurrentlyOn && $humidifierRested) {
                     $desiredHumidifier = 'on';
 
-                    $alerts[] = $this->alert(
-                        sensor: 'humidity',
-                        value: $humidity,
-                        threshold: "below {$t['humidity_low']}%",
-                        message: "💧 [CotSU Mushroom | {$stageLabel}] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
-                    );
+                    // SMS only when humidity actually left the target range.
+                    if ($humidity < $t['humidity_low']) {
+                        $alerts[] = $this->alert(
+                            sensor: 'humidity',
+                            value: $humidity,
+                            threshold: "below {$t['humidity_low']}%",
+                            message: "💧 [CotSU Mushroom | {$stageLabel}] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
+                        );
+                    }
                 }
-            } elseif ($humidity >= $t['humidity_high'] && $humidifierCurrentlyOn) {
+            } elseif ($humidity >= $turnOffAt && $humidifierCurrentlyOn) {
                 $desiredHumidifier = 'off';
             }
         }
@@ -291,6 +298,20 @@ class ThresholdService
                 'humidifier' => $desiredHumidifier,
             ],
         ];
+    }
+
+    /**
+     * Humidity levels at which the humidifier switches ON (at or below) and OFF (at or above).
+     *
+     * @param  array<string, mixed>  $thresholds
+     * @return array{on_at: float, off_at: float}
+     */
+    public function humidityControlBand(array $thresholds): array
+    {
+        $offAt = (float) $thresholds['humidity_high'] - (float) config('humidifier.humidity_off_margin');
+        $onAt = min((float) $thresholds['humidity_low'] + (float) config('humidifier.humidity_on_margin'), $offAt - 1);
+
+        return ['on_at' => $onAt, 'off_at' => $offAt];
     }
 
     /**

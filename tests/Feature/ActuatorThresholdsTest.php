@@ -18,5 +18,18 @@ test('actuator page shows thresholds for the active growing stage', function () 
         ->assertInertia(fn ($page) => $page
             ->where('thresholds.humidity_low', 70)
             ->where('thresholds.humidity_high', 80)
+            ->where('thresholds.humidifier_on_at', 72)
+            ->where('thresholds.humidifier_off_at', 79)
             ->missing('overrides.fan'));
+});
+
+test('admin settings page is not shadowed by the profile redirect', function () {
+    $this->actingAs(User::factory()->create(['role' => 'admin']))
+        ->get('/settings')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('SystemSettings'));
+
+    $this->actingAs(User::factory()->create(['role' => 'admin']))
+        ->get('/settings/profile')
+        ->assertOk();
 });

@@ -84,10 +84,10 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 | Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :---------------------- | :--------- | :-------------------------------------------------------------------------------- |
 | 🌡️ **Temperature**        | **28–32°C**             | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).               |
-| 💧 **Humidity**           | **70–80% RH**           | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
+| 💧 **Humidity**           | **70–80% RH**           | DHT22      | `<= 72%` → Auto-activate humidifier (SMS only if `< 70%`). `>= 79%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → SMS alert (ventilate manually).                                   |
 | 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
-| 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
+| 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                        |
 
 ---
 
@@ -98,16 +98,17 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 | Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :------------------------- | :--------- | :-------------------------------------------------------------------------------- |
 | 🌡️ **Temperature**        | **28–32°C**                | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).               |
-| 💧 **Humidity**           | **85–95% RH**              | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
+| 💧 **Humidity**           | **85–95% RH**              | DHT22      | `<= 87%` → Auto-activate humidifier (SMS only if `< 85%`). `>= 94%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → SMS alert (ventilate manually).                                   |
 | 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
-| 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
+| 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                        |
 
 ---
 
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
 - **Humidifier Failsafe Runtime**: Continuous humidifier operation is capped at 15 minutes with a mandatory 3-minute resting period, protecting the mist maker from overheating and alerting if the water reservoir runs dry.
+- **Humidity Control Band**: The humidifier switches ON at _lower limit + 2_ and OFF at _upper limit − 1_ (adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
 - **Smart SMS Alerts**: Humidifier alerts only trigger on activation, not while recovering.
 - **Mist & Water Tank Tracking** (Actuator Control page): Mist output and tank level are _estimates_ calculated from the humidifier relay's on-time in `actuator_logs` (not measured by a sensor).

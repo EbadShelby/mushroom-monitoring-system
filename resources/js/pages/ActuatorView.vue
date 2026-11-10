@@ -18,7 +18,7 @@ import {
     RefreshCw,
 } from '@lucide/vue';
 import axios from 'axios';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { useSensorStore } from '@/stores/useSensorStore';
 import type {
@@ -97,7 +97,7 @@ async function toggleActuator(
     try {
         await axios.post('/api/actuators/toggle', { actuator, action });
         toast.success(`${actuator} turned ${action}`);
-        reloadMist();
+        reloadMist(actuator === 'humidifier');
     } catch {
         toast.error('Failed to toggle actuator.');
     } finally {
@@ -112,16 +112,25 @@ let reloadTimer: ReturnType<typeof setInterval>;
 
 onMounted(() => {
     mistTimer = setInterval(() => (nowMs.value = Date.now()), 1000);
-    reloadTimer = setInterval(reloadMist, 60000);
+    reloadTimer = setInterval(() => reloadMist(), 60000);
 });
 onUnmounted(() => {
     clearInterval(mistTimer);
     clearInterval(reloadTimer);
 });
 
-function reloadMist() {
-    router.reload({ only: ['mist', 'logs'] });
+function reloadMist(includeLogs = false) {
+    router.reload({ only: includeLogs ? ['mist', 'logs'] : ['mist'] });
 }
+
+watch(
+    () => props.logs,
+    (fresh) => {
+        if (fresh) {
+            logsData.value = fresh;
+        }
+    },
+);
 
 // Seconds elapsed since the server computed the summary while the humidifier ran.
 const liveSeconds = computed(() =>
@@ -522,7 +531,7 @@ const triggerLabels: Record<string, string> = {
                     </div>
                     <div class="flex items-end justify-between">
                         <p class="text-3xl font-bold text-foreground">
-                            {{ tankRemainingMl.toFixed(1) }}
+                            <span>{{ tankRemainingMl.toFixed(1) }}</span>
                             <span
                                 class="text-base font-normal text-muted-foreground"
                                 >/ {{ mist.tank.capacity_ml }} mL each</span
@@ -590,7 +599,7 @@ const triggerLabels: Record<string, string> = {
                         </h2>
                     </div>
                     <p class="text-3xl font-bold text-foreground">
-                        {{ todayMl.toFixed(1) }}
+                        <span>{{ todayMl.toFixed(1) }}</span>
                         <span
                             class="text-base font-normal text-muted-foreground"
                             >mL today</span
@@ -724,20 +733,30 @@ const triggerLabels: Record<string, string> = {
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >Humidity Low (humidifier ON)</span
+                                >Humidifier ON at</span
                             >
                             <span class="font-semibold text-foreground"
-                                >{{ thresholds.humidity_low }}%</span
+                                >&le; {{ thresholds.humidifier_on_at }}%</span
                             >
                         </div>
                         <div
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >Humidity High (humidifier OFF)</span
+                                >Humidifier OFF at</span
                             >
                             <span class="font-semibold text-foreground"
-                                >{{ thresholds.humidity_high }}%</span
+                                >&ge; {{ thresholds.humidifier_off_at }}%</span
+                            >
+                        </div>
+                        <div
+                            class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
+                        >
+                            <span class="text-muted-foreground"
+                                >Humidity Low (SMS alert)</span
+                            >
+                            <span class="font-semibold text-foreground"
+                                >&lt; {{ thresholds.humidity_low }}%</span
                             >
                         </div>
                         <div
@@ -902,14 +921,13 @@ const triggerLabels: Record<string, string> = {
                                     {{ log.triggered_by ?? '—' }}
                                 </td>
                                 <td class="px-4 py-3 text-muted-foreground">
-                                    <template
-                                        v-if="log.duration_seconds != null"
+                                    <span v-if="log.duration_seconds != null"
                                         >{{
                                             formatDuration(log.duration_seconds)
                                         }}
-                                        · {{ log.mist_ml }} mL</template
+                                        · {{ log.mist_ml }} mL</span
                                     >
-                                    <template v-else>—</template>
+                                    <span v-else>—</span>
                                 </td>
                             </tr>
                             <tr v-if="logsData && !logsData.data.length">

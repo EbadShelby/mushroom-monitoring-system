@@ -152,12 +152,18 @@ const adminNavItems = computed(() => {
 
         <SidebarContent>
             <NavMain :group="monitoringNav" />
-            <SidebarSeparator class="mx-3 my-1" />
+            <SidebarSeparator
+                class="mx-3 my-1 data-[orientation=horizontal]:w-auto"
+            />
             <NavMain :group="growingNav" />
-            <SidebarSeparator class="mx-3 my-1" />
+            <SidebarSeparator
+                class="mx-3 my-1 data-[orientation=horizontal]:w-auto"
+            />
             <NavMain :group="reportsNav" />
             <template v-if="adminNavItems">
-                <SidebarSeparator class="mx-3 my-1" />
+                <SidebarSeparator
+                    class="mx-3 my-1 data-[orientation=horizontal]:w-auto"
+                />
                 <NavMain :group="adminNavItems" />
             </template>
         </SidebarContent>

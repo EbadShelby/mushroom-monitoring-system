@@ -128,6 +128,8 @@ export interface Thresholds {
     temp_max: number;
     humidity_low: number;
     humidity_high: number;
+    humidifier_on_at: number;
+    humidifier_off_at: number;
     co2_max: number;
     soil_warning: number;
     soil_critical: number;

@@ -25,10 +25,10 @@ const char* actuatorUrl = "http://YOUR_PC_IP:8080/api/actuator-commands";
 #define RELAY_LED        27   // N2
 
 // ─── Soil Calibration ───────────────────────────────
-#define DRY_VALUE     2559
-#define WET_VALUE     1354
-#define SOIL_CRITICAL 20
-#define SOIL_DRY      30
+#define DRY_VALUE     2259
+#define WET_VALUE     1705
+#define SOIL_DRY      40
+#define SOIL_CRITICAL 25
 
 // ─── Objects ───────────────────────────────────────
 DHT    dht(DHTPIN, DHTTYPE);
