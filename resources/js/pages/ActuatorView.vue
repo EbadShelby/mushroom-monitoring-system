@@ -263,6 +263,19 @@ async function toggleOverride(actuator: 'humidifier' | 'led') {
 const schedule = ref({ ...props.ledSchedule });
 const savingSchedule = ref(false);
 
+function formatHour(hour: number | string | undefined | null): string {
+    const h = Number(hour ?? 0);
+
+    if (isNaN(h)) {
+        return '12:00 AM';
+    }
+
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h % 12 === 0 ? 12 : h % 12;
+
+    return `${displayHour}:00 ${period}`;
+}
+
 async function saveSchedule() {
     savingSchedule.value = true;
 
@@ -661,38 +674,48 @@ const triggerLabels: Record<string, string> = {
                             <label
                                 for="led-on-hour"
                                 class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >ON Hour (0–23)</label
+                                >ON Time</label
                             >
-                            <input
+                            <select
                                 id="led-on-hour"
                                 v-model.number="schedule.on_hour"
-                                type="number"
-                                min="0"
-                                max="23"
                                 :disabled="!canControl"
-                                class="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50"
-                            />
+                                class="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50 dark:bg-slate-800"
+                            >
+                                <option
+                                    v-for="h in 24"
+                                    :key="h - 1"
+                                    :value="h - 1"
+                                >
+                                    {{ formatHour(h - 1) }}
+                                </option>
+                            </select>
                         </div>
                         <div class="space-y-1">
                             <label
                                 for="led-off-hour"
                                 class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >OFF Hour (0–23)</label
+                                >OFF Time</label
                             >
-                            <input
+                            <select
                                 id="led-off-hour"
                                 v-model.number="schedule.off_hour"
-                                type="number"
-                                min="0"
-                                max="23"
                                 :disabled="!canControl"
-                                class="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50"
-                            />
+                                class="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50 dark:bg-slate-800"
+                            >
+                                <option
+                                    v-for="h in 24"
+                                    :key="h - 1"
+                                    :value="h - 1"
+                                >
+                                    {{ formatHour(h - 1) }}
+                                </option>
+                            </select>
                         </div>
                     </div>
                     <p class="mt-2 text-xs text-muted-foreground">
-                        Current: ON at {{ schedule.on_hour }}:00 → OFF at
-                        {{ schedule.off_hour }}:00 ({{
+                        Current: ON at {{ formatHour(schedule.on_hour) }} → OFF
+                        at {{ formatHour(schedule.off_hour) }} ({{
                             (schedule.off_hour - schedule.on_hour + 24) % 24
                         }}h light)
                     </p>

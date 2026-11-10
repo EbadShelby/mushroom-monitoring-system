@@ -61,6 +61,19 @@ async function saveSettings() {
 function inputClass() {
     return 'w-full rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50';
 }
+
+function formatHour(hour: number | string | undefined | null): string {
+    const h = Number(hour ?? 0);
+
+    if (isNaN(h)) {
+        return '12:00 AM';
+    }
+
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h % 12 === 0 ? 12 : h % 12;
+
+    return `${displayHour}:00 ${period}`;
+}
 </script>
 
 <template>
@@ -539,38 +552,48 @@ function inputClass() {
                             <label
                                 for="sched-on"
                                 class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >ON Hour (0–23)</label
+                                >ON Time</label
                             >
-                            <input
+                            <select
                                 id="sched-on"
                                 v-model="settingsForm.led_on_hour"
-                                type="number"
-                                min="0"
-                                max="23"
                                 :class="inputClass()"
-                                placeholder="6"
-                            />
+                            >
+                                <option
+                                    v-for="h in 24"
+                                    :key="h - 1"
+                                    :value="String(h - 1)"
+                                >
+                                    {{ formatHour(h - 1) }}
+                                </option>
+                            </select>
                         </div>
                         <div class="space-y-1">
                             <label
                                 for="sched-off"
                                 class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >OFF Hour (0–23)</label
+                                >OFF Time</label
                             >
-                            <input
+                            <select
                                 id="sched-off"
                                 v-model="settingsForm.led_off_hour"
-                                type="number"
-                                min="0"
-                                max="23"
                                 :class="inputClass()"
-                                placeholder="18"
-                            />
+                            >
+                                <option
+                                    v-for="h in 24"
+                                    :key="h - 1"
+                                    :value="String(h - 1)"
+                                >
+                                    {{ formatHour(h - 1) }}
+                                </option>
+                            </select>
                         </div>
                     </div>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Lights ON at {{ settingsForm.led_on_hour ?? 6 }}:00 and
-                        OFF at {{ settingsForm.led_off_hour ?? 18 }}:00 daily
+                        Lights ON at
+                        {{ formatHour(settingsForm.led_on_hour ?? 6) }} and OFF
+                        at
+                        {{ formatHour(settingsForm.led_off_hour ?? 18) }} daily
                         (for fruiting photoperiod).
                     </p>
                     <button
