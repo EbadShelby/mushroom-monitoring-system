@@ -11,5 +11,4 @@ export interface SensorData {
 export interface ActuatorData {
     humidifier: 'on' | 'off';
     led: 'on' | 'off';
-    fan: 'on' | 'off';
 }

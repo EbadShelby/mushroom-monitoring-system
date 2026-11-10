@@ -2,7 +2,7 @@
 
 An IoT system designed for monitoring and automating the cultivation environment of Gray Oyster Mushrooms (_Pleurotus sajor-caju_). This system was developed for Cotabato State University — BS Agriculture Program.
 
-The system uses an ESP32 microcontroller to collect environmental data from various sensors (temperature, humidity, CO2, light, and soil moisture) and automatically controls actuators (ventilation fans [intake & exhaust push-pull], humidifier, grow light) based on specific thresholds. The data is sent to a Laravel backend, where it is stored in MySQL for historical tracking and pushed to a Firebase Realtime Database for live dashboard monitoring built with Vue.js.
+The system uses an ESP32 microcontroller to collect environmental data from various sensors (temperature, humidity, CO2, light, and soil moisture) and automatically controls actuators (humidifier, grow light) based on specific thresholds. The data is sent to a Laravel backend, where it is stored in MySQL for historical tracking and pushed to a Firebase Realtime Database for live dashboard monitoring built with Vue.js.
 
 ## System Architecture
 
@@ -70,7 +70,6 @@ Laravel API (SINGLE entry point — all data flows through here)
 
 _All actuators use separate power rails — ESP32 only sends a relay signal. Relay is active LOW (LOW = ON, HIGH = OFF)._
 
-- **Ventilation Fans** (Intake & Exhaust push-pull, 5V USB wired in parallel) → Relay N1 → GPIO 26
 - **Humidifier** (Ultrasonic Mist Maker) → Relay N3 → GPIO 14
 - **LED Grow Light Strip** (5V USB) → Relay N2 → GPIO 27
 
@@ -84,9 +83,9 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 
 | Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :---------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–32°C**             | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → Auto-activate ventilation fans & alert.     |
+| 🌡️ **Temperature**        | **28–32°C**             | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).               |
 | 💧 **Humidity**           | **70–80% RH**           | DHT22      | `< 70%` → Auto-activate humidifier & SMS alert. `>= 80%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → Auto-activate ventilation fans for fresh air & SMS alert.         |
+| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → SMS alert (ventilate manually).                                   |
 | 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
 | 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
@@ -98,9 +97,9 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 | Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                   |
 | :------------------------ | :------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **28–32°C**                | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → Auto-activate ventilation fans & alert.     |
+| 🌡️ **Temperature**        | **28–32°C**                | DHT22      | `< 28°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).               |
 | 💧 **Humidity**           | **85–95% RH**              | DHT22      | `< 85%` → Auto-activate humidifier & SMS alert. `>= 95%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → Auto-activate ventilation fans for fresh air & SMS alert.         |
+| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → SMS alert (ventilate manually).                                   |
 | 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
 | 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 55%` → Warning SMS alert. `< 50%` → Critical SMS alert.                        |
 
@@ -108,11 +107,9 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
-- **Humidifier Interlock & Emergency Override**: When the **Humidifier** is active (or within a 2-minute post-mist settling window), the **Ventilation Fans** are held **OFF** to preserve mist. However, **Emergency Override** triggers if temperature reaches ≥ 35°C or CO₂ reaches ≥ 2,000 ppm (fruiting), instantly overriding the humidifier and forcing ventilation fans ON.
 - **Humidifier Failsafe Runtime**: Continuous humidifier operation is capped at 15 minutes with a mandatory 3-minute resting period, protecting the mist maker from overheating and alerting if the water reservoir runs dry.
-- **Hysteresis Deadband**: To prevent the fans from rapidly cycling on and off at threshold boundaries, they only turn off when the temperature drops 1°C below the maximum, and CO₂ drops 100 ppm below the maximum.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
-- **Smart SMS Alerts**: Non-actionable alerts are suppressed (e.g. if the fan is blocked by the humidifier, it won't spam SMS). Humidifier alerts only trigger on activation, not while recovering.
+- **Smart SMS Alerts**: Humidifier alerts only trigger on activation, not while recovering.
 - **Automatic Stage Switch**: Users can switch growth stages on the dashboard or cycles page, instantly updating live gauges, target indicators, Pinia status evaluators, and backend automation logic.
 
 ## User Roles

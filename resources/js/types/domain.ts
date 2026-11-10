@@ -113,7 +113,6 @@ export interface Thresholds {
 
 export interface ActuatorOverrides {
     humidifier: boolean;
-    fan: boolean;
     led: boolean;
 }
 

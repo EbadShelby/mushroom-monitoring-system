@@ -2,7 +2,6 @@
 import { Head, usePage } from '@inertiajs/vue3';
 import {
     Droplets,
-    Wind,
     Sun,
     Zap,
     Clock,
@@ -74,12 +73,11 @@ async function fetchLogs(p = 1) {
 // ── Actuator toggle ──────────────────────────────────────────────────────────
 const toggling = ref<Record<string, boolean>>({
     humidifier: false,
-    fan: false,
     led: false,
 });
 
 async function toggleActuator(
-    actuator: 'humidifier' | 'fan' | 'led',
+    actuator: 'humidifier' | 'led',
     action: 'on' | 'off',
 ) {
     if (!canControl.value) {
@@ -106,7 +104,6 @@ async function toggleActuator(
 const overrideState = ref<ActuatorOverrides>({ ...props.overrides });
 const lockingOverride = ref<Record<string, boolean>>({
     humidifier: false,
-    fan: false,
     led: false,
 });
 
@@ -126,7 +123,7 @@ const activeOverrideNames = computed(() =>
         .join(', '),
 );
 
-async function toggleOverride(actuator: 'humidifier' | 'fan' | 'led') {
+async function toggleOverride(actuator: 'humidifier' | 'led') {
     if (!canControl.value) {
         toast.error('Access denied. Only Admin or Faculty can set overrides.');
 
@@ -182,13 +179,6 @@ const actuators = [
         color: 'blue',
     },
     {
-        key: 'fan' as const,
-        label: 'Ventilation Fans',
-        relay: 'Relay 3 (Intake & Exhaust)',
-        icon: Wind,
-        color: 'purple',
-    },
-    {
         key: 'led' as const,
         label: 'Grow Lights',
         relay: 'Relay 2',
@@ -205,13 +195,6 @@ const colorClasses: Record<string, Record<string, string>> = {
         ping: 'bg-blue-400',
         dot: 'bg-blue-500',
     },
-    purple: {
-        bg: 'bg-purple-500/10',
-        text: 'text-purple-500',
-        badge: 'bg-purple-500/20 text-purple-600 dark:text-purple-400',
-        ping: 'bg-purple-400',
-        dot: 'bg-purple-500',
-    },
     yellow: {
         bg: 'bg-yellow-500/10',
         text: 'text-yellow-500',
@@ -221,7 +204,7 @@ const colorClasses: Record<string, Record<string, string>> = {
     },
 };
 
-function getActuatorState(key: 'humidifier' | 'fan' | 'led') {
+function getActuatorState(key: 'humidifier' | 'led') {
     return store.actuators[key];
 }
 
@@ -288,7 +271,7 @@ const triggerLabels: Record<string, string> = {
             </div>
 
             <!-- Actuator Status Cards -->
-            <div class="grid gap-6 md:grid-cols-3">
+            <div class="grid gap-6 md:grid-cols-2">
                 <div
                     v-for="act in actuators"
                     :key="act.key"
@@ -537,7 +520,7 @@ const triggerLabels: Record<string, string> = {
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >Temp Max (ventilation ON)</span
+                                >Temp Max (SMS alert)</span
                             >
                             <span class="font-semibold text-foreground"
                                 >{{ thresholds.temp_max }}°C</span
@@ -547,7 +530,7 @@ const triggerLabels: Record<string, string> = {
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >CO₂ Max (ventilation ON)</span
+                                >CO₂ Max (SMS alert)</span
                             >
                             <span class="font-semibold text-foreground"
                                 >{{ thresholds.co2_max }} ppm</span

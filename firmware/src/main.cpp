@@ -20,8 +20,7 @@ const char* actuatorUrl = "http://YOUR_PC_IP:8080/api/actuator-commands";
 #define SOIL_PIN  35
 
 // ─── Relay Pin Assignments ─────────────────────────
-// N1 = Fan, N3 = Humidifier, N2 = LED Light
-#define RELAY_FAN        26   // N1
+// N3 = Humidifier, N2 = LED Light
 #define RELAY_HUMIDIFIER 14   // N3
 #define RELAY_LED        27   // N2
 
@@ -48,9 +47,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println("=== IoT Mushroom Monitoring System ===");
   Serial.println("Gray Oyster Mushroom — Pleurotus sajor-caju");
-  Serial.println("Relay: N1=Fan | N3=Humidifier | N2=LED");
+  Serial.println("Relay: N3=Humidifier | N2=LED");
 
-  pinMode(RELAY_FAN,        OUTPUT); digitalWrite(RELAY_FAN,        HIGH);
   pinMode(RELAY_HUMIDIFIER, OUTPUT); digitalWrite(RELAY_HUMIDIFIER, HIGH);
   pinMode(RELAY_LED,        OUTPUT); digitalWrite(RELAY_LED,        HIGH);
   Serial.println("✅ Relays initialized — all OFF");
@@ -149,8 +147,6 @@ void loop() {
                 soilMoisture, soilRaw, soilStatus.c_str());
 
   Serial.println("----------------------------------------");
-  Serial.printf("🔌 Fan (N1)        : %s\n",
-    digitalRead(RELAY_FAN) == LOW ? "ON" : "OFF");
   Serial.printf("💦 Humidifier (N3) : %s\n",
     digitalRead(RELAY_HUMIDIFIER) == LOW ? "ON" : "OFF");
   Serial.printf("💡 LED Light (N2)  : %s\n",
@@ -217,14 +213,6 @@ void pollActuatorCommands() {
   if (code == 200) {
     String payload = http.getString();
     Serial.println("   Commands: " + payload);
-
-    if (payload.indexOf("\"fan\":\"on\"") >= 0) {
-      digitalWrite(RELAY_FAN, LOW);
-      Serial.println("   🌀 Fan (N1) → ON");
-    } else if (payload.indexOf("\"fan\":\"off\"") >= 0) {
-      digitalWrite(RELAY_FAN, HIGH);
-      Serial.println("   🌀 Fan (N1) → OFF");
-    }
 
     if (payload.indexOf("\"humidifier\":\"on\"") >= 0) {
       digitalWrite(RELAY_HUMIDIFIER, LOW);

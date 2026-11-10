@@ -20,7 +20,6 @@ export const useSensorStore = defineStore('sensor', () => {
     const actuators = vRef<ActuatorData>({
         humidifier: 'off',
         led: 'off',
-        fan: 'off',
     });
 
     const isConnected = vRef<boolean>(false);

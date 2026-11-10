@@ -34,20 +34,6 @@ class ThresholdService
     ];
 
     /**
-     * Hysteresis margins for fan deactivation.
-     *
-     * The fan turns ON when a threshold is exceeded, but turns OFF only when the
-     * reading drops BELOW the threshold by this margin. This prevents rapid
-     * on/off cycling when readings hover right at the boundary.
-     *
-     * e.g. fan turns ON when CO₂ > 1000 ppm, but only turns OFF when ≤ 900 ppm.
-     */
-    private const FAN_HYSTERESIS = [
-        'temp' => 1.0,   // °C below temp_max before fan turns off
-        'co2' => 100,    // ppm below co2_max before fan turns off
-    ];
-
-    /**
      * Max continuous runtime for the humidifier before forcing a resting cooldown (in minutes).
      * Protects the ultrasonic mist maker from running dry and overheating.
      */
@@ -60,20 +46,10 @@ class ThresholdService
     private const HUMIDIFIER_REST_MINUTES = 3;
 
     /**
-     * Settling window after humidifier turns off before allowing ventilation fans (in minutes).
-     * Gives ultrasonic mist time to deposit without trapping the chamber.
+     * Minutes of continuous humidifier runtime after which humidity still below the
+     * low threshold is treated as a fault (empty tank, blocked mist or faulty sensor).
      */
-    private const HUMIDIFIER_POST_SETTLE_MINUTES = 2;
-
-    /**
-     * Emergency thresholds that bypass the humidifier interlock and force ventilation.
-     * Dangerous heat or toxic CO2 buildup takes absolute priority over humidity.
-     */
-    private const EMERGENCY_THRESHOLDS = [
-        'temp' => 35.0,           // °C: extreme heat kills pinheads and stalls mycelium
-        'co2_fruit' => 2000,      // ppm: severe CO2 in fruiting causing severe deformities
-        'co2_colonization' => 6000, // ppm: critical asphyxiation level
-    ];
+    private const HUMIDIFIER_STALL_MINUTES = 5;
 
     /** @var array<string, mixed> */
     private array $colonizationThresholds;
@@ -133,20 +109,12 @@ class ThresholdService
      * abnormal. Specifically:
      *   - Humidifier: SMS only when humidity is LOW (actionable). The humidifier
      *     turning off at the high threshold is normal operation — no SMS.
-     *   - Fan: SMS only when the fan is actually commanded ON. If the fan is
-     *     blocked by the humidifier interlock (fanAllowed = false), no SMS is
-     *     sent — the alert would be non-actionable and would repeat every 15 min.
-     *   - Fan hysteresis: fan turns off only when readings drop below the threshold
-     *     minus a deadband margin, preventing rapid on/off cycling.
-     *   - Emergency Override: Critical heat (≥ 35°C) or toxic CO₂ (≥ 2000 ppm fruiting)
-     *     bypasses the humidifier interlock, shuts down the humidifier, and forces
-     *     ventilation push-pull fans ON.
      *
      * @param  array<string, mixed>  $reading  { temperature, humidity, co2_raw, light_level, soil_moisture }
      * @param  GrowingCycle|null  $cycle  The active growing cycle (stage determines thresholds)
      * @return array{
      *   alerts: list<array{sensor: string, value: float|int, threshold: string, message: string}>,
-     *   commands: array{humidifier: string|null, fan: string|null}
+     *   commands: array{humidifier: string|null}
      * }
      */
     public function evaluate(array $reading, ?GrowingCycle $cycle = null): array
@@ -160,24 +128,6 @@ class ThresholdService
         // Load current actuator states from Firebase once
         $currentActuators = $this->firebase->getActuators();
         $humidifierCurrentlyOn = ($currentActuators['humidifier'] ?? 'off') === 'on';
-        $fanCurrentlyOn = ($currentActuators['fan'] ?? 'off') === 'on';
-
-        // ─── Emergency Environmental Check ─────────────────────────────────────
-        // Severe heat (≥ 35°C) or dangerous CO₂ buildup (≥ 2000 ppm fruiting / ≥ 6000 ppm col)
-        // threatens mushroom survival. Life-support ventilation takes precedence over humidity.
-        $emergencyVentilation = false;
-
-        if (isset($reading['temperature']) && (float) $reading['temperature'] >= self::EMERGENCY_THRESHOLDS['temp']) {
-            $emergencyVentilation = true;
-        }
-
-        $co2EmergencyThreshold = $stage === 'colonization'
-            ? self::EMERGENCY_THRESHOLDS['co2_colonization']
-            : self::EMERGENCY_THRESHOLDS['co2_fruit'];
-
-        if (isset($reading['co2_raw']) && (int) $reading['co2_raw'] >= $co2EmergencyThreshold) {
-            $emergencyVentilation = true;
-        }
 
         // ─── Humidifier ────────────────────────────────────────────────────────
         // null = no change, 'on' = turn on, 'off' = turn off
@@ -203,6 +153,18 @@ class ThresholdService
             }
         }
 
+        // 1b. Stall detection: running for a while yet humidity is still low
+        if (! $humidifierRuntimeExceeded && $humidifierCurrentlyOn && $lastHumidifierLog && $lastHumidifierLog->action === 'on'
+            && isset($reading['humidity']) && (float) $reading['humidity'] < $t['humidity_low']
+            && $lastHumidifierLog->triggered_at->lte(now()->subMinutes(self::HUMIDIFIER_STALL_MINUTES))) {
+            $alerts[] = $this->alert(
+                sensor: 'humidity',
+                value: (float) $reading['humidity'],
+                threshold: self::HUMIDIFIER_STALL_MINUTES.'m on, humidity not rising',
+                message: "⚠️ [CotSU Mushroom | {$stageLabel}] Humidity still LOW ({$reading['humidity']}%) after ".self::HUMIDIFIER_STALL_MINUTES.' mins of misting. Check the water tank, mist maker and humidity sensor.',
+            );
+        }
+
         // 2. Check resting cooldown (if currently OFF)
         $humidifierRested = true;
         if (! $humidifierCurrentlyOn && $lastHumidifierLog && $lastHumidifierLog->action === 'off') {
@@ -211,12 +173,8 @@ class ThresholdService
             }
         }
 
-        // 3. Normal humidity evaluation (only if not emergency ventilation and not runtime exceeded)
-        if ($emergencyVentilation) {
-            if ($humidifierCurrentlyOn) {
-                $desiredHumidifier = 'off';
-            }
-        } elseif (! $humidifierRuntimeExceeded && isset($reading['humidity'])) {
+        // 3. Normal humidity evaluation (only if runtime limit not exceeded)
+        if (! $humidifierRuntimeExceeded && isset($reading['humidity'])) {
             $humidity = (float) $reading['humidity'];
 
             if ($humidity < $t['humidity_low']) {
@@ -235,35 +193,7 @@ class ThresholdService
             }
         }
 
-        // ─── Fan Interlock + Cooldown ──────────────────────────────────────────
-        // Fan is blocked when:
-        //   (a) humidifier is currently on, OR
-        //   (b) humidifier will be turned on by this evaluation, OR
-        //   (c) humidifier was turned off less than 2 minutes ago (settling window)
-        // EXCEPTION: Emergency ventilation (critical heat or dangerous CO₂) bypasses this interlock.
-        $humidifierWillBeOn = ($humidifierCurrentlyOn && $desiredHumidifier !== 'off') || $desiredHumidifier === 'on';
-
-        $fanAllowed = true;
-
-        if ($emergencyVentilation) {
-            $fanAllowed = true; // Emergency bypasses interlock
-        } elseif ($humidifierWillBeOn) {
-            $fanAllowed = false;
-        } else {
-            $lastHumidifierOff = ActuatorLog::where('actuator', 'humidifier')
-                ->where('action', 'off')
-                ->latest('triggered_at')
-                ->first();
-
-            if ($lastHumidifierOff && $lastHumidifierOff->triggered_at->gt(now()->subMinutes(self::HUMIDIFIER_POST_SETTLE_MINUTES))) {
-                $fanAllowed = false;
-            }
-        }
-
         // ─── Temperature ──────────────────────────────────────────────────────
-        $tempHigh = false;
-        $tempClear = true; // used for hysteresis — temp is safely below threshold
-
         if (isset($reading['temperature'])) {
             $temp = (float) $reading['temperature'];
 
@@ -274,70 +204,31 @@ class ThresholdService
                     threshold: "below {$t['temp_min']}°C",
                     message: "⚠️ [CotSU Mushroom | {$stageLabel}] Temperature LOW: {$temp}°C (min: {$t['temp_min']}°C). Check heating.",
                 );
-            } elseif ($temp >= self::EMERGENCY_THRESHOLDS['temp']) {
-                $tempHigh = true;
-                $tempClear = false;
-
+            } elseif ($temp > $t['temp_max']) {
                 $alerts[] = $this->alert(
                     sensor: 'temperature',
                     value: $temp,
-                    threshold: 'CRITICAL: ≥ '.self::EMERGENCY_THRESHOLDS['temp'].'°C',
-                    message: "🚨 [CotSU Mushroom | {$stageLabel}] CRITICAL HEAT: {$temp}°C (≥ ".self::EMERGENCY_THRESHOLDS['temp'].'°C). Emergency ventilation activated; humidifier overridden.',
+                    threshold: "above {$t['temp_max']}°C",
+                    message: "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Please check chamber ventilation and cooling.",
                 );
-            } elseif ($temp > $t['temp_max']) {
-                $tempHigh = true;
-                $tempClear = false;
-
-                // Only alert + message if the fan will actually turn on.
-                if ($fanAllowed || $fanCurrentlyOn) {
-                    $alerts[] = $this->alert(
-                        sensor: 'temperature',
-                        value: $temp,
-                        threshold: "above {$t['temp_max']}°C",
-                        message: "🌡️ [CotSU Mushroom | {$stageLabel}] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Ventilation fans (intake & exhaust) activated to cool the chamber.",
-                    );
-                }
-            } else {
-                $tempClear = $temp <= ($t['temp_max'] - self::FAN_HYSTERESIS['temp']);
             }
         }
 
         // ─── CO₂ ──────────────────────────────────────────────────────────────
-        $co2High = false;
-        $co2Clear = true; // used for hysteresis — co2 is safely below threshold
-
         if (isset($reading['co2_raw'])) {
             $co2 = (int) $reading['co2_raw'];
 
-            if ($co2 >= $co2EmergencyThreshold) {
-                $co2High = true;
-                $co2Clear = false;
-
-                $alerts[] = $this->alert(
-                    sensor: 'co2',
-                    value: $co2,
-                    threshold: "CRITICAL: ≥ {$co2EmergencyThreshold} ppm",
-                    message: "🚨 [CotSU Mushroom | {$stageLabel}] CRITICAL CO₂: {$co2} ppm (dangerous buildup). Emergency ventilation activated; humidifier overridden.",
-                );
-            } elseif ($co2 > $t['co2_max']) {
-                $co2High = true;
-                $co2Clear = false;
-
+            if ($co2 > $t['co2_max']) {
                 $co2Label = $stage === 'colonization'
                     ? "above {$t['co2_max']} ppm (colonization ceiling)"
                     : "above {$t['co2_max']} ppm (fruiting requires fresh air)";
 
-                if ($fanAllowed || $fanCurrentlyOn) {
-                    $alerts[] = $this->alert(
-                        sensor: 'co2',
-                        value: $co2,
-                        threshold: $co2Label,
-                        message: "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Ventilation fans (intake & exhaust) activated for fresh air exchange.",
-                    );
-                }
-            } else {
-                // CO₂ in range — apply hysteresis deadband before allowing fan off
-                $co2Clear = $co2 <= ($t['co2_max'] - self::FAN_HYSTERESIS['co2']);
+                $alerts[] = $this->alert(
+                    sensor: 'co2',
+                    value: $co2,
+                    threshold: $co2Label,
+                    message: "💨 [CotSU Mushroom | {$stageLabel}] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Please air out the chamber manually.",
+                );
             }
         }
 
@@ -394,39 +285,10 @@ class ThresholdService
             }
         }
 
-        // ─── Unified Fan Resolution ────────────────────────────────────────────
-        // Fan state is decided ONCE here, after all sensors are evaluated.
-        //
-        // Turn-on: fan is needed ($needsFan) and currently off.
-        // Turn-off: uses hysteresis — both temp AND co2 must be clearly below
-        //   their respective thresholds (by FAN_HYSTERESIS margin) before the fan
-        //   turns off. This prevents rapid on/off cycling when readings hover at
-        //   the boundary.
-        // Interlock: if humidifier is (or will be) on, fan is forced off (unless emergency).
-        $desiredFan = null;
-
-        $needsFan = ($tempHigh || $co2High) && $fanAllowed;
-
-        // Both conditions must be clearly in the safe zone before allowing fan off.
-        // If a sensor value is absent, treat that dimension as clear (safe default).
-        $allConditionsClear = $tempClear && $co2Clear;
-
-        if ($humidifierWillBeOn && $fanCurrentlyOn && ! $emergencyVentilation) {
-            // Interlock: humidifier is (or will be) on — force fan off immediately
-            $desiredFan = 'off';
-        } elseif ($needsFan && ! $fanCurrentlyOn) {
-            // Trigger(s) active and fan is allowed — turn on
-            $desiredFan = 'on';
-        } elseif ($allConditionsClear && ! $humidifierWillBeOn && $fanCurrentlyOn) {
-            // All readings have dropped safely below their thresholds — turn fan off
-            $desiredFan = 'off';
-        }
-
         return [
             'alerts' => $alerts,
             'commands' => [
                 'humidifier' => $desiredHumidifier,
-                'fan' => $desiredFan,
             ],
         ];
     }

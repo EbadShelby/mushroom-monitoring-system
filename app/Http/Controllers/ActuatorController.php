@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActuatorLog;
+use App\Models\GrowingCycle;
 use App\Models\Setting;
 use App\Services\FirebaseService;
+use App\Services\ThresholdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,10 +14,13 @@ use Inertia\Response;
 
 class ActuatorController extends Controller
 {
-    public function __construct(private FirebaseService $firebase) {}
+    public function __construct(private FirebaseService $firebase, private ThresholdService $thresholdService) {}
 
     public function index(): Response
     {
+        $activeCycle = GrowingCycle::where('status', 'active')->latest('start_date')->first();
+        $stageThresholds = $this->thresholdService->thresholdsForStage($activeCycle?->growing_stage ?? 'fruiting');
+
         return Inertia::render('ActuatorView', [
             'logs' => Inertia::defer(fn () => ActuatorLog::query()
                 ->orderByDesc('triggered_at')
@@ -26,16 +31,15 @@ class ActuatorController extends Controller
                 'off_hour' => (int) Setting::get('led_off_hour', 18),
             ],
             'thresholds' => [
-                'temp_max' => (float) Setting::get('threshold_temp_max', 32),
-                'humidity_low' => (float) Setting::get('threshold_humidity_low', 80),
-                'humidity_high' => (float) Setting::get('threshold_humidity_high', 90),
-                'co2_max' => (int) Setting::get('threshold_co2_max', 1000),
-                'soil_warning' => (int) Setting::get('threshold_soil_warning', 30),
-                'soil_critical' => (int) Setting::get('threshold_soil_critical', 20),
+                'temp_max' => (float) $stageThresholds['temp_max'],
+                'humidity_low' => (float) $stageThresholds['humidity_low'],
+                'humidity_high' => (float) $stageThresholds['humidity_high'],
+                'co2_max' => (int) $stageThresholds['co2_max'],
+                'soil_warning' => (int) $stageThresholds['soil_warning'],
+                'soil_critical' => (int) $stageThresholds['soil_critical'],
             ],
             'overrides' => [
                 'humidifier' => Setting::get('override_humidifier') === '1',
-                'fan' => Setting::get('override_fan') === '1',
                 'led' => Setting::get('override_led') === '1',
             ],
         ]);
@@ -44,7 +48,7 @@ class ActuatorController extends Controller
     public function toggle(Request $request): JsonResponse
     {
         $request->validate([
-            'actuator' => ['required', 'string', 'in:humidifier,fan,led'],
+            'actuator' => ['required', 'string', 'in:humidifier,led'],
             'action' => ['required', 'string', 'in:on,off'],
         ]);
 
@@ -76,7 +80,7 @@ class ActuatorController extends Controller
     public function toggleOverride(Request $request): JsonResponse
     {
         $request->validate([
-            'actuator' => ['required', 'string', 'in:humidifier,fan,led'],
+            'actuator' => ['required', 'string', 'in:humidifier,led'],
             'active' => ['required', 'boolean'],
         ]);
 

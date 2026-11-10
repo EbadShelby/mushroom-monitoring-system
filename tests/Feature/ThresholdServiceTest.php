@@ -9,10 +9,9 @@ beforeEach(function () {
     $this->firebase = Mockery::mock(FirebaseService::class);
 });
 
-test('low humidity turns on humidifier when rested and fan is blocked by interlock', function () {
+test('low humidity turns on humidifier when rested', function () {
     $this->firebase->shouldReceive('getActuators')->once()->andReturn([
         'humidifier' => 'off',
-        'fan' => 'off',
     ]);
 
     $service = new ThresholdService($this->firebase);
@@ -32,72 +31,12 @@ test('low humidity turns on humidifier when rested and fan is blocked by interlo
     ], $cycle);
 
     expect($result['commands']['humidifier'])->toBe('on');
-    expect($result['commands']['fan'])->toBeNull(); // blocked by interlock
-});
-
-test('emergency CO2 overrides humidifier interlock and forces ventilation fans on', function () {
-    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
-        'humidifier' => 'on',
-        'fan' => 'off',
-    ]);
-
-    $service = new ThresholdService($this->firebase);
-    $cycle = GrowingCycle::create([
-        'name' => 'Test Cycle',
-        'mushroom_variety' => 'Gray Oyster',
-        'substrate_type' => 'Sawdust',
-        'start_date' => now()->toDateString(),
-        'status' => 'active',
-        'growing_stage' => 'fruiting',
-    ]);
-
-    $result = $service->evaluate([
-        'humidity' => 70.0,
-        'co2_raw' => 2200, // exceeds 2000 ppm emergency ceiling
-        'temperature' => 26.0,
-    ], $cycle);
-
-    // Humidifier is forced off to avoid wasting mist, fan is forced on
-    expect($result['commands']['humidifier'])->toBe('off');
-    expect($result['commands']['fan'])->toBe('on');
-
-    $alerts = collect($result['alerts']);
-    expect($alerts->contains(fn ($a) => str_contains($a['message'], 'CRITICAL CO₂')))->toBeTrue();
-});
-
-test('emergency heat overrides humidifier interlock and forces ventilation fans on', function () {
-    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
-        'humidifier' => 'on',
-        'fan' => 'off',
-    ]);
-
-    $service = new ThresholdService($this->firebase);
-    $cycle = GrowingCycle::create([
-        'name' => 'Test Cycle',
-        'mushroom_variety' => 'Gray Oyster',
-        'substrate_type' => 'Sawdust',
-        'start_date' => now()->toDateString(),
-        'status' => 'active',
-        'growing_stage' => 'fruiting',
-    ]);
-
-    $result = $service->evaluate([
-        'humidity' => 70.0,
-        'co2_raw' => 800,
-        'temperature' => 35.5, // exceeds 35.0°C emergency ceiling
-    ], $cycle);
-
-    expect($result['commands']['humidifier'])->toBe('off');
-    expect($result['commands']['fan'])->toBe('on');
-
-    $alerts = collect($result['alerts']);
-    expect($alerts->contains(fn ($a) => str_contains($a['message'], 'CRITICAL HEAT')))->toBeTrue();
+    expect($result['commands'])->not->toHaveKey('fan');
 });
 
 test('humidifier continuous runtime limit shuts off after 15 minutes', function () {
     $this->firebase->shouldReceive('getActuators')->once()->andReturn([
         'humidifier' => 'on',
-        'fan' => 'off',
     ]);
 
     // Create an actuator log indicating humidifier has been running for 16 minutes
@@ -131,13 +70,12 @@ test('humidifier continuous runtime limit shuts off after 15 minutes', function 
     expect($alerts->contains(fn ($a) => str_contains($a['message'], 'Humidifier ran continuously for 15 mins')))->toBeTrue();
 });
 
-test('reduced 2-minute post-humidifier settling window allows ventilation after 2 minutes', function () {
-    // Humidifier is off, fan is off
-    $this->firebase->shouldReceive('getActuators')->andReturn([
+test('high temperature and CO2 only raise alerts without actuator commands', function () {
+    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
         'humidifier' => 'off',
-        'fan' => 'off',
     ]);
 
+    $service = new ThresholdService($this->firebase);
     $cycle = GrowingCycle::create([
         'name' => 'Test Cycle',
         'mushroom_variety' => 'Gray Oyster',
@@ -147,33 +85,44 @@ test('reduced 2-minute post-humidifier settling window allows ventilation after 
         'growing_stage' => 'fruiting',
     ]);
 
-    // Case A: Humidifier turned off 1 minute ago (within 2-minute settling window)
-    $logA = ActuatorLog::create([
-        'actuator' => 'humidifier',
-        'action' => 'off',
-        'trigger' => 'automatic',
-        'triggered_by' => 'system',
-        'triggered_at' => now()->subMinute(),
+    $result = $service->evaluate([
+        'humidity' => 90.0,
+        'co2_raw' => 1300,
+        'temperature' => 34.0,
+    ], $cycle);
+
+    expect($result['commands'])->toBe(['humidifier' => null]);
+
+    $sensors = collect($result['alerts'])->pluck('sensor');
+    expect($sensors->contains('co2'))->toBeTrue();
+    expect($sensors->contains('temperature'))->toBeTrue();
+});
+
+test('humidifier stall alert fires when humidity stays low after 5 minutes of misting', function () {
+    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
+        'humidifier' => 'on',
     ]);
 
-    $serviceA = new ThresholdService($this->firebase);
-    $resultA = $serviceA->evaluate([
-        'humidity' => 90.0,
-        'co2_raw' => 1300, // above 1000 ppm
-        'temperature' => 26.0,
-    ], $cycle);
+    ActuatorLog::create([
+        'actuator' => 'humidifier',
+        'action' => 'on',
+        'trigger' => 'automatic',
+        'triggered_by' => 'system',
+        'triggered_at' => now()->subMinutes(6),
+    ]);
 
-    expect($resultA['commands']['fan'])->toBeNull(); // blocked by 2m settling window
+    $service = new ThresholdService($this->firebase);
+    $cycle = GrowingCycle::create([
+        'name' => 'Test Cycle',
+        'mushroom_variety' => 'Gray Oyster',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+        'growing_stage' => 'fruiting',
+    ]);
 
-    // Case B: Humidifier turned off 3 minutes ago (beyond 2-minute settling window)
-    $logA->update(['triggered_at' => now()->subMinutes(3)]);
+    $result = $service->evaluate(['humidity' => 70.0, 'temperature' => 30.0], $cycle);
 
-    $serviceB = new ThresholdService($this->firebase);
-    $resultB = $serviceB->evaluate([
-        'humidity' => 90.0,
-        'co2_raw' => 1300, // above 1000 ppm
-        'temperature' => 26.0,
-    ], $cycle);
-
-    expect($resultB['commands']['fan'])->toBe('on'); // allowed!
+    expect($result['commands']['humidifier'])->toBeNull();
+    expect(collect($result['alerts'])->contains(fn ($a) => str_contains($a['message'], 'after 5 mins of misting')))->toBeTrue();
 });

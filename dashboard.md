@@ -441,48 +441,6 @@ onUnmounted(() => store.stopListening());
                         </div>
                     </div>
 
-                    <!-- Fan Actuator -->
-                    <div
-                        class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/50 p-4 transition-colors hover:bg-muted/50"
-                    >
-                        <div class="flex items-start justify-between">
-                            <div
-                                class="rounded-lg bg-purple-500/10 p-2.5 text-purple-500"
-                            >
-                                <Wind class="h-6 w-6" />
-                            </div>
-                            <div
-                                class="relative flex h-3 w-3"
-                                v-if="store.actuators.fan === 'on'"
-                            >
-                                <span
-                                    class="absolute inline-flex h-full w-full animate-ping rounded-full bg-purple-400 opacity-75"
-                                ></span>
-                                <span
-                                    class="relative inline-flex h-3 w-3 rounded-full bg-purple-500"
-                                ></span>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <h4 class="text-lg font-semibold">Ventilation Fans</h4>
-                            <div class="mt-2 flex items-center justify-between">
-                                <span class="text-sm text-muted-foreground"
-                                    >Relay 3 (Intake &amp; Exhaust)</span
-                                >
-                                <span
-                                    class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase"
-                                    :class="
-                                        store.actuators.fan === 'on'
-                                            ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400'
-                                            : 'bg-secondary text-muted-foreground'
-                                    "
-                                >
-                                    {{ store.actuators.fan }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- LED Actuator -->
                     <div
                         class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/50 p-4 transition-colors hover:bg-muted/50"

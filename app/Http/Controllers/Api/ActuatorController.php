@@ -19,7 +19,6 @@ class ActuatorController extends Controller
      * Example response:
      * {
      *   "humidifier": "on",
-     *   "fan": "off",
      *   "led": "off"
      * }
      */
@@ -27,8 +26,8 @@ class ActuatorController extends Controller
     {
         $actuators = $this->firebase->getActuators();
 
-        // Ensure we always return all three keys with a safe default
-        $defaults = ['humidifier' => 'off', 'fan' => 'off', 'led' => 'off'];
+        // Ensure we always return both keys with a safe default
+        $defaults = ['humidifier' => 'off', 'led' => 'off'];
         $commands = array_merge($defaults, $actuators);
 
         return response()->json($commands);
