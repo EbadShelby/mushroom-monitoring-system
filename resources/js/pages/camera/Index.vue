@@ -82,10 +82,19 @@ const showUpload = ref(false);
 const uploading = ref(false);
 const uploadErrors = ref<Record<string, string>>({});
 
+const defaultCycleId = computed(() => {
+    if (props.filters.cycle_id) {
+        return String(props.filters.cycle_id);
+    }
+
+    const active =
+        props.cycles.find((c) => c.status === 'active') ?? props.cycles[0];
+
+    return active ? String(active.id) : '';
+});
+
 const uploadForm = ref({
-    growing_cycle_id: props.filters.cycle_id
-        ? String(props.filters.cycle_id)
-        : '',
+    growing_cycle_id: defaultCycleId.value,
     flush_number: '1',
     captured_date: new Date().toISOString().split('T')[0],
     notes: '',
@@ -102,13 +111,81 @@ function onFileSelected(e: Event) {
     }
 }
 
-function setFile(file: File) {
-    photoFile.value = file;
+async function compressImageIfNeeded(file: File): Promise<File> {
+    // Compress images larger than 1.5MB so they always stay under PHP's default 2MB limit
+    if (file.size <= 1.5 * 1024 * 1024 || !file.type.startsWith('image/')) {
+        return file;
+    }
+
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const maxDim = 1920;
+            let { width, height } = img;
+
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+                resolve(file);
+
+                return;
+            }
+
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob(
+                (blob) => {
+                    if (!blob || blob.size >= file.size) {
+                        resolve(file);
+
+                        return;
+                    }
+
+                    const baseName = file.name.replace(/\.[^.]+$/, '');
+                    resolve(
+                        new File([blob], `${baseName}.jpg`, {
+                            type: 'image/jpeg',
+                            lastModified: file.lastModified,
+                        }),
+                    );
+                },
+                'image/jpeg',
+                0.85,
+            );
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve(file);
+        };
+
+        img.src = url;
+    });
+}
+
+async function setFile(file: File) {
+    const processed = await compressImageIfNeeded(file);
+    photoFile.value = processed;
     const reader = new FileReader();
     reader.onload = (e) => {
         photoPreview.value = e.target?.result as string;
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(processed);
 }
 
 function onDrop(e: DragEvent) {
@@ -128,6 +205,15 @@ function clearPhoto() {
 async function submitUpload() {
     if (!photoFile.value) {
         toast.error('Please select a photo');
+
+        return;
+    }
+
+    if (!uploadForm.value.growing_cycle_id) {
+        uploadErrors.value = {
+            growing_cycle_id: 'Please select a growing cycle.',
+        };
+        toast.error('Please select a growing cycle.');
 
         return;
     }
@@ -155,7 +241,21 @@ async function submitUpload() {
         router.reload({ only: ['snapshots'] });
     } catch (e: any) {
         if (e.response?.status === 422) {
-            uploadErrors.value = e.response.data.errors ?? {};
+            const rawErrors = e.response.data.errors ?? {};
+            const normalized: Record<string, string> = {};
+
+            for (const [key, messages] of Object.entries(rawErrors)) {
+                normalized[key] = Array.isArray(messages)
+                    ? String(messages[0])
+                    : String(messages);
+            }
+
+            uploadErrors.value = normalized;
+            const firstMessage =
+                Object.values(normalized)[0] ??
+                e.response.data.message ??
+                'Validation failed';
+            toast.error(firstMessage);
         } else {
             toast.error('Upload failed');
         }

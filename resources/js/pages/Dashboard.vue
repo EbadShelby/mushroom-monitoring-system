@@ -62,6 +62,28 @@ const activeStage = computed(
 );
 const isColonization = computed(() => activeStage.value === 'colonization');
 
+const snapshotImage = computed(() => {
+    return props.latestSnapshot?.file_path
+        ? `/storage/${props.latestSnapshot.file_path}`
+        : '/sample-image.png';
+});
+
+const snapshotAlt = computed(() => {
+    return props.latestSnapshot?.file_name ?? 'Latest mushroom snapshot';
+});
+
+const snapshotLabel = computed(() => {
+    if (!props.latestSnapshot) {
+        return 'No photo yet (sample preview)';
+    }
+
+    if (props.latestSnapshot.flush_number) {
+        return `Flush ${props.latestSnapshot.flush_number} • ${props.latestSnapshot.captured_date ?? ''}`;
+    }
+
+    return props.latestSnapshot.captured_date ?? '';
+});
+
 watchEffect(() => {
     store.setStage(activeStage.value);
 });
@@ -255,7 +277,7 @@ function alertStatusClass(status: string) {
     <Head title="Live Monitoring" />
 
     <div
-        class="relative flex h-full min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10"
+        class="relative flex h-full min-h-[calc(100vh-(--spacing(16)))] flex-1 flex-col bg-linear-to-br from-primary/5 via-background to-secondary/10"
     >
         <!-- Subtle decorative blobs -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
@@ -277,7 +299,7 @@ function alertStatusClass(status: string) {
                 <div>
                     <div class="flex flex-wrap items-center gap-3">
                         <h1
-                            class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
+                            class="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
                         >
                             Mushroom Cultivation
                         </h1>
@@ -1103,23 +1125,18 @@ function alertStatusClass(status: string) {
                     </div>
 
                     <div v-else>
-                        <!-- Always show sample image as thumbnail (dummy) -->
                         <div
                             class="cursor-pointer overflow-hidden rounded-lg border border-border/50 ring-offset-background transition-all hover:ring-2 hover:ring-emerald-500/50"
                             @click="showLightbox = true"
                         >
                             <img
-                                src="/sample-image.png"
-                                alt="Latest mushroom snapshot"
+                                :src="snapshotImage"
+                                :alt="snapshotAlt"
                                 class="h-36 w-full object-cover transition-transform duration-500 hover:scale-105"
                             />
                         </div>
                         <p class="mt-2 text-xs text-muted-foreground">
-                            {{
-                                latestSnapshot
-                                    ? latestSnapshot.captured_date
-                                    : 'Sample preview'
-                            }}
+                            {{ snapshotLabel }}
                         </p>
                     </div>
                 </div>
@@ -1210,7 +1227,7 @@ function alertStatusClass(status: string) {
         >
             <div
                 v-if="showLightbox"
-                class="fixed inset-0 z-[100] flex items-center justify-center"
+                class="fixed inset-0 z-100 flex items-center justify-center"
                 style="background: rgba(0, 0, 0, 0.93)"
                 @click.self="showLightbox = false"
             >
@@ -1221,8 +1238,8 @@ function alertStatusClass(status: string) {
                     <X class="h-5 w-5" />
                 </button>
                 <img
-                    src="/sample-image.png"
-                    alt="Latest mushroom snapshot"
+                    :src="snapshotImage"
+                    :alt="snapshotAlt"
                     class="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl ring-1 ring-white/10"
                 />
             </div>

@@ -34,7 +34,8 @@ class DashboardController extends Controller
             'latestSnapshot' => Inertia::defer(fn () => $activeCycle
                 ? CameraSnapshot::where('growing_cycle_id', $activeCycle->id)
                     ->orderByDesc('captured_date')
-                    ->first(['id', 'file_path', 'file_name', 'captured_date'])
+                    ->orderByDesc('id')
+                    ->first(['id', 'file_path', 'file_name', 'flush_number', 'captured_date'])
                 : null),
 
             'lastAlert' => Inertia::defer(fn () => AlertLog::orderByDesc('sent_at')

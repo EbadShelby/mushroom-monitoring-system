@@ -45,6 +45,10 @@ class CameraController extends Controller
             'captured_date' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+        ], [
+            'growing_cycle_id.required' => 'Please select a growing cycle.',
+            'growing_cycle_id.exists' => 'The selected growing cycle does not exist.',
+            'photo.uploaded' => 'The photo exceeds the server upload size limit or failed to upload.',
         ]);
 
         $path = $request->file('photo')->store('snapshots', 'public');
