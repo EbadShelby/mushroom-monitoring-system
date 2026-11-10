@@ -6,6 +6,7 @@ use App\Models\AlertLog;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
+use App\Services\HumidifierMistService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    public function __construct(private HumidifierMistService $mist) {}
+
     public function index(Request $request): Response
     {
         $activeCycle = GrowingCycle::where('status', 'active')
@@ -20,6 +23,7 @@ class DashboardController extends Controller
             ->first();
 
         return Inertia::render('Dashboard', [
+            'tank' => $this->mist->tank(now()),
             'activeCycle' => Inertia::defer(fn () => $activeCycle ? [
                 'id' => $activeCycle->id,
                 'name' => $activeCycle->name,

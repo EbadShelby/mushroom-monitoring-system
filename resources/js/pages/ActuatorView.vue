@@ -170,7 +170,7 @@ const tankLow = computed(
     () => tankPercent.value <= props.mist.tank.low_percent,
 );
 const weekMaxMl = computed(() =>
-    Math.max(1, ...props.mist.week.map((d) => d.ml)),
+    Math.max(1, todayMl.value, ...props.mist.week.map((d) => d.ml)),
 );
 
 function formatDuration(totalSeconds: number): string {
@@ -622,27 +622,68 @@ const triggerLabels: Record<string, string> = {
                         {{ formatDuration(todaySeconds) }} on ·
                         {{ mist.unit_count }} × {{ unitRate }} mL/s
                     </p>
-                    <div class="mt-4 flex h-24 items-end gap-2">
+                    <!-- 7-Day History Header -->
+                    <div
+                        class="mt-4 flex items-center justify-between border-t border-border/40 pt-3"
+                    >
+                        <span class="text-xs font-medium text-muted-foreground"
+                            >Last 7 Days Output</span
+                        >
+                        <span class="text-[11px] text-muted-foreground"
+                            >Hover bar for details</span
+                        >
+                    </div>
+
+                    <div class="mt-2 flex h-28 items-end gap-2">
                         <div
                             v-for="(day, i) in mist.week"
                             :key="day.date"
-                            class="flex flex-1 flex-col items-center gap-1"
+                            class="group relative flex flex-1 flex-col items-center gap-1"
                         >
+                            <!-- Output value above bar -->
+                            <span
+                                class="text-[10px] font-medium transition-opacity"
+                                :class="
+                                    (i === 6 ? todayMl : day.ml) > 0
+                                        ? i === 6
+                                            ? 'font-bold text-blue-500 dark:text-blue-400'
+                                            : 'text-foreground/80'
+                                        : 'text-muted-foreground/60 opacity-0 group-hover:opacity-100'
+                                "
+                            >
+                                {{ Math.round(i === 6 ? todayMl : day.ml) }}
+                            </span>
+
+                            <!-- Bar -->
                             <div
-                                class="w-full rounded-t bg-blue-500/70"
+                                class="w-full rounded-t transition-all"
+                                :class="
+                                    i === 6
+                                        ? 'bg-blue-500 shadow-sm shadow-blue-500/30'
+                                        : 'bg-blue-500/40 group-hover:bg-blue-500/70'
+                                "
                                 :style="{
                                     height: `${Math.max(
-                                        4,
+                                        5,
                                         ((i === 6 ? todayMl : day.ml) /
                                             weekMaxMl) *
                                             100,
                                     )}%`,
                                 }"
-                                :title="`${day.date}: ${day.ml} mL`"
+                                :title="`${day.date} (${i === 6 ? 'Today' : i === 5 ? 'Yesterday' : day.label}): ${(i === 6 ? todayMl : day.ml).toFixed(1)} mL · ${formatDuration(i === 6 ? todaySeconds : day.seconds)}`"
                             ></div>
-                            <span class="text-[10px] text-muted-foreground">{{
-                                day.label
-                            }}</span>
+
+                            <!-- Day label -->
+                            <span
+                                class="text-[10px]"
+                                :class="
+                                    i === 6
+                                        ? 'font-bold text-blue-500 dark:text-blue-400'
+                                        : 'text-muted-foreground'
+                                "
+                            >
+                                {{ i === 6 ? 'Today' : day.label }}
+                            </span>
                         </div>
                     </div>
                     <p class="mt-3 text-[11px] text-muted-foreground">

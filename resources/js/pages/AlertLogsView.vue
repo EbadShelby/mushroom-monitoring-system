@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import {
     Bell,
     Filter,
@@ -9,8 +9,7 @@ import {
     AlertTriangle,
 } from '@lucide/vue';
 import type { ApexOptions } from 'apexcharts';
-import axios from 'axios';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
 import type { AlertLog, Paginated } from '@/types';
 
@@ -23,17 +22,38 @@ defineOptions({
 const props = defineProps<{
     logs?: Paginated<AlertLog>;
     chartData?: { sensor: string; count: number }[];
+    filters?: { sensor?: string; from?: string; to?: string };
 }>();
 
 const logsData = ref<Paginated<AlertLog> | null>(props.logs ?? null);
 const chartData = ref(props.chartData ?? []);
 const isLoading = ref(false);
 
+watch(
+    () => props.logs,
+    (val) => {
+        if (val) {
+            logsData.value = val;
+        }
+    },
+    { immediate: true },
+);
+
+watch(
+    () => props.chartData,
+    (val) => {
+        if (val) {
+            chartData.value = val;
+        }
+    },
+    { immediate: true },
+);
+
 // Filters
-const sensorFilter = ref('');
-const fromDate = ref('');
-const toDate = ref('');
-const currentPage = ref(1);
+const sensorFilter = ref(props.filters?.sensor ?? '');
+const fromDate = ref(props.filters?.from ?? '');
+const toDate = ref(props.filters?.to ?? '');
+const currentPage = ref(props.logs?.current_page ?? 1);
 
 const sensorOptions = [
     { value: '', label: 'All Sensors' },
@@ -45,45 +65,26 @@ const sensorOptions = [
     { value: 'water_tank', label: 'Water Tank' },
 ];
 
-async function fetchLogs(page = 1) {
+function fetchLogs(page = 1) {
     isLoading.value = true;
     currentPage.value = page;
 
-    try {
-        const params: Record<string, unknown> = { page };
-
-        if (sensorFilter.value) {
-            params.sensor = sensorFilter.value;
-        }
-
-        if (fromDate.value) {
-            params.from = fromDate.value;
-        }
-
-        if (toDate.value) {
-            params.to = toDate.value;
-        }
-
-        const logsRes = await axios.get('/api/alert-logs/chart', { params });
-
-        // For paginated logs we just pass the filter params via URL
-        const logsResponse = await axios.get('/alerts', {
-            params,
-            headers: {
-                'X-Inertia': true,
-                'X-Inertia-Partial-Data': 'logs',
-                'X-Inertia-Partial-Component': 'AlertLogsView',
+    router.get(
+        '/alerts',
+        {
+            page,
+            ...(sensorFilter.value ? { sensor: sensorFilter.value } : {}),
+            ...(fromDate.value ? { from: fromDate.value } : {}),
+            ...(toDate.value ? { to: toDate.value } : {}),
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            onFinish: () => {
+                isLoading.value = false;
             },
-        });
-
-        if (logsResponse.data?.props?.logs) {
-            logsData.value = logsResponse.data.props.logs;
-        }
-
-        chartData.value = logsRes.data;
-    } finally {
-        isLoading.value = false;
-    }
+        },
+    );
 }
 
 function applyFilters() {

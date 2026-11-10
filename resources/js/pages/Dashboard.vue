@@ -19,6 +19,8 @@ import {
     Layers,
     ArrowRightLeft,
     X,
+    Droplet,
+    RefreshCw,
 } from '@lucide/vue';
 import type { ApexOptions } from 'apexcharts';
 import axios from 'axios';
@@ -29,7 +31,12 @@ import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
 
 const showLightbox = ref(false);
-import type { GrowingCycle, CameraSnapshot, AlertLog } from '@/types';
+import type {
+    GrowingCycle,
+    CameraSnapshot,
+    AlertLog,
+    HumidifierTank,
+} from '@/types';
 
 defineOptions({
     layout: {
@@ -47,6 +54,7 @@ const props = defineProps<{
     latestSnapshot?: CameraSnapshot | null;
     lastAlert?: AlertLog | null;
     chartData?: any[];
+    tank?: HumidifierTank;
 }>();
 
 const page = usePage();
@@ -270,6 +278,55 @@ function alertStatusClass(status: string) {
     return status === 'sent'
         ? 'bg-emerald-500/20 text-emerald-500'
         : 'bg-destructive/20 text-destructive';
+}
+
+function formatAlertDate(dateStr: string | null | undefined): string {
+    if (!dateStr) {
+        return '—';
+    }
+
+    const d = new Date(dateStr);
+
+    if (isNaN(d.getTime())) {
+        return dateStr;
+    }
+
+    return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+}
+
+const refillingTank = ref(false);
+
+async function refillTank() {
+    refillingTank.value = true;
+
+    try {
+        await axios.post('/api/actuators/tank-refill');
+        toast.success('Water tank refill logged.');
+        router.reload({ only: ['tank'] });
+    } catch {
+        toast.error('Failed to log tank refill.');
+    } finally {
+        refillingTank.value = false;
+    }
+}
+
+function formatDuration(totalSeconds: number): string {
+    const s = Math.max(0, Math.round(totalSeconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+
+    if (h > 0) {
+        return `${h}h ${m}m`;
+    }
+
+    return `${m}m`;
 }
 </script>
 
@@ -982,11 +1039,13 @@ function alertStatusClass(status: string) {
                 </div>
             </div>
 
-            <!-- Info Row: Active Cycle + Camera Snapshot + Last Alert -->
+            <!-- Info Row: Active Cycle + Water Tank + Camera Snapshot + Last Alert -->
             <div
                 class="grid gap-6"
                 :class="
-                    userRole === 'student' ? 'md:grid-cols-2' : 'md:grid-cols-3'
+                    userRole === 'student'
+                        ? 'md:grid-cols-2 lg:grid-cols-3'
+                        : 'md:grid-cols-2 lg:grid-cols-4'
                 "
             >
                 <!-- Active Growing Cycle -->
@@ -1098,6 +1157,122 @@ function alertStatusClass(status: string) {
                     </div>
                 </div>
 
+                <!-- Water Tank Level -->
+                <div
+                    class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+                >
+                    <div>
+                        <div class="mb-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="rounded-lg p-2 shadow-inner"
+                                    :class="
+                                        (tank?.percent ?? 100) <=
+                                        (tank?.low_percent ?? 20)
+                                            ? 'bg-red-500/10 text-red-500'
+                                            : 'bg-blue-500/10 text-blue-500'
+                                    "
+                                >
+                                    <Droplet class="h-5 w-5" />
+                                </div>
+                                <h3
+                                    class="font-semibold tracking-wide text-muted-foreground"
+                                >
+                                    WATER TANK
+                                </h3>
+                            </div>
+                            <span
+                                v-if="tank?.tracking"
+                                class="rounded-full px-2 py-0.5 text-xs font-bold"
+                                :class="
+                                    tank.percent <= tank.low_percent
+                                        ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                                        : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                                "
+                            >
+                                {{
+                                    tank.percent <= tank.low_percent
+                                        ? 'Low Water'
+                                        : 'Normal'
+                                }}
+                            </span>
+                        </div>
+
+                        <div v-if="tank">
+                            <div class="flex items-baseline justify-between">
+                                <div class="text-2xl font-bold text-foreground">
+                                    {{ tank.remaining_ml }}
+                                    <span
+                                        class="text-sm font-normal text-muted-foreground"
+                                    >
+                                        / {{ tank.capacity_ml }} mL
+                                    </span>
+                                </div>
+                                <span
+                                    class="text-sm font-semibold text-muted-foreground"
+                                >
+                                    {{ tank.percent }}%
+                                </span>
+                            </div>
+
+                            <!-- Progress bar -->
+                            <div
+                                class="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-muted"
+                            >
+                                <div
+                                    class="h-full rounded-full transition-all duration-500"
+                                    :class="
+                                        tank.percent <= tank.low_percent
+                                            ? 'bg-red-500'
+                                            : 'bg-blue-500'
+                                    "
+                                    :style="{ width: `${tank.percent}%` }"
+                                ></div>
+                            </div>
+
+                            <p class="mt-3 text-xs text-muted-foreground">
+                                <template v-if="tank.tracking">
+                                    ≈
+                                    {{
+                                        formatDuration(
+                                            tank.runtime_left_seconds,
+                                        )
+                                    }}
+                                    misting left
+                                </template>
+                                <template v-else>
+                                    Not tracking yet. Refill and log to start.
+                                </template>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="userRole !== 'student'"
+                        class="mt-4 flex items-center justify-between border-t border-border/40 pt-3"
+                    >
+                        <button
+                            type="button"
+                            @click="refillTank"
+                            :disabled="refillingTank"
+                            class="flex items-center gap-1.5 text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400 disabled:opacity-50"
+                        >
+                            <RefreshCw
+                                class="h-3.5 w-3.5"
+                                :class="{ 'animate-spin': refillingTank }"
+                            />
+                            {{ refillingTank ? 'Logging...' : 'Log Refill' }}
+                        </button>
+
+                        <a
+                            href="/actuators"
+                            class="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            Actuators →
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Latest Camera Snapshot -->
                 <div
                     class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
@@ -1200,7 +1375,9 @@ function alertStatusClass(status: string) {
                                     lastAlert.value_at_alert
                                 }}</strong></span
                             >
-                            <span>{{ lastAlert.sent_at }}</span>
+                            <span>{{
+                                formatAlertDate(lastAlert.sent_at)
+                            }}</span>
                         </div>
                     </div>
                     <div

@@ -46,7 +46,13 @@ test('dashboard loads successfully with active cycle and latest camera snapshot'
         'uploaded_by' => $user->id,
     ]);
 
-    $this->actingAs($user)
-        ->get(route('dashboard'))
-        ->assertOk();
+    $response = $this->actingAs($user)
+        ->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Dashboard')
+        ->has('tank.capacity_ml')
+        ->has('tank.percent')
+    );
 });

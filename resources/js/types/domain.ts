@@ -67,6 +67,8 @@ export interface HumidifierMist {
     };
 }
 
+export type HumidifierTank = HumidifierMist['tank'];
+
 export interface UserLog {
     id: number;
     user_id: number;
