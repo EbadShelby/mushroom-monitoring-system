@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Rules\PhilippineMobileNumber;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,6 +25,13 @@ class SystemSettingsController extends Controller
 
     public function updateSettings(Request $request): JsonResponse
     {
+        if (is_string($request->input('sms_recipients'))) {
+            $numbers = array_filter(
+                array_map(PhilippineMobileNumber::normalize(...), explode(',', $request->input('sms_recipients'))),
+            );
+            $request->merge(['sms_recipients' => implode(',', $numbers)]);
+        }
+
         $data = $request->validate([
             // ── Colonization thresholds ────────────────────────────────────────
             'threshold_col_temp_min' => ['nullable', 'numeric'],
@@ -46,7 +55,15 @@ class SystemSettingsController extends Controller
             // ── Other ─────────────────────────────────────────────────────────
             'led_on_hour' => ['nullable', 'integer', 'min:0', 'max:23'],
             'led_off_hour' => ['nullable', 'integer', 'min:0', 'max:23'],
-            'sms_recipients' => ['nullable', 'string'],
+            'sms_recipients' => ['nullable', 'string', function (string $attribute, mixed $value, Closure $fail): void {
+                $rule = new PhilippineMobileNumber;
+
+                foreach (explode(',', $value) as $number) {
+                    $rule->validate($attribute, $number, function (string $message) use ($fail, $number): void {
+                        $fail("Invalid recipient number: {$number}. Use e.g. 09123456789.");
+                    });
+                }
+            }],
             'system_name' => ['nullable', 'string', 'max:100'],
         ]);
 

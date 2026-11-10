@@ -287,13 +287,13 @@ function inputClass() {
                         <div class="space-y-1 md:col-span-2">
                             <label
                                 class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >Contact Number (Optional)</label
+                                >Contact Number (Optional, e.g. 09123456789)</label
                             >
                             <input
                                 v-model="newUser.contact_number"
                                 type="text"
                                 :class="inputClass()"
-                                placeholder="09XX XXX XXXX"
+                                placeholder="09123456789 or +639123456789"
                             />
                         </div>
                     </div>
@@ -386,6 +386,7 @@ function inputClass() {
                                             type="text"
                                             :class="inputClass()"
                                             class="!py-1"
+                                            placeholder="09123456789"
                                         />
                                     </template>
                                     <span v-else>{{

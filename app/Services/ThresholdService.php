@@ -16,8 +16,8 @@ class ThresholdService
         'humidity_high' => 80.0,  // humidifier OFF at 80%
         'co2_max' => 5000,  // high CO₂ acceptable during colonization
         'light_max' => 100.0, // keep dark/very dim — alert if > 100 lux
-        'soil_warning' => 40,    // substrate moisture warning (matches firmware SOIL_DRY)
-        'soil_critical' => 25,    // substrate moisture critical (matches firmware SOIL_CRITICAL)
+        'soil_warning' => 30,    // substrate moisture warning (matches firmware SOIL_DRY)
+        'soil_critical' => 20,    // substrate moisture critical (matches firmware SOIL_CRITICAL)
     ];
 
     // ─── Stage: Fruiting (mushrooms forming and growing) ──────────────────────────
@@ -29,8 +29,8 @@ class ThresholdService
         'co2_max' => 1000,  // keep below 1000 ppm for fruiting
         'light_min' => 200.0, // need indirect light — alert if < 200 lux
         'light_max' => 800.0, // alert if > 800 lux
-        'soil_warning' => 40,    // substrate moisture warning (matches firmware SOIL_DRY)
-        'soil_critical' => 25,    // substrate moisture critical (matches firmware SOIL_CRITICAL)
+        'soil_warning' => 30,    // substrate moisture warning (matches firmware SOIL_DRY)
+        'soil_critical' => 20,    // substrate moisture critical (matches firmware SOIL_CRITICAL)
     ];
 
     /**

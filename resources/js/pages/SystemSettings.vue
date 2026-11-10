@@ -495,11 +495,12 @@ function inputClass() {
                             v-model="settingsForm.sms_recipients"
                             rows="4"
                             :class="inputClass()"
-                            placeholder="+639123456789,+639987654321"
+                            placeholder="09123456789,09987654321"
                         ></textarea>
                         <p class="text-xs text-muted-foreground">
-                            Enter numbers in E.164 format, separated by commas.
-                            Uses Semaphore API.
+                            Enter numbers like 09123456789, separated by commas
+                            (+63 format is also accepted and converted). Uses
+                            Semaphore API.
                         </p>
                     </div>
                     <button

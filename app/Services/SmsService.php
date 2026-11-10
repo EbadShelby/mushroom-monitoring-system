@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\AlertLog;
+use App\Models\Setting;
 use App\Models\User;
+use App\Rules\PhilippineMobileNumber;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -22,7 +24,32 @@ class SmsService
     }
 
     /**
-     * Send an alert SMS to all faculty + admin users that have a contact number.
+     * Admin/faculty contact numbers merged with the "sms_recipients" setting,
+     * normalized to 09XXXXXXXXX and de-duplicated.
+     *
+     * @return list<string>
+     */
+    private function recipientNumbers(): array
+    {
+        $userNumbers = User::whereIn('role', ['admin', 'faculty'])
+            ->whereNotNull('contact_number')
+            ->where('contact_number', '!=', '')
+            ->pluck('contact_number')
+            ->all();
+
+        $settingNumbers = explode(',', (string) Setting::get('sms_recipients', ''));
+
+        $numbers = array_map(
+            PhilippineMobileNumber::normalize(...),
+            [...$userNumbers, ...$settingNumbers],
+        );
+
+        return array_values(array_unique(array_filter($numbers)));
+    }
+
+    /**
+     * Send an alert SMS to all faculty + admin users that have a contact number,
+     * plus any numbers listed in the SMS recipients setting.
      *
      * Logs each send attempt to alert_logs, respecting a per-sensor cooldown to
      * avoid SMS flooding (one alert per sensor per $cooldownMinutes window).
@@ -55,11 +82,7 @@ class SmsService
         }
 
         // ── Gather recipients ──────────────────────────────────────────────
-        $recipients = User::whereIn('role', ['admin', 'faculty'])
-            ->whereNotNull('contact_number')
-            ->where('contact_number', '!=', '')
-            ->pluck('contact_number')
-            ->toArray();
+        $recipients = $this->recipientNumbers();
 
         if (empty($recipients)) {
             Log::warning('No SMS recipients found — skipped', compact('sensor'));

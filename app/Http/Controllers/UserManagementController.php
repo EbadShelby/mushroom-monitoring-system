@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Rules\PhilippineMobileNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -30,12 +31,16 @@ class UserManagementController extends Controller
             abort(403);
         }
 
+        if ($request->has('contact_number')) {
+            $request->merge(['contact_number' => PhilippineMobileNumber::normalize($request->input('contact_number'))]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['required', 'string', 'in:admin,faculty,student'],
-            'contact_number' => ['nullable', 'string', 'max:20'],
+            'contact_number' => ['nullable', 'string', 'max:20', new PhilippineMobileNumber],
         ]);
 
         $user = User::create([
@@ -56,15 +61,19 @@ class UserManagementController extends Controller
             abort(403);
         }
 
+        if ($request->has('contact_number')) {
+            $request->merge(['contact_number' => PhilippineMobileNumber::normalize($request->input('contact_number'))]);
+        }
+
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'role' => ['sometimes', 'string', 'in:admin,faculty,student'],
-            'contact_number' => ['nullable', 'string', 'max:20'],
+            'contact_number' => ['nullable', 'string', 'max:20', new PhilippineMobileNumber],
         ]);
 
         $user->update($data);
 
-        return response()->json(['success' => true, 'user' => $user->fresh(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at'])]);
+        return response()->json(['success' => true, 'user' => $user->fresh()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at'])]);
     }
 
     public function deactivate(User $user): JsonResponse
