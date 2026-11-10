@@ -70,7 +70,7 @@ Laravel API (SINGLE entry point — all data flows through here)
 
 _All actuators use separate power rails — ESP32 only sends a relay signal. Relay is active LOW (LOW = ON, HIGH = OFF)._
 
-- **Humidifier** (Ultrasonic Mist Maker) → Relay N3 → GPIO 14
+- **Humidifier** (4 × Ultrasonic Mist Maker, wired together on one relay) → Relay N3 → GPIO 14
 - **LED Grow Light Strip** (5V USB) → Relay N2 → GPIO 27
 
 ## Threshold Values & Stage-Based Automation Logic (Gray Oyster Mushroom)
@@ -110,6 +110,11 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 - **Humidifier Failsafe Runtime**: Continuous humidifier operation is capped at 15 minutes with a mandatory 3-minute resting period, protecting the mist maker from overheating and alerting if the water reservoir runs dry.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
 - **Smart SMS Alerts**: Humidifier alerts only trigger on activation, not while recovering.
+- **Mist & Water Tank Tracking** (Actuator Control page): Mist output and tank level are _estimates_ calculated from the humidifier relay's on-time in `actuator_logs` (not measured by a sensor).
+    - Each of the 4 units is rated at 0.013 mL/s, so total output is 4 × 0.013 = 0.052 mL/s. The page shows today's total mist, a 7-day chart, and per-session mist in the logs table.
+    - Each unit has its own tank (300 mL usable). After refilling **all** tanks, press **Log refill** — tank tracking starts from that moment (until then the card shows "Not tracking yet" and a full tank). Only the refill time is stored (`settings.humidifier_tank_refilled_at`); the level is recomputed on every load.
+    - An SMS ("Water Tank" in Alert Logs) is sent to Admin/Faculty when the tank drops to 10% or below while misting, repeated at most every 3 hours.
+    - Tune via `.env`: `HUMIDIFIER_MIST_RATE`, `HUMIDIFIER_UNIT_COUNT`, `HUMIDIFIER_TANK_CAPACITY`, `HUMIDIFIER_LOW_TANK_PERCENT` (see `config/humidifier.php`).
 - **Automatic Stage Switch**: Users can switch growth stages on the dashboard or cycles page, instantly updating live gauges, target indicators, Pinia status evaluators, and backend automation logic.
 
 ## User Roles
@@ -282,6 +287,7 @@ Follow these steps when powering up the physical mushroom monitoring setup:
 4. **Access the Dashboard**
     - Open browser: `http://localhost:8080` (or `http://192.168.254.138:8080`)
     - Log in with your credentials.
+    - After refilling the humidifier tanks, open **Actuator Control** and press **Log refill** so the water-tank tracker restarts.
 
 5. **Power On ESP32**
     - Plug in the ESP32 board.
