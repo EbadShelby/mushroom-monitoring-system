@@ -7,6 +7,7 @@ use App\Models\GrowingCycle;
 use App\Models\SensorReading;
 use App\Models\Setting;
 use App\Services\FirebaseService;
+use App\Services\HumidifierMistService;
 use App\Services\SmsService;
 use App\Services\ThresholdService;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,7 @@ class SensorController extends Controller
         private FirebaseService $firebase,
         private SmsService $sms,
         private ThresholdService $threshold,
+        private HumidifierMistService $mist,
     ) {}
 
     /**
@@ -79,6 +81,12 @@ class SensorController extends Controller
                 'threshold' => $alert['threshold'],
                 'message' => $alert['message'],
             ]);
+        }
+
+        // Low water tank warning (only while misting, long cooldown to avoid SMS flooding)
+        if ($this->mist->isRunning() && ($tankAlert = $this->mist->lowTankAlert()) !== null) {
+            $this->sms->sendAlert($tankAlert, (int) config('humidifier.low_tank_alert_cooldown_minutes'));
+            $result['alerts'][] = $tankAlert;
         }
 
         // ── 6. Apply actuator commands ─────────────────────────────────────────

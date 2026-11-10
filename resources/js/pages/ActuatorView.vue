@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import {
     Droplets,
     Sun,
@@ -14,14 +14,17 @@ import {
     Lock,
     LockOpen,
     ShieldAlert,
+    Droplet,
+    RefreshCw,
 } from '@lucide/vue';
 import axios from 'axios';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { toast } from 'vue-sonner';
 import { useSensorStore } from '@/stores/useSensorStore';
 import type {
     ActuatorLog,
     ActuatorOverrides,
+    HumidifierMist,
     LedSchedule,
     Thresholds,
     Paginated,
@@ -38,6 +41,7 @@ const props = defineProps<{
     ledSchedule: LedSchedule;
     thresholds: Thresholds;
     overrides: ActuatorOverrides;
+    mist: HumidifierMist;
 }>();
 
 const page = usePage();
@@ -93,10 +97,104 @@ async function toggleActuator(
     try {
         await axios.post('/api/actuators/toggle', { actuator, action });
         toast.success(`${actuator} turned ${action}`);
+        reloadMist();
     } catch {
         toast.error('Failed to toggle actuator.');
     } finally {
         toggling.value[actuator] = false;
+    }
+}
+
+// ── Mist & water tank ────────────────────────────────────────────────────────
+const nowMs = ref(Date.now());
+let mistTimer: ReturnType<typeof setInterval>;
+let reloadTimer: ReturnType<typeof setInterval>;
+
+onMounted(() => {
+    mistTimer = setInterval(() => (nowMs.value = Date.now()), 1000);
+    reloadTimer = setInterval(reloadMist, 60000);
+});
+onUnmounted(() => {
+    clearInterval(mistTimer);
+    clearInterval(reloadTimer);
+});
+
+function reloadMist() {
+    router.reload({ only: ['mist', 'logs'] });
+}
+
+// Seconds elapsed since the server computed the summary while the humidifier ran.
+const liveSeconds = computed(() =>
+    props.mist.running
+        ? Math.max(
+              0,
+              Math.floor((nowMs.value - Date.parse(props.mist.as_of)) / 1000),
+          )
+        : 0,
+);
+
+const rate = computed(() => props.mist.rate_ml_per_second);
+const unitRate = computed(() => props.mist.unit_rate_ml_per_second);
+const todayMl = computed(
+    () => props.mist.today.ml + liveSeconds.value * rate.value,
+);
+const todaySeconds = computed(
+    () => props.mist.today.seconds + liveSeconds.value,
+);
+// Only drain the tank live once a refill has been logged; otherwise the
+// server keeps reporting a full tank and the tick would flicker back to 300.
+const tankRemainingMl = computed(() =>
+    props.mist.tank.tracking
+        ? Math.max(
+              0,
+              props.mist.tank.remaining_ml - liveSeconds.value * unitRate.value,
+          )
+        : props.mist.tank.remaining_ml,
+);
+const tankPercent = computed(() =>
+    Math.round((tankRemainingMl.value / props.mist.tank.capacity_ml) * 100),
+);
+const runtimeLeftSeconds = computed(() =>
+    Math.round(tankRemainingMl.value / unitRate.value),
+);
+const tankLow = computed(
+    () => tankPercent.value <= props.mist.tank.low_percent,
+);
+const weekMaxMl = computed(() =>
+    Math.max(1, ...props.mist.week.map((d) => d.ml)),
+);
+
+function formatDuration(totalSeconds: number): string {
+    const s = Math.max(0, Math.round(totalSeconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+
+    if (h > 0) {
+        return `${h}h ${m}m`;
+    }
+
+    return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+}
+
+const refilling = ref(false);
+
+async function refillTank() {
+    if (!canControl.value) {
+        toast.error('Access denied. Only Admin or Faculty can log a refill.');
+
+        return;
+    }
+
+    refilling.value = true;
+
+    try {
+        await axios.post('/api/actuators/humidifier/refill');
+        toast.success('Tank refill logged.');
+        reloadMist();
+    } catch {
+        toast.error('Failed to log refill.');
+    } finally {
+        refilling.value = false;
     }
 }
 
@@ -407,6 +505,132 @@ const triggerLabels: Record<string, string> = {
                 </div>
             </div>
 
+            <!-- Humidifier Mist & Water Tank -->
+            <div class="grid gap-6 md:grid-cols-2">
+                <div
+                    class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
+                >
+                    <div class="mb-4 flex items-center gap-2">
+                        <div
+                            class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner"
+                        >
+                            <Droplet class="h-4 w-4" />
+                        </div>
+                        <h2 class="font-semibold text-foreground">
+                            Water Tanks ({{ mist.unit_count }} units)
+                        </h2>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <p class="text-3xl font-bold text-foreground">
+                            {{ tankRemainingMl.toFixed(1) }}
+                            <span
+                                class="text-base font-normal text-muted-foreground"
+                                >/ {{ mist.tank.capacity_ml }} mL each</span
+                            >
+                        </p>
+                        <p class="text-sm text-muted-foreground">
+                            ≈ {{ formatDuration(runtimeLeftSeconds) }} of
+                            misting left
+                        </p>
+                    </div>
+                    <div class="mt-3 h-3 overflow-hidden rounded-full bg-muted">
+                        <div
+                            class="h-full rounded-full transition-all"
+                            :class="tankLow ? 'bg-red-500' : 'bg-blue-500'"
+                            :style="{ width: `${tankPercent}%` }"
+                        ></div>
+                    </div>
+                    <p
+                        v-if="tankLow && mist.tank.tracking"
+                        class="mt-3 text-sm font-medium text-red-500"
+                    >
+                        Tank is running low — refill soon.
+                    </p>
+                    <p
+                        v-if="!mist.tank.tracking"
+                        class="mt-3 text-xs text-muted-foreground"
+                    >
+                        Not tracking yet. Fill all tanks, then press “Log
+                        refill”.
+                    </p>
+                    <p
+                        v-else-if="mist.tank.refilled_at"
+                        class="mt-3 text-xs text-muted-foreground"
+                    >
+                        Last refill:
+                        {{
+                            new Date(mist.tank.refilled_at).toLocaleString(
+                                'en-PH',
+                            )
+                        }}
+                    </p>
+                    <button
+                        v-if="canControl"
+                        id="btn-tank-refill"
+                        @click="refillTank"
+                        :disabled="refilling"
+                        class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-600 transition-all hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400"
+                    >
+                        <RefreshCw class="h-4 w-4" />
+                        Log refill (all {{ mist.unit_count }} tanks)
+                    </button>
+                </div>
+
+                <div
+                    class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
+                >
+                    <div class="mb-4 flex items-center gap-2">
+                        <div
+                            class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner"
+                        >
+                            <Droplets class="h-4 w-4" />
+                        </div>
+                        <h2 class="font-semibold text-foreground">
+                            Mist Output (est.)
+                        </h2>
+                    </div>
+                    <p class="text-3xl font-bold text-foreground">
+                        {{ todayMl.toFixed(1) }}
+                        <span
+                            class="text-base font-normal text-muted-foreground"
+                            >mL today</span
+                        >
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                        {{ formatDuration(todaySeconds) }} on ·
+                        {{ mist.unit_count }} × {{ unitRate }} mL/s
+                    </p>
+                    <div class="mt-4 flex h-24 items-end gap-2">
+                        <div
+                            v-for="(day, i) in mist.week"
+                            :key="day.date"
+                            class="flex flex-1 flex-col items-center gap-1"
+                        >
+                            <div
+                                class="w-full rounded-t bg-blue-500/70"
+                                :style="{
+                                    height: `${Math.max(
+                                        4,
+                                        ((i === 6 ? todayMl : day.ml) /
+                                            weekMaxMl) *
+                                            100,
+                                    )}%`,
+                                }"
+                                :title="`${day.date}: ${day.ml} mL`"
+                            ></div>
+                            <span class="text-[10px] text-muted-foreground">{{
+                                day.label
+                            }}</span>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-[11px] text-muted-foreground">
+                        Estimated from relay on-time ×
+                        {{ mist.unit_count }} units × {{ unitRate }} mL/s, not
+                        measured.
+                    </p>
+                </div>
+            </div>
+
             <!-- LED Schedule & Thresholds -->
             <div class="grid gap-6 md:grid-cols-2">
                 <!-- LED Schedule -->
@@ -612,11 +836,16 @@ const triggerLabels: Record<string, string> = {
                                 >
                                     Triggered By
                                 </th>
+                                <th
+                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Run / Mist (est.)
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="!logsData">
-                                <td colspan="5" class="px-4 py-8 text-center">
+                                <td colspan="6" class="px-4 py-8 text-center">
                                     <div class="animate-pulse space-y-2">
                                         <div
                                             class="h-3 w-full rounded bg-muted"
@@ -672,10 +901,20 @@ const triggerLabels: Record<string, string> = {
                                 <td class="px-4 py-3 text-muted-foreground">
                                     {{ log.triggered_by ?? '—' }}
                                 </td>
+                                <td class="px-4 py-3 text-muted-foreground">
+                                    <template
+                                        v-if="log.duration_seconds != null"
+                                        >{{
+                                            formatDuration(log.duration_seconds)
+                                        }}
+                                        · {{ log.mist_ml }} mL</template
+                                    >
+                                    <template v-else>—</template>
+                                </td>
                             </tr>
                             <tr v-if="logsData && !logsData.data.length">
                                 <td
-                                    colspan="5"
+                                    colspan="6"
                                     class="px-4 py-8 text-center text-muted-foreground"
                                 >
                                     No actuator events logged.

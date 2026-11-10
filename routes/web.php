@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('actuators', [ActuatorController::class, 'index'])->name('actuators');
         Route::post('api/actuators/toggle', [ActuatorController::class, 'toggle'])->name('actuators.toggle');
         Route::post('api/actuators/override', [ActuatorController::class, 'toggleOverride'])->name('actuators.override');
+        Route::post('api/actuators/humidifier/refill', [ActuatorController::class, 'refillTank'])->name('actuators.humidifier.refill');
         Route::put('api/actuators/schedule', [ActuatorController::class, 'schedule'])->name('actuators.schedule');
 
         // Alert Logs (SMS)

@@ -43,6 +43,28 @@ export interface ActuatorLog {
     trigger: 'auto' | 'manual' | 'schedule';
     triggered_by: string | null;
     triggered_at: string;
+    duration_seconds?: number | null;
+    mist_ml?: number | null;
+}
+
+export interface HumidifierMist {
+    as_of: string;
+    rate_ml_per_second: number;
+    unit_rate_ml_per_second: number;
+    unit_count: number;
+    running: boolean;
+    today: { seconds: number; ml: number };
+    week: { date: string; label: string; seconds: number; ml: number }[];
+    tank: {
+        tracking: boolean;
+        capacity_ml: number;
+        used_ml: number;
+        remaining_ml: number;
+        percent: number;
+        low_percent: number;
+        runtime_left_seconds: number;
+        refilled_at: string | null;
+    };
 }
 
 export interface UserLog {

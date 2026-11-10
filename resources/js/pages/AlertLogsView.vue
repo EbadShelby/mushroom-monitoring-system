@@ -42,6 +42,7 @@ const sensorOptions = [
     { value: 'co2_raw', label: 'CO₂' },
     { value: 'light_level', label: 'Light' },
     { value: 'soil_moisture', label: 'Soil Moisture' },
+    { value: 'water_tank', label: 'Water Tank' },
 ];
 
 async function fetchLogs(page = 1) {
@@ -127,6 +128,7 @@ const sensorLabel: Record<string, string> = {
     co2_raw: 'CO₂',
     light_level: 'Light',
     soil_moisture: 'Soil',
+    water_tank: 'Water Tank',
 };
 </script>
 

@@ -6,6 +6,7 @@ use App\Models\ActuatorLog;
 use App\Models\GrowingCycle;
 use App\Models\Setting;
 use App\Services\FirebaseService;
+use App\Services\HumidifierMistService;
 use App\Services\ThresholdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 class ActuatorController extends Controller
 {
-    public function __construct(private FirebaseService $firebase, private ThresholdService $thresholdService) {}
+    public function __construct(private FirebaseService $firebase, private ThresholdService $thresholdService, private HumidifierMistService $mist) {}
 
     public function index(): Response
     {
@@ -25,7 +26,9 @@ class ActuatorController extends Controller
             'logs' => Inertia::defer(fn () => ActuatorLog::query()
                 ->orderByDesc('triggered_at')
                 ->paginate(20)
+                ->through(fn (ActuatorLog $log) => $this->withMistData($log))
             ),
+            'mist' => fn () => $this->mist->summary(),
             'ledSchedule' => [
                 'on_hour' => (int) Setting::get('led_on_hour', 6),
                 'off_hour' => (int) Setting::get('led_off_hour', 18),
@@ -42,6 +45,49 @@ class ActuatorController extends Controller
                 'humidifier' => Setting::get('override_humidifier') === '1',
                 'led' => Setting::get('override_led') === '1',
             ],
+        ]);
+    }
+
+    /**
+     * Attach on-duration and estimated mist to humidifier "off" entries.
+     *
+     * @return array<string, mixed>
+     */
+    private function withMistData(ActuatorLog $log): array
+    {
+        $data = $log->toArray();
+        $data['duration_seconds'] = null;
+        $data['mist_ml'] = null;
+
+        if ($log->actuator !== 'humidifier' || $log->action !== 'off') {
+            return $data;
+        }
+
+        $previous = ActuatorLog::query()
+            ->where('actuator', 'humidifier')
+            ->where(fn ($query) => $query
+                ->where('triggered_at', '<', $log->triggered_at)
+                ->orWhere(fn ($tie) => $tie->where('triggered_at', $log->triggered_at)->where('id', '<', $log->id)))
+            ->orderByDesc('triggered_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($previous?->action === 'on') {
+            $seconds = max(0, $log->triggered_at->getTimestamp() - $previous->triggered_at->getTimestamp());
+            $data['duration_seconds'] = $seconds;
+            $data['mist_ml'] = $this->mist->mlFor($seconds);
+        }
+
+        return $data;
+    }
+
+    public function refillTank(): JsonResponse
+    {
+        $refilledAt = $this->mist->refillTank();
+
+        return response()->json([
+            'success' => true,
+            'refilled_at' => $refilledAt->toIso8601String(),
         ]);
     }
 
