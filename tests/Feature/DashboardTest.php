@@ -54,6 +54,8 @@ test('dashboard loads successfully with active cycle and latest camera snapshot'
         ->component('Dashboard')
         ->has('tank.capacity_ml')
         ->has('tank.percent')
+        ->has('mist.today.ml')
+        ->has('mist.week')
     );
 
     $page = $response->viewData('page');

@@ -24,6 +24,7 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'tank' => $this->mist->tank(now()),
+            'mist' => fn () => $this->mist->summary(),
             'activeCycle' => Inertia::defer(fn () => $activeCycle ? [
                 'id' => $activeCycle->id,
                 'name' => $activeCycle->name,

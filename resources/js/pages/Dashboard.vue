@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Thermometer,
     Droplets,
@@ -35,6 +35,7 @@ import type {
     GrowingCycle,
     CameraSnapshot,
     AlertLog,
+    HumidifierMist,
     HumidifierTank,
 } from '@/types';
 
@@ -55,6 +56,7 @@ const props = defineProps<{
     lastAlert?: AlertLog | null;
     chartData?: any[];
     tank?: HumidifierTank;
+    mist?: HumidifierMist;
 }>();
 
 const page = usePage();
@@ -130,10 +132,12 @@ async function toggleStage() {
 
 // Real-time clock for the dashboard header
 const currentTime = ref('');
+const nowMs = ref(Date.now());
 let clockInterval: ReturnType<typeof setInterval> | null = null;
 
 function updateClock() {
-    currentTime.value = new Date().toLocaleTimeString('en-US', {
+    nowMs.value = Date.now();
+    currentTime.value = new Date(nowMs.value).toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         second: '2-digit',
@@ -317,13 +321,38 @@ async function refillTank() {
     try {
         await axios.post('/api/actuators/tank-refill');
         toast.success('Water tank refill logged.');
-        router.reload({ only: ['tank'] });
+        router.reload({ only: ['tank', 'mist'] });
     } catch {
         toast.error('Failed to log tank refill.');
     } finally {
         refillingTank.value = false;
     }
 }
+
+const liveMistSeconds = computed(() =>
+    props.mist?.running
+        ? Math.max(
+              0,
+              Math.floor((nowMs.value - Date.parse(props.mist.as_of)) / 1000),
+          )
+        : 0,
+);
+const mistRate = computed(() => props.mist?.rate_ml_per_second ?? 0);
+const mistUnitRate = computed(() => props.mist?.unit_rate_ml_per_second ?? 0);
+const mistUnitCount = computed(() => props.mist?.unit_count ?? 4);
+const todayMistMl = computed(
+    () => (props.mist?.today.ml ?? 0) + liveMistSeconds.value * mistRate.value,
+);
+const todayMistSeconds = computed(
+    () => (props.mist?.today.seconds ?? 0) + liveMistSeconds.value,
+);
+const weekMaxMistMl = computed(() =>
+    Math.max(
+        1,
+        todayMistMl.value,
+        ...(props.mist?.week.map((d) => d.ml) ?? [0]),
+    ),
+);
 
 function formatDuration(totalSeconds: number): string {
     const s = Math.max(0, Math.round(totalSeconds));
@@ -456,7 +485,9 @@ function formatDuration(totalSeconds: number): string {
             </div>
 
             <!-- Sensor Grid -->
-            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div
+                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+            >
                 <!-- Temperature -->
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
@@ -487,16 +518,6 @@ function formatDuration(totalSeconds: number): string {
                                 TEMPERATURE
                             </p>
                         </div>
-                        <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
-                            :class="
-                                isColonization
-                                    ? 'bg-amber-500/15 text-amber-400'
-                                    : 'bg-purple-500/15 text-purple-400'
-                            "
-                        >
-                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
-                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -566,16 +587,6 @@ function formatDuration(totalSeconds: number): string {
                                 HUMIDITY
                             </p>
                         </div>
-                        <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
-                            :class="
-                                isColonization
-                                    ? 'bg-amber-500/15 text-amber-400'
-                                    : 'bg-purple-500/15 text-purple-400'
-                            "
-                        >
-                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
-                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -645,16 +656,6 @@ function formatDuration(totalSeconds: number): string {
                                 CO₂ LEVEL
                             </p>
                         </div>
-                        <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
-                            :class="
-                                isColonization
-                                    ? 'bg-amber-500/15 text-amber-400'
-                                    : 'bg-purple-500/15 text-purple-400'
-                            "
-                        >
-                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
-                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -726,16 +727,6 @@ function formatDuration(totalSeconds: number): string {
                                 LIGHT LEVEL
                             </p>
                         </div>
-                        <span
-                            class="rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase"
-                            :class="
-                                isColonization
-                                    ? 'bg-amber-500/15 text-amber-400'
-                                    : 'bg-purple-500/15 text-purple-400'
-                            "
-                        >
-                            {{ isColonization ? 'Colonization' : 'Fruiting' }}
-                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -778,6 +769,85 @@ function formatDuration(totalSeconds: number): string {
                         >
                             <CheckCircle2 class="h-4 w-4" />
                             {{ isColonization ? 'Dark' : 'Optimal' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Substrate Moisture -->
+                <div
+                    class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    :class="
+                        store.soilStatus !== 'normal'
+                            ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
+                            : 'border-border/50 bg-card/60 backdrop-blur-md'
+                    "
+                >
+                    <div
+                        class="absolute -top-6 -right-6 text-foreground/5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12"
+                    >
+                        <Sprout class="h-32 w-32" stroke-width="1.5" />
+                    </div>
+
+                    <div
+                        class="relative z-10 flex items-center justify-between"
+                    >
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="rounded-lg bg-emerald-500/10 p-2 text-emerald-500 shadow-inner"
+                            >
+                                <Sprout class="h-5 w-5" />
+                            </div>
+                            <p
+                                class="text-sm font-semibold tracking-wide text-muted-foreground"
+                            >
+                                SUBSTRATE
+                            </p>
+                        </div>
+                        <span
+                            class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-emerald-600 uppercase dark:text-emerald-400"
+                        >
+                            {{ store.sensors.soil_status ?? 'Unknown' }}
+                        </span>
+                    </div>
+
+                    <div class="relative z-10 mt-6 flex items-baseline gap-2">
+                        <p
+                            class="text-5xl font-bold tracking-tighter text-foreground"
+                        >
+                            <span v-if="store.sensors.soil_moisture !== null">{{
+                                store.sensors.soil_moisture
+                            }}</span>
+                            <span v-else class="text-muted-foreground/50"
+                                >--</span
+                            >
+                        </p>
+                        <span class="text-xl font-medium text-muted-foreground"
+                            >%</span
+                        >
+                    </div>
+
+                    <div
+                        class="relative z-10 mt-4 flex items-center justify-between text-sm"
+                    >
+                        <span class="font-medium text-muted-foreground"
+                            >Target: ≥ 30%</span
+                        >
+                        <div
+                            v-if="store.soilStatus !== 'normal'"
+                            class="flex animate-pulse items-center gap-1 font-medium text-destructive"
+                        >
+                            <AlertCircle class="h-4 w-4" />
+                            {{
+                                store.soilStatus === 'critical'
+                                    ? 'Critical'
+                                    : 'Dry'
+                            }}
+                        </div>
+                        <div
+                            v-else
+                            class="flex items-center gap-1 font-medium text-primary"
+                        >
+                            <CheckCircle2 class="h-4 w-4" /> Optimal
                         </div>
                     </div>
                 </div>
@@ -863,129 +933,284 @@ function formatDuration(totalSeconds: number): string {
                 </div>
             </div>
 
-            <!-- Bottom Section: Soil & Actuators -->
-            <div class="grid gap-6 md:grid-cols-3">
-                <!-- Substrate Moisture -->
+            <!-- Operational Row: Water Tank + Mist Output + System Automation -->
+            <div class="grid gap-6 lg:grid-cols-3">
+                <!-- Water Tank Level -->
                 <div
-                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg md:col-span-1"
+                    class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
                 >
-                    <div class="mb-6 flex items-center gap-2">
-                        <div
-                            class="rounded-lg bg-emerald-500/10 p-2 text-emerald-500 shadow-inner"
-                        >
-                            <Sprout class="h-5 w-5" />
+                    <div>
+                        <div class="mb-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="rounded-lg p-2 shadow-inner"
+                                    :class="
+                                        (tank?.percent ?? 100) <=
+                                        (tank?.low_percent ?? 20)
+                                            ? 'bg-red-500/10 text-red-500'
+                                            : 'bg-blue-500/10 text-blue-500'
+                                    "
+                                >
+                                    <Droplet class="h-5 w-5" />
+                                </div>
+                                <h3
+                                    class="font-semibold tracking-wide text-muted-foreground"
+                                >
+                                    WATER TANK
+                                </h3>
+                            </div>
+                            <span
+                                v-if="tank?.tracking"
+                                class="rounded-full px-2 py-0.5 text-xs font-bold"
+                                :class="
+                                    tank.percent <= tank.low_percent
+                                        ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                                        : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                                "
+                            >
+                                {{
+                                    tank.percent <= tank.low_percent
+                                        ? 'Low Water'
+                                        : 'Normal'
+                                }}
+                            </span>
                         </div>
-                        <h3
-                            class="font-semibold tracking-wide text-muted-foreground"
-                        >
-                            SUBSTRATE MOISTURE
-                        </h3>
+
+                        <div v-if="tank">
+                            <div class="flex items-baseline justify-between">
+                                <div class="text-2xl font-bold text-foreground">
+                                    {{ tank.remaining_ml }}
+                                    <span
+                                        class="text-sm font-normal text-muted-foreground"
+                                    >
+                                        / {{ tank.capacity_ml }} mL
+                                    </span>
+                                </div>
+                                <span
+                                    class="text-sm font-semibold text-muted-foreground"
+                                >
+                                    {{ tank.percent }}%
+                                </span>
+                            </div>
+
+                            <!-- Progress bar -->
+                            <div
+                                class="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-muted"
+                            >
+                                <div
+                                    class="h-full rounded-full transition-all duration-500"
+                                    :class="
+                                        tank.percent <= tank.low_percent
+                                            ? 'bg-red-500'
+                                            : 'bg-blue-500'
+                                    "
+                                    :style="{ width: `${tank.percent}%` }"
+                                ></div>
+                            </div>
+
+                            <p class="mt-3 text-xs text-muted-foreground">
+                                <template v-if="tank.tracking">
+                                    ≈
+                                    {{
+                                        formatDuration(
+                                            tank.runtime_left_seconds,
+                                        )
+                                    }}
+                                    misting left
+                                </template>
+                                <template v-else>
+                                    Not tracking yet. Refill and log to start.
+                                </template>
+                            </p>
+                        </div>
                     </div>
 
-                    <div class="flex flex-col items-center justify-center py-6">
-                        <div
-                            class="relative flex h-40 w-40 items-center justify-center rounded-full border-4 border-muted bg-background/50 shadow-inner"
+                    <div
+                        v-if="userRole !== 'student'"
+                        class="mt-4 flex items-center justify-between border-t border-border/40 pt-3"
+                    >
+                        <button
+                            type="button"
+                            @click="refillTank"
+                            :disabled="refillingTank"
+                            class="flex items-center gap-1.5 text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400 disabled:opacity-50"
                         >
-                            <div
-                                class="absolute inset-0 rounded-full border-4 border-emerald-500 transition-all duration-1000"
-                                :style="`clip-path: inset(${100 - (store.sensors.soil_moisture ?? 0)}% 0 0 0)`"
-                            ></div>
-                            <div
-                                class="z-10 rounded-full bg-background/80 px-3 py-1 text-center backdrop-blur-sm"
-                            >
-                                <p
-                                    class="text-3xl font-bold tracking-tighter text-foreground"
-                                >
-                                    <span
-                                        v-if="
-                                            store.sensors.soil_moisture !== null
-                                        "
-                                        >{{ store.sensors.soil_moisture }}</span
-                                    >
-                                    <span
-                                        v-else
-                                        class="text-muted-foreground/50"
-                                        >--</span
-                                    >
-                                    <span class="text-lg text-muted-foreground"
-                                        >%</span
-                                    >
-                                </p>
-                            </div>
-                        </div>
-                        <div
-                            class="mt-6 flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 font-medium text-emerald-600 capitalize shadow-sm dark:text-emerald-400"
+                            <RefreshCw
+                                class="h-3.5 w-3.5"
+                                :class="{ 'animate-spin': refillingTank }"
+                            />
+                            {{ refillingTank ? 'Logging...' : 'Log Refill' }}
+                        </button>
+
+                        <Link
+                            href="/actuators"
+                            class="text-xs text-muted-foreground transition-colors hover:text-foreground"
                         >
-                            <Activity class="h-4 w-4" />
-                            {{ store.sensors.soil_status ?? 'Unknown' }}
-                        </div>
+                            Actuators →
+                        </Link>
                     </div>
                 </div>
 
-                <!-- Actuators Panel -->
+                <!-- Mist Output -->
                 <div
-                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg md:col-span-2"
+                    class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
                 >
-                    <div class="mb-6 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="rounded-lg bg-indigo-500/10 p-2 text-indigo-500 shadow-inner"
-                            >
-                                <Zap class="h-5 w-5" />
+                    <div>
+                        <div class="mb-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="rounded-lg bg-cyan-500/10 p-2 text-cyan-500 shadow-inner"
+                                >
+                                    <Droplets class="h-5 w-5" />
+                                </div>
+                                <h3
+                                    class="font-semibold tracking-wide text-muted-foreground"
+                                >
+                                    MIST OUTPUT
+                                </h3>
                             </div>
-                            <h3
-                                class="font-semibold tracking-wide text-muted-foreground"
+                            <span
+                                class="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-600 dark:text-cyan-400"
                             >
-                                SYSTEM AUTOMATION
-                            </h3>
+                                Est.
+                            </span>
                         </div>
-                        <span
-                            class="rounded-full bg-secondary/80 px-2.5 py-1 text-xs font-medium text-secondary-foreground shadow-sm"
-                        >
-                            Automated
-                        </span>
+
+                        <div v-if="mist">
+                            <p class="text-2xl font-bold text-foreground">
+                                {{ todayMistMl.toFixed(1) }}
+                                <span
+                                    class="text-sm font-normal text-muted-foreground"
+                                >
+                                    mL today
+                                </span>
+                            </p>
+                            <p class="mt-0.5 text-xs text-muted-foreground">
+                                {{ formatDuration(todayMistSeconds) }} on ·
+                                {{ mistUnitCount }} × {{ mistUnitRate }} mL/s
+                            </p>
+
+                            <div class="mt-4 flex h-16 items-end gap-1.5">
+                                <div
+                                    v-for="(day, i) in mist.week"
+                                    :key="day.date"
+                                    class="group relative flex flex-1 flex-col items-center gap-1"
+                                >
+                                    <div
+                                        class="w-full rounded-t transition-all"
+                                        :class="
+                                            i === 6
+                                                ? 'bg-cyan-500 shadow-sm shadow-cyan-500/30'
+                                                : 'bg-cyan-500/35 group-hover:bg-cyan-500/70'
+                                        "
+                                        :style="{
+                                            height: `${Math.max(
+                                                6,
+                                                ((i === 6
+                                                    ? todayMistMl
+                                                    : day.ml) /
+                                                    weekMaxMistMl) *
+                                                    100,
+                                            )}%`,
+                                        }"
+                                        :title="`${day.date} (${i === 6 ? 'Today' : i === 5 ? 'Yesterday' : day.label}): ${(i === 6 ? todayMistMl : day.ml).toFixed(1)} mL · ${formatDuration(i === 6 ? todayMistSeconds : day.seconds)}`"
+                                    ></div>
+                                    <span
+                                        class="text-[10px]"
+                                        :class="
+                                            i === 6
+                                                ? 'font-bold text-cyan-500 dark:text-cyan-400'
+                                                : 'text-muted-foreground'
+                                        "
+                                    >
+                                        {{ i === 6 ? 'Today' : day.label }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="grid h-[calc(100%-4rem)] gap-4 sm:grid-cols-2">
-                        <!-- Humidifier Actuator -->
-                        <div
-                            class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 p-4 backdrop-blur-sm transition-all hover:bg-muted/50 hover:shadow-md"
+                    <div
+                        class="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-xs text-muted-foreground"
+                    >
+                        <span>Last 7 days output</span>
+                        <Link
+                            href="/actuators"
+                            class="transition-colors hover:text-foreground"
                         >
-                            <div class="flex items-start justify-between">
+                            Details →
+                        </Link>
+                    </div>
+                </div>
+
+                <!-- Compact System Automation -->
+                <div
+                    class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+                >
+                    <div>
+                        <div class="mb-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
                                 <div
-                                    class="rounded-lg bg-blue-500/10 p-2.5 text-blue-500 shadow-inner"
+                                    class="rounded-lg bg-indigo-500/10 p-2 text-indigo-500 shadow-inner"
                                 >
-                                    <Droplets class="h-6 w-6" />
+                                    <Zap class="h-5 w-5" />
                                 </div>
-                                <div
-                                    class="relative flex h-3 w-3"
-                                    v-if="store.actuators.humidifier === 'on'"
+                                <h3
+                                    class="font-semibold tracking-wide text-muted-foreground"
                                 >
-                                    <span
-                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"
-                                    ></span>
-                                    <span
-                                        class="relative inline-flex h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
-                                    ></span>
-                                </div>
+                                    SYSTEM AUTOMATION
+                                </h3>
                             </div>
-                            <div class="mt-4">
-                                <h4
-                                    class="text-lg font-semibold text-foreground"
-                                >
-                                    Humidifier
-                                </h4>
-                                <div
-                                    class="mt-2 flex items-center justify-between"
-                                >
-                                    <span class="text-sm text-muted-foreground"
-                                        >Relay 1</span
+                            <span
+                                class="rounded-full bg-secondary/80 px-2.5 py-0.5 text-[11px] font-medium text-secondary-foreground"
+                            >
+                                Automated
+                            </span>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            <!-- Humidifier Actuator -->
+                            <div
+                                class="flex items-center justify-between rounded-xl border border-border/50 bg-background/40 px-3.5 py-2.5 transition-colors hover:bg-muted/50"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="rounded-lg bg-blue-500/10 p-2 text-blue-500"
                                     >
+                                        <Droplets class="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <p
+                                            class="text-sm font-semibold text-foreground"
+                                        >
+                                            Humidifier
+                                        </p>
+                                        <p
+                                            class="text-[11px] text-muted-foreground"
+                                        >
+                                            Relay 1
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
                                     <span
-                                        class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase transition-colors"
+                                        v-if="
+                                            store.actuators.humidifier === 'on'
+                                        "
+                                        class="relative flex h-2.5 w-2.5"
+                                    >
+                                        <span
+                                            class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"
+                                        ></span>
+                                        <span
+                                            class="relative inline-flex h-2.5 w-2.5 rounded-full bg-blue-500"
+                                        ></span>
+                                    </span>
+                                    <span
+                                        class="rounded-md px-2 py-0.5 text-xs font-bold tracking-wider uppercase"
                                         :class="
                                             store.actuators.humidifier === 'on'
-                                                ? 'bg-blue-500/20 text-blue-600 shadow-sm dark:text-blue-400'
+                                                ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
                                                 : 'bg-secondary text-muted-foreground'
                                         "
                                     >
@@ -993,47 +1218,47 @@ function formatDuration(totalSeconds: number): string {
                                     </span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- LED Actuator -->
-                        <div
-                            class="flex flex-col justify-between rounded-xl border border-border/50 bg-background/40 p-4 backdrop-blur-sm transition-all hover:bg-muted/50 hover:shadow-md"
-                        >
-                            <div class="flex items-start justify-between">
-                                <div
-                                    class="rounded-lg bg-yellow-500/10 p-2.5 text-yellow-500 shadow-inner"
-                                >
-                                    <Sun class="h-6 w-6" />
-                                </div>
-                                <div
-                                    class="relative flex h-3 w-3"
-                                    v-if="store.actuators.led === 'on'"
-                                >
-                                    <span
-                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75"
-                                    ></span>
-                                    <span
-                                        class="relative inline-flex h-3 w-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"
-                                    ></span>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <h4
-                                    class="text-lg font-semibold text-foreground"
-                                >
-                                    Grow Lights
-                                </h4>
-                                <div
-                                    class="mt-2 flex items-center justify-between"
-                                >
-                                    <span class="text-sm text-muted-foreground"
-                                        >Relay 2</span
+                            <!-- LED Actuator -->
+                            <div
+                                class="flex items-center justify-between rounded-xl border border-border/50 bg-background/40 px-3.5 py-2.5 transition-colors hover:bg-muted/50"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="rounded-lg bg-yellow-500/10 p-2 text-yellow-500"
                                     >
+                                        <Sun class="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <p
+                                            class="text-sm font-semibold text-foreground"
+                                        >
+                                            Grow Lights
+                                        </p>
+                                        <p
+                                            class="text-[11px] text-muted-foreground"
+                                        >
+                                            Relay 2
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
                                     <span
-                                        class="rounded-md px-2 py-1 text-xs font-bold tracking-wider uppercase transition-colors"
+                                        v-if="store.actuators.led === 'on'"
+                                        class="relative flex h-2.5 w-2.5"
+                                    >
+                                        <span
+                                            class="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75"
+                                        ></span>
+                                        <span
+                                            class="relative inline-flex h-2.5 w-2.5 rounded-full bg-yellow-500"
+                                        ></span>
+                                    </span>
+                                    <span
+                                        class="rounded-md px-2 py-0.5 text-xs font-bold tracking-wider uppercase"
                                         :class="
                                             store.actuators.led === 'on'
-                                                ? 'bg-yellow-500/20 text-yellow-600 shadow-sm dark:text-yellow-400'
+                                                ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
                                                 : 'bg-secondary text-muted-foreground'
                                         "
                                     >
@@ -1043,16 +1268,29 @@ function formatDuration(totalSeconds: number): string {
                             </div>
                         </div>
                     </div>
+
+                    <div
+                        v-if="userRole !== 'student'"
+                        class="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-xs text-muted-foreground"
+                    >
+                        <span>Relay controls</span>
+                        <Link
+                            href="/actuators"
+                            class="transition-colors hover:text-foreground"
+                        >
+                            Manage →
+                        </Link>
+                    </div>
                 </div>
             </div>
 
-            <!-- Info Row: Active Cycle + Water Tank + Camera Snapshot + Last Alert -->
+            <!-- Info Row: Active Cycle + Camera Snapshot + Last Alert -->
             <div
                 class="grid gap-6"
                 :class="
                     userRole === 'student'
-                        ? 'md:grid-cols-2 lg:grid-cols-3'
-                        : 'md:grid-cols-2 lg:grid-cols-4'
+                        ? 'md:grid-cols-2 lg:grid-cols-2'
+                        : 'md:grid-cols-2 lg:grid-cols-3'
                 "
             >
                 <!-- Active Growing Cycle -->
@@ -1161,122 +1399,6 @@ function formatDuration(totalSeconds: number): string {
                     >
                         <Calendar class="mb-2 h-10 w-10 opacity-30" />
                         <p class="text-sm">No active cycle</p>
-                    </div>
-                </div>
-
-                <!-- Water Tank Level -->
-                <div
-                    class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
-                >
-                    <div>
-                        <div class="mb-4 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <div
-                                    class="rounded-lg p-2 shadow-inner"
-                                    :class="
-                                        (tank?.percent ?? 100) <=
-                                        (tank?.low_percent ?? 20)
-                                            ? 'bg-red-500/10 text-red-500'
-                                            : 'bg-blue-500/10 text-blue-500'
-                                    "
-                                >
-                                    <Droplet class="h-5 w-5" />
-                                </div>
-                                <h3
-                                    class="font-semibold tracking-wide text-muted-foreground"
-                                >
-                                    WATER TANK
-                                </h3>
-                            </div>
-                            <span
-                                v-if="tank?.tracking"
-                                class="rounded-full px-2 py-0.5 text-xs font-bold"
-                                :class="
-                                    tank.percent <= tank.low_percent
-                                        ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                                        : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
-                                "
-                            >
-                                {{
-                                    tank.percent <= tank.low_percent
-                                        ? 'Low Water'
-                                        : 'Normal'
-                                }}
-                            </span>
-                        </div>
-
-                        <div v-if="tank">
-                            <div class="flex items-baseline justify-between">
-                                <div class="text-2xl font-bold text-foreground">
-                                    {{ tank.remaining_ml }}
-                                    <span
-                                        class="text-sm font-normal text-muted-foreground"
-                                    >
-                                        / {{ tank.capacity_ml }} mL
-                                    </span>
-                                </div>
-                                <span
-                                    class="text-sm font-semibold text-muted-foreground"
-                                >
-                                    {{ tank.percent }}%
-                                </span>
-                            </div>
-
-                            <!-- Progress bar -->
-                            <div
-                                class="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-muted"
-                            >
-                                <div
-                                    class="h-full rounded-full transition-all duration-500"
-                                    :class="
-                                        tank.percent <= tank.low_percent
-                                            ? 'bg-red-500'
-                                            : 'bg-blue-500'
-                                    "
-                                    :style="{ width: `${tank.percent}%` }"
-                                ></div>
-                            </div>
-
-                            <p class="mt-3 text-xs text-muted-foreground">
-                                <template v-if="tank.tracking">
-                                    ≈
-                                    {{
-                                        formatDuration(
-                                            tank.runtime_left_seconds,
-                                        )
-                                    }}
-                                    misting left
-                                </template>
-                                <template v-else>
-                                    Not tracking yet. Refill and log to start.
-                                </template>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div
-                        v-if="userRole !== 'student'"
-                        class="mt-4 flex items-center justify-between border-t border-border/40 pt-3"
-                    >
-                        <button
-                            type="button"
-                            @click="refillTank"
-                            :disabled="refillingTank"
-                            class="flex items-center gap-1.5 text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400 disabled:opacity-50"
-                        >
-                            <RefreshCw
-                                class="h-3.5 w-3.5"
-                                :class="{ 'animate-spin': refillingTank }"
-                            />
-                            {{ refillingTank ? 'Logging...' : 'Log Refill' }}
-                        </button>
-
-                        <a
-                            href="/actuators"
-                            class="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Actuators →
-                        </a>
                     </div>
                 </div>
 
