@@ -87,7 +87,8 @@ class GrowingCycleController extends Controller
                 $isColonization = $cycle->growing_stage === 'colonization';
                 $tempMin = $isColonization ? 28 : 28;
                 $tempMax = $isColonization ? 32 : 32;
-                $humLow = $isColonization ? 70 : 85;
+                $humLow = 75;
+                $humHigh = 95;
                 $co2Max = $isColonization ? 5000 : 1000;
                 $soilWarn = 40;
 
@@ -96,7 +97,7 @@ class GrowingCycleController extends Controller
                         fn ($r) => $r->temperature !== null && ($r->temperature < $tempMin || $r->temperature > $tempMax)
                     )->count(),
                     'humidity' => $readings->filter(
-                        fn ($r) => $r->humidity !== null && $r->humidity < $humLow
+                        fn ($r) => $r->humidity !== null && ($r->humidity < $humLow || $r->humidity > $humHigh)
                     )->count(),
                     'co2' => $readings->filter(
                         fn ($r) => $r->co2_raw !== null && $r->co2_raw > $co2Max

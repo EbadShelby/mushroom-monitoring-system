@@ -42,7 +42,7 @@ class ReportController extends Controller
             'temperature' => $readings->filter(
                 fn ($r) => $r->temperature !== null && ($r->temperature < 28 || $r->temperature > 32)
             )->count(),
-            'humidity' => $readings->filter(fn ($r) => $r->humidity !== null && $r->humidity < 80)->count(),
+            'humidity' => $readings->filter(fn ($r) => $r->humidity !== null && ($r->humidity < 75 || $r->humidity > 95))->count(),
             'co2' => $readings->filter(fn ($r) => $r->co2_raw !== null && $r->co2_raw > 1000)->count(),
             'soil_moisture' => $readings->filter(fn ($r) => $r->soil_moisture !== null && $r->soil_moisture < 40)->count(),
             'total_readings' => $readings->count(),

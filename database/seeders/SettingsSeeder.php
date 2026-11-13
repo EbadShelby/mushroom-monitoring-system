@@ -15,7 +15,7 @@ class SettingsSeeder extends Seeder
         $settings = [
             ['key' => 'temp_min', 'value' => '28'],
             ['key' => 'temp_max', 'value' => '32'],
-            ['key' => 'humidity_min', 'value' => '80'],
+            ['key' => 'humidity_min', 'value' => '75'],
             ['key' => 'humidity_max', 'value' => '95'],
             ['key' => 'co2_max', 'value' => '1000'],
             ['key' => 'soil_dry', 'value' => '30'],

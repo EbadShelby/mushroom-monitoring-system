@@ -12,8 +12,8 @@ class ThresholdService
     private const COLONIZATION_DEFAULTS = [
         'temp_min' => 28.0,  // ideal 28–32°C
         'temp_max' => 32.0,
-        'humidity_low' => 70.0,  // humidifier ON below 70%
-        'humidity_high' => 80.0,  // humidifier OFF at 80%
+        'humidity_low' => 75.0,  // humidifier ON below 75%
+        'humidity_high' => 95.0,  // humidifier OFF at 95%
         'co2_max' => 5000,  // high CO₂ acceptable during colonization
         'light_max' => 100.0, // keep dark/very dim — alert if > 100 lux
         'soil_warning' => 30,    // substrate moisture warning (matches firmware SOIL_DRY)
@@ -24,7 +24,7 @@ class ThresholdService
     private const FRUITING_DEFAULTS = [
         'temp_min' => 28.0,  // ideal 28–32°C
         'temp_max' => 32.0,
-        'humidity_low' => 85.0,  // humidifier ON below 85%
+        'humidity_low' => 75.0,  // humidifier ON below 75%
         'humidity_high' => 95.0,  // humidifier OFF at 95%
         'co2_max' => 1000,  // keep below 1000 ppm for fruiting
         'light_min' => 200.0, // need indirect light — alert if < 200 lux

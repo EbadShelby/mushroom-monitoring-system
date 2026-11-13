@@ -161,7 +161,7 @@ const breachCards = computed(() => [
     {
         label: 'Humidity',
         value: props.breachSummary?.humidity ?? 0,
-        range: '≥ 80%',
+        range: '75–95%',
         icon: Droplets,
         color: 'text-cyan-400',
         bg: 'bg-cyan-500/10',
@@ -272,7 +272,10 @@ const groupedSnapshots = computed(() => {
 const snapshotNumberMap = computed(() => {
     const snaps = props.snapshots ?? [];
     const sorted = [...snaps].sort((a, b) => {
-        const dateComp = (a.captured_date ?? '').localeCompare(b.captured_date ?? '');
+        const dateComp = (a.captured_date ?? '').localeCompare(
+            b.captured_date ?? '',
+        );
+
         if (dateComp !== 0) {
             return dateComp;
         }
@@ -785,7 +788,8 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                         v-if="snapshotNumberMap.has(snap.id)"
                                         class="text-xs font-semibold text-foreground dark:text-white"
                                     >
-                                        Snapshot {{ snapshotNumberMap.get(snap.id) }}
+                                        Snapshot
+                                        {{ snapshotNumberMap.get(snap.id) }}
                                     </p>
                                 </div>
                             </div>

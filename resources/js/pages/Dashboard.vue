@@ -590,8 +590,7 @@ function formatDuration(totalSeconds: number): string {
                         class="relative z-10 mt-4 flex items-center justify-between text-sm"
                     >
                         <span class="font-medium text-muted-foreground"
-                            >Target:
-                            {{ isColonization ? '70–80%' : '85–95%' }}</span
+                            >Target: 75–95%</span
                         >
                         <div
                             v-if="store.humidityStatus !== 'normal'"

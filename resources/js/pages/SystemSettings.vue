@@ -204,7 +204,7 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="70"
+                                    placeholder="75"
                                 />
                             </div>
                             <div class="space-y-1">
@@ -221,7 +221,7 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="80"
+                                    placeholder="95"
                                 />
                             </div>
                             <div class="space-y-1">
@@ -362,7 +362,7 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="85"
+                                    placeholder="75"
                                 />
                             </div>
                             <div class="space-y-1">

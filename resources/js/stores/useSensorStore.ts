@@ -98,22 +98,12 @@ export const useSensorStore = defineStore('sensor', () => {
             return 'critical';
         }
 
-        if (activeStage.value === 'colonization') {
-            if (hum < 65) {
-                return 'critical';
-            }
+        if (hum < 70) {
+            return 'critical';
+        }
 
-            if (hum < 70 || hum > 80) {
-                return 'warning';
-            }
-        } else {
-            if (hum < 80) {
-                return 'critical';
-            }
-
-            if (hum < 85 || hum > 95) {
-                return 'warning';
-            }
+        if (hum < 75 || hum > 95) {
+            return 'warning';
         }
 
         return 'normal';

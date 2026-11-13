@@ -25,7 +25,7 @@ test('low humidity turns on humidifier when rested', function () {
     ]);
 
     $result = $service->evaluate([
-        'humidity' => 75.0, // below 85% fruiting min
+        'humidity' => 70.0, // below 75% min
         'co2_raw' => 1200,   // above 1000 ppm, but below 2000 ppm emergency
         'temperature' => 26.0,
     ], $cycle);
@@ -127,10 +127,10 @@ test('humidifier stall alert fires when humidity stays low after 5 minutes of mi
     expect(collect($result['alerts'])->contains(fn ($a) => str_contains($a['message'], 'after 5 mins of misting')))->toBeTrue();
 });
 
-dataset('humidity control band (fruiting 85-95)', [
-    'off, 87 turns on early, no SMS' => ['off', 87.0, 'on', false],
-    'off, 88 inside band does nothing' => ['off', 88.0, null, false],
-    'off, 84 turns on with SMS' => ['off', 84.0, 'on', true],
+dataset('humidity control band (75-95)', [
+    'off, 77 turns on early, no SMS' => ['off', 77.0, 'on', false],
+    'off, 78 inside band does nothing' => ['off', 78.0, null, false],
+    'off, 74 turns on with SMS' => ['off', 74.0, 'on', true],
     'on, 93 keeps running' => ['on', 93.0, null, false],
     'on, 94 turns off before 95' => ['on', 94.0, 'off', false],
 ]);
@@ -161,4 +161,4 @@ test('humidifier uses an inner control band so humidity stays in range', functio
 
     expect($result['commands']['humidifier'])->toBe($command)
         ->and(collect($result['alerts'])->contains('sensor', 'humidity'))->toBe($sendsSms);
-})->with('humidity control band (fruiting 85-95)');
+})->with('humidity control band (75-95)');
