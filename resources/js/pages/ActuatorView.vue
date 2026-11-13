@@ -370,9 +370,7 @@ const triggerLabels: Record<string, string> = {
                 v-if="anyOverrideActive"
                 class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-4"
             >
-                <ShieldAlert
-                    class="mt-0.5 h-5 w-5 shrink-0 text-amber-500"
-                />
+                <ShieldAlert class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                 <div>
                     <p
                         class="text-sm font-semibold text-amber-600 dark:text-amber-400"

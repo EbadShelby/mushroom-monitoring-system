@@ -79,7 +79,9 @@ const groupedSnapshots = computed(() => {
 
 const snapshotNumberMap = computed(() => {
     const sorted = [...props.snapshots].sort((a, b) => {
-        const dateComp = (a.captured_date ?? '').localeCompare(b.captured_date ?? '');
+        const dateComp = (a.captured_date ?? '').localeCompare(
+            b.captured_date ?? '',
+        );
 
         if (dateComp !== 0) {
             return dateComp;
@@ -368,7 +370,7 @@ function formatDate(d: string | null) {
 
         <!-- Filter bar -->
         <div
-            class="flex flex-wrap items-end gap-4 rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
+            class="flex flex-wrap items-end gap-4 rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
         >
             <Filter
                 class="h-4 w-4 shrink-0 text-muted-foreground dark:text-slate-400"
@@ -408,7 +410,7 @@ function formatDate(d: string | null) {
             </div>
             <button
                 v-if="filterCycle || filterDate"
-                class="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground dark:border-slate-700 dark:text-slate-400 dark:text-white"
+                class="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground dark:border-slate-700 dark:text-slate-400 dark:hover:text-white"
                 @click="clearFilters"
             >
                 <X class="h-3.5 w-3.5" /> Clear
@@ -425,10 +427,10 @@ function formatDate(d: string | null) {
         <!-- Timeline -->
         <div
             v-if="snapshots.length === 0"
-            class="flex flex-col items-center gap-4 rounded-2xl border border-border/50 bg-card/50 py-20 text-center backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
+            class="flex flex-col items-center gap-4 rounded-2xl border border-border/50 bg-card/50 py-20 text-center backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
         >
             <div
-                class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60 dark:bg-muted dark:bg-slate-700/60"
+                class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60 dark:bg-slate-700/60"
             >
                 <Camera
                     class="h-8 w-8 text-muted-foreground/80 dark:text-slate-500"
@@ -457,7 +459,7 @@ function formatDate(d: string | null) {
             <div
                 v-for="group in groupedSnapshots"
                 :key="group.date"
-                class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
+                class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
             >
                 <div class="mb-4 flex items-center gap-2">
                     <CalendarDays class="h-4 w-4 text-emerald-400" />
@@ -487,12 +489,13 @@ function formatDate(d: string | null) {
                         />
                         <!-- Overlay -->
                         <div
-                            class="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-2 opacity-0 transition duration-200 group-hover:opacity-100"
+                            class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/70 via-transparent to-transparent p-2 opacity-0 transition duration-200 group-hover:opacity-100"
                         >
                             <span
                                 v-if="snapshotNumberMap.has(snap.id)"
                                 class="text-xs font-bold text-foreground dark:text-white"
-                                >Snapshot {{ snapshotNumberMap.get(snap.id) }}</span
+                                >Snapshot
+                                {{ snapshotNumberMap.get(snap.id) }}</span
                             >
                             <span
                                 v-if="snap.notes"
@@ -530,11 +533,11 @@ function formatDate(d: string | null) {
                 @click.self="showUpload = false"
             >
                 <div
-                    class="w-full max-w-lg rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
+                    class="w-full max-w-lg rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-slate-700/50 dark:bg-slate-900"
                 >
                     <!-- Header -->
                     <div
-                        class="flex items-center justify-between border-b border-border/50 px-6 py-4 dark:border-border dark:border-slate-700/50"
+                        class="flex items-center justify-between border-b border-border/50 px-6 py-4 dark:border-slate-700/50"
                     >
                         <div class="flex items-center gap-3">
                             <div
@@ -549,7 +552,7 @@ function formatDate(d: string | null) {
                             </h2>
                         </div>
                         <button
-                            class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:text-white"
+                            class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:hover:text-white"
                             @click="showUpload = false"
                         >
                             <X class="h-4 w-4" />
@@ -621,7 +624,7 @@ function formatDate(d: string | null) {
                                     @drop.prevent="onDrop"
                                 >
                                     <div
-                                        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 dark:bg-muted dark:bg-slate-700/60"
+                                        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 dark:bg-slate-700/60"
                                     >
                                         <ImageIcon
                                             class="h-6 w-6 text-muted-foreground dark:text-slate-400"
@@ -731,13 +734,13 @@ function formatDate(d: string | null) {
                 @click="lightboxSnap = null"
             >
                 <button
-                    class="absolute top-4 right-4 rounded-full bg-card p-2 text-foreground backdrop-blur-sm hover:bg-muted dark:bg-slate-700 dark:bg-slate-800/80 dark:text-white"
+                    class="absolute top-4 right-4 rounded-full bg-card p-2 text-foreground backdrop-blur-sm hover:bg-muted dark:bg-slate-800/80 dark:text-white"
                     @click="lightboxSnap = null"
                 >
                     <X class="h-5 w-5" />
                 </button>
                 <button
-                    class="absolute left-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-700 dark:bg-slate-800/80 dark:text-white"
+                    class="absolute left-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-800/80 dark:text-white"
                     :disabled="lightboxIdx === 0"
                     @click.stop="lightboxPrev"
                 >
@@ -762,7 +765,8 @@ function formatDate(d: string | null) {
                             v-if="snapshotNumberMap.has(lightboxSnap.id)"
                             class="text-xs text-muted-foreground dark:text-slate-400"
                         >
-                            Snapshot {{ snapshotNumberMap.get(lightboxSnap.id) }}
+                            Snapshot
+                            {{ snapshotNumberMap.get(lightboxSnap.id) }}
                         </p>
                         <p
                             v-if="lightboxSnap.notes"
@@ -778,7 +782,7 @@ function formatDate(d: string | null) {
                     </p>
                 </div>
                 <button
-                    class="absolute right-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-700 dark:bg-slate-800/80 dark:text-white"
+                    class="absolute right-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-800/80 dark:text-white"
                     :disabled="lightboxIdx === snapshots.length - 1"
                     @click.stop="lightboxNext"
                 >
