@@ -22,6 +22,7 @@ defineOptions({
 
 const props = defineProps<{
     settings?: SystemSettingsType;
+    thresholdDefaults?: Record<string, number>;
 }>();
 
 const page = usePage();
@@ -42,14 +43,33 @@ const tabs: { id: Tab; label: string; icon: unknown }[] = [
 ];
 
 // ---------- Settings Form ----------
+const savedSettings = ref<SystemSettingsType>({ ...props.settings });
 const settingsForm = ref<SystemSettingsType>({ ...props.settings });
 const savingSettings = ref(false);
+
+function thresholdPlaceholder(key: keyof SystemSettingsType): string {
+    const current = savedSettings.value?.[key];
+    const fallback = props.thresholdDefaults?.[key as string];
+
+    if (current !== undefined && current !== null && current !== '') {
+        return String(current);
+    }
+
+    return fallback !== undefined ? String(fallback) : '';
+}
 
 async function saveSettings() {
     savingSettings.value = true;
 
     try {
         await axios.put('/api/settings', settingsForm.value);
+
+        for (const [k, v] of Object.entries(settingsForm.value)) {
+            if (v !== undefined && v !== null && v !== '') {
+                (savedSettings.value as Record<string, unknown>)[k] = v;
+            }
+        }
+
         toast.success('Settings saved.');
     } catch {
         toast.error('Failed to save settings.');
@@ -170,7 +190,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="28"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_temp_min',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -187,7 +211,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="30"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_temp_max',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -204,7 +232,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="75"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_humidity_low',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -221,7 +253,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="95"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_humidity_high',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -236,7 +272,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="5000"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_co2_max',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -253,7 +293,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="100"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_light_max',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -270,7 +314,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="55"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_soil_warning',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -287,7 +335,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="50"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_col_soil_critical',
+                                        )
+                                    "
                                 />
                             </div>
                         </div>
@@ -328,7 +380,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="28"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_temp_min',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -345,7 +401,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
-                                    placeholder="30"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_temp_max',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -362,7 +422,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="75"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_humidity_low',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -379,7 +443,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="95"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_humidity_high',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -396,7 +464,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="1000"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_co2_max',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -414,7 +486,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="200"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_light_min',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -431,7 +507,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="800"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_light_max',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -448,7 +528,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="55"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_soil_warning',
+                                        )
+                                    "
                                 />
                             </div>
                             <div class="space-y-1">
@@ -465,7 +549,11 @@ function formatHour(hour: number | string | undefined | null): string {
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
-                                    placeholder="50"
+                                    :placeholder="
+                                        thresholdPlaceholder(
+                                            'threshold_fruit_soil_critical',
+                                        )
+                                    "
                                 />
                             </div>
                         </div>

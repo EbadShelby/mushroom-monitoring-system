@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use App\Rules\PhilippineMobileNumber;
+use App\Services\ThresholdService;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class SystemSettingsController extends Controller
 
         return Inertia::render('SystemSettings', [
             'settings' => Setting::all()->pluck('value', 'key'),
+            'thresholdDefaults' => ThresholdService::defaultThresholdSettings(),
         ]);
     }
 

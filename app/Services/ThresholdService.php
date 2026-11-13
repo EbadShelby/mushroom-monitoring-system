@@ -64,6 +64,26 @@ class ThresholdService
     }
 
     /**
+     * Default threshold values keyed by their setting key name.
+     *
+     * @return array<string, float|int>
+     */
+    public static function defaultThresholdSettings(): array
+    {
+        $defaults = [];
+
+        foreach (self::COLONIZATION_DEFAULTS as $key => $value) {
+            $defaults["threshold_col_{$key}"] = $value;
+        }
+
+        foreach (self::FRUITING_DEFAULTS as $key => $value) {
+            $defaults["threshold_fruit_{$key}"] = $value;
+        }
+
+        return $defaults;
+    }
+
+    /**
      * Load threshold settings from DB for the given stage prefix.
      *
      * DB keys follow pattern: threshold_{prefix}_{key}
