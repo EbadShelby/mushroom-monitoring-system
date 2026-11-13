@@ -375,7 +375,7 @@ function formatDate(d: string | null) {
             <div
                 v-for="(cfg, key) in stageConfig"
                 :key="key"
-                class="flex items-start gap-2.5 rounded-xl border border-border/50 bg-card/40 px-4 py-3 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/40"
+                class="flex items-start gap-2.5 rounded-xl border border-border/50 bg-card/40 px-4 py-3 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/40"
             >
                 <div
                     class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
@@ -415,7 +415,7 @@ function formatDate(d: string | null) {
 
         <!-- Filter bar -->
         <div
-            class="flex flex-wrap items-center gap-3 rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
+            class="flex flex-wrap items-center gap-3 rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
         >
             <Filter class="h-4 w-4 text-muted-foreground dark:text-slate-400" />
             <span class="text-sm text-muted-foreground dark:text-slate-400"
@@ -441,7 +441,7 @@ function formatDate(d: string | null) {
             </div>
             <button
                 v-if="statusFilter"
-                class="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground dark:text-slate-400 dark:text-white"
+                class="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"
                 @click="clearFilter"
             >
                 <X class="h-3 w-3" /> Clear
@@ -450,15 +450,13 @@ function formatDate(d: string | null) {
 
         <!-- Cycles table -->
         <div
-            class="overflow-hidden rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
+            class="overflow-hidden rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
         >
             <div
                 v-if="cycles.data.length === 0"
                 class="flex flex-col items-center gap-4 py-16 text-center"
             >
-                <div
-                    class="rounded-full bg-muted/60 p-5 dark:bg-muted dark:bg-slate-700/60"
-                >
+                <div class="rounded-full bg-muted/60 p-5 dark:bg-slate-700/60">
                     <Sprout class="h-10 w-10 text-emerald-400" />
                 </div>
                 <div>
@@ -482,7 +480,7 @@ function formatDate(d: string | null) {
             <table v-else class="w-full">
                 <thead>
                     <tr
-                        class="border-b border-border/50 bg-muted/30 dark:border-border dark:border-slate-700/50 dark:bg-slate-900/50"
+                        class="border-b border-border/50 bg-muted/30 dark:border-slate-700/50 dark:bg-slate-900/50"
                     >
                         <th
                             class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
@@ -671,7 +669,7 @@ function formatDate(d: string | null) {
             <!-- Pagination -->
             <div
                 v-if="cycles.last_page > 1"
-                class="flex items-center justify-between border-t border-border/50 px-5 py-3 dark:border-border dark:border-slate-700/50"
+                class="flex items-center justify-between border-t border-border/50 px-5 py-3 dark:border-slate-700/50"
             >
                 <p class="text-xs text-muted-foreground dark:text-slate-400">
                     Showing {{ cycles.from }}–{{ cycles.to }} of
@@ -689,11 +687,11 @@ function formatDate(d: string | null) {
                         v-for="link in cycles.links.slice(1, -1)"
                         :key="link.label"
                         :disabled="!link.url"
-                        class="min-w-[32px] rounded-lg px-2 py-1 text-xs font-medium transition"
+                        class="min-w-8 rounded-lg px-2 py-1 text-xs font-medium transition"
                         :class="
                             link.active
                                 ? 'bg-emerald-600 text-foreground dark:text-white'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:text-white'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:hover:text-white'
                         "
                         @click="goToPage(link.url)"
                         v-html="link.label"
@@ -735,11 +733,11 @@ function formatDate(d: string | null) {
                 >
                     <div
                         v-if="showModal"
-                        class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border/50 bg-card shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
+                        class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border/50 bg-card shadow-2xl dark:border-slate-700/50 dark:bg-slate-900"
                     >
                         <!-- Modal header -->
                         <div
-                            class="sticky top-0 z-10 flex items-center justify-between border-b border-border/50 bg-card/95 px-6 py-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-slate-900/95"
+                            class="sticky top-0 z-10 flex items-center justify-between border-b border-border/50 bg-card/95 px-6 py-4 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-900/95"
                         >
                             <div class="flex items-center gap-3">
                                 <div
@@ -907,7 +905,7 @@ function formatDate(d: string | null) {
                                                             sub.label,
                                                         )
                                                     "
-                                                    class="h-3 w-3 stroke-[3]"
+                                                    class="h-3 w-3 stroke-3"
                                                 />
                                             </div>
                                             <span class="truncate">{{
@@ -936,7 +934,7 @@ function formatDate(d: string | null) {
                                             >
                                                 <Check
                                                     v-if="hasOtherSubstrate"
-                                                    class="h-3 w-3 stroke-[3]"
+                                                    class="h-3 w-3 stroke-3"
                                                 />
                                             </div>
                                             <span class="truncate"

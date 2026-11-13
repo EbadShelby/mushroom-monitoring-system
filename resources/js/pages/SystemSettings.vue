@@ -100,7 +100,7 @@ function formatHour(hour: number | string | undefined | null): string {
     <Head title="Settings" />
 
     <div
-        class="relative flex h-full min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10"
+        class="relative flex h-full min-h-[calc(100vh-(--spacing(16)))] flex-1 flex-col bg-linear-to-br from-primary/5 via-background to-secondary/10"
     >
         <div
             class="z-10 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col space-y-8 p-4 md:p-8 md:pt-6"
@@ -123,7 +123,7 @@ function formatHour(hour: number | string | undefined | null): string {
                 <!-- Header -->
                 <div>
                     <h1
-                        class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
+                        class="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
                     >
                         System Settings
                     </h1>
