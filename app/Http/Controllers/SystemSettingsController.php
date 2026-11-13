@@ -8,14 +8,15 @@ use App\Services\ThresholdService;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Translation\PotentiallyTranslatedString;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class SystemSettingsController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        if (auth()->user()?->role !== 'admin') {
+        if ($request->user()?->role !== 'admin') {
             return Inertia::render('Dashboard');
         }
 
@@ -61,8 +62,8 @@ class SystemSettingsController extends Controller
                 $rule = new PhilippineMobileNumber;
 
                 foreach (explode(',', $value) as $number) {
-                    $rule->validate($attribute, $number, function (string $message) use ($fail, $number): void {
-                        $fail("Invalid recipient number: {$number}. Use e.g. 09123456789.");
+                    $rule->validate($attribute, $number, function (string $message) use ($fail, $number): PotentiallyTranslatedString {
+                        return $fail("Invalid recipient number: {$number}. Use e.g. 09123456789.");
                     });
                 }
             }],

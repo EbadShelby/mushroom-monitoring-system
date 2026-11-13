@@ -20,7 +20,7 @@ class ActuatorController extends Controller
     public function index(): Response
     {
         $activeCycle = GrowingCycle::where('status', 'active')->latest('start_date')->first();
-        $stageThresholds = $this->thresholdService->thresholdsForStage($activeCycle?->growing_stage ?? 'fruiting');
+        $stageThresholds = $this->thresholdService->thresholdsForStage($activeCycle->growing_stage ?? 'fruiting');
 
         $humidityBand = $this->thresholdService->humidityControlBand($stageThresholds);
 
@@ -113,7 +113,7 @@ class ActuatorController extends Controller
             'actuator' => $actuator,
             'action' => $action,
             'trigger' => 'manual',
-            'triggered_by' => auth()->user()->name ?? 'system',
+            'triggered_by' => $request->user()->name ?? 'system',
             'triggered_at' => now(),
         ]);
 
