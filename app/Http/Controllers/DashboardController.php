@@ -7,6 +7,7 @@ use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
 use App\Services\HumidifierMistService;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -14,7 +15,10 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __construct(private HumidifierMistService $mist) {}
+    public function __construct(
+        private HumidifierMistService $mist,
+        private SmsService $sms,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -25,6 +29,9 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'tank' => $this->mist->tank(now()),
             'mist' => fn () => $this->mist->summary(),
+            'smsMute' => fn () => $request->user()?->role !== 'student'
+                ? $this->sms->muteStatus()
+                : null,
             'activeCycle' => Inertia::defer(fn () => $activeCycle ? [
                 'id' => $activeCycle->id,
                 'name' => $activeCycle->name,

@@ -340,7 +340,7 @@ const triggerLabels: Record<string, string> = {
     <Head title="Actuator Control" />
 
     <div
-        class="relative flex h-full min-h-[calc(100vh-theme(spacing.16))] flex-1 flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/10"
+        class="relative flex h-full min-h-[calc(100vh-(--spacing(16)))] flex-1 flex-col bg-linear-to-br from-primary/5 via-background to-secondary/10"
     >
         <div
             class="z-10 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col space-y-8 p-4 md:p-8 md:pt-6"
@@ -348,7 +348,7 @@ const triggerLabels: Record<string, string> = {
             <!-- Header -->
             <div>
                 <h1
-                    class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
+                    class="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
                 >
                     Actuator Control
                 </h1>
@@ -371,7 +371,7 @@ const triggerLabels: Record<string, string> = {
                 class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-4"
             >
                 <ShieldAlert
-                    class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500"
+                    class="mt-0.5 h-5 w-5 shrink-0 text-amber-500"
                 />
                 <div>
                     <p
@@ -766,7 +766,7 @@ const triggerLabels: Record<string, string> = {
                         v-if="overrideState.led"
                         class="mt-3 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400"
                     >
-                        <Lock class="h-3.5 w-3.5 flex-shrink-0" />
+                        <Lock class="h-3.5 w-3.5 shrink-0" />
                         LED override is active — the schedule is paused.
                     </div>
                     <button

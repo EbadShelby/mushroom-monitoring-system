@@ -74,19 +74,26 @@ class SensorController extends Controller
         $result = $this->threshold->evaluate($data, $activeCycle);
 
         // ── 5. Dispatch SMS alerts ─────────────────────────────────────────────
-        foreach ($result['alerts'] as $alert) {
-            $this->sms->sendAlert([
-                'sensor' => $alert['sensor'],
-                'value' => $alert['value'],
-                'threshold' => $alert['threshold'],
-                'message' => $alert['message'],
-            ]);
+        // Environmental SMS alerts only run during an active growing cycle so
+        // an empty/idle chamber does not burn SMS credits.
+        $alertsTriggered = 0;
+
+        if ($activeCycle !== null) {
+            foreach ($result['alerts'] as $alert) {
+                $this->sms->sendAlert([
+                    'sensor' => $alert['sensor'],
+                    'value' => $alert['value'],
+                    'threshold' => $alert['threshold'],
+                    'message' => $alert['message'],
+                ]);
+                $alertsTriggered++;
+            }
         }
 
         // Low water tank warning (only while misting, long cooldown to avoid SMS flooding)
         if ($this->mist->isRunning() && ($tankAlert = $this->mist->lowTankAlert()) !== null) {
             $this->sms->sendAlert($tankAlert, (int) config('humidifier.low_tank_alert_cooldown_minutes'));
-            $result['alerts'][] = $tankAlert;
+            $alertsTriggered++;
         }
 
         // ── 6. Apply actuator commands ─────────────────────────────────────────
@@ -119,7 +126,7 @@ class SensorController extends Controller
             'success' => true,
             'reading_id' => $reading->id,
             'cycle_id' => $activeCycle?->id,
-            'alerts_triggered' => count($result['alerts']),
+            'alerts_triggered' => $alertsTriggered,
             'commands_applied' => $commandsApplied,
             'recorded_at' => $reading->recorded_at,
         ], 201);
