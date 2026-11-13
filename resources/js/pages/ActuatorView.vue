@@ -638,7 +638,7 @@ const triggerLabels: Record<string, string> = {
                         <div
                             v-for="(day, i) in mist.week"
                             :key="day.date"
-                            class="group relative flex flex-1 flex-col items-center gap-1"
+                            class="group relative flex h-full flex-1 flex-col items-center gap-1"
                         >
                             <!-- Output value above bar -->
                             <span
@@ -655,23 +655,25 @@ const triggerLabels: Record<string, string> = {
                             </span>
 
                             <!-- Bar -->
-                            <div
-                                class="w-full rounded-t transition-all"
-                                :class="
-                                    i === 6
-                                        ? 'bg-blue-500 shadow-sm shadow-blue-500/30'
-                                        : 'bg-blue-500/40 group-hover:bg-blue-500/70'
-                                "
-                                :style="{
-                                    height: `${Math.max(
-                                        5,
-                                        ((i === 6 ? todayMl : day.ml) /
-                                            weekMaxMl) *
-                                            100,
-                                    )}%`,
-                                }"
-                                :title="`${day.date} (${i === 6 ? 'Today' : i === 5 ? 'Yesterday' : day.label}): ${(i === 6 ? todayMl : day.ml).toFixed(1)} mL · ${formatDuration(i === 6 ? todaySeconds : day.seconds)}`"
-                            ></div>
+                            <div class="flex w-full flex-1 items-end">
+                                <div
+                                    class="w-full rounded-t transition-all"
+                                    :class="
+                                        i === 6
+                                            ? 'bg-blue-500 shadow-sm shadow-blue-500/30'
+                                            : 'bg-blue-500/40 group-hover:bg-blue-500/70'
+                                    "
+                                    :style="{
+                                        height: `${Math.max(
+                                            5,
+                                            ((i === 6 ? todayMl : day.ml) /
+                                                weekMaxMl) *
+                                                100,
+                                        )}%`,
+                                    }"
+                                    :title="`${day.date} (${i === 6 ? 'Today' : i === 5 ? 'Yesterday' : day.label}): ${(i === 6 ? todayMl : day.ml).toFixed(1)} mL · ${formatDuration(i === 6 ? todaySeconds : day.seconds)}`"
+                                ></div>
+                            </div>
 
                             <!-- Day label -->
                             <span
