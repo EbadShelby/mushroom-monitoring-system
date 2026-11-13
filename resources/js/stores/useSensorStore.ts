@@ -182,11 +182,11 @@ export const useSensorStore = defineStore('sensor', () => {
             return 'normal';
         }
 
-        if (soil < 25) {
+        if (soil < 20) {
             return 'critical';
         }
 
-        if (soil < 40) {
+        if (soil < 30) {
             return 'warning';
         }
 

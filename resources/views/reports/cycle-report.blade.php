@@ -95,7 +95,7 @@
         </div>
         <div class="breach-card {{ $breachSummary['soil_moisture'] === 0 ? 'ok' : '' }}">
             <div class="breach-num">{{ number_format($breachSummary['soil_moisture']) }}</div>
-            <div class="breach-label">Soil Moisture Alerts<br>(below 30%)</div>
+            <div class="breach-label">Substrate Moisture Alerts<br>(below 30%)</div>
         </div>
     </div>
 </div>

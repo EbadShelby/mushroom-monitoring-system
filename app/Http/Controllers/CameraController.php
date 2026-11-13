@@ -41,7 +41,7 @@ class CameraController extends Controller
     {
         $data = $request->validate([
             'growing_cycle_id' => ['required', 'integer', 'exists:growing_cycles,id'],
-            'flush_number' => ['required', 'integer', 'min:1'],
+            'flush_number' => ['nullable', 'integer', 'min:1'],
             'captured_date' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
@@ -61,7 +61,7 @@ class CameraController extends Controller
 
         $snapshot = CameraSnapshot::create([
             'growing_cycle_id' => $data['growing_cycle_id'],
-            'flush_number' => $data['flush_number'],
+            'flush_number' => $data['flush_number'] ?? 1,
             'captured_date' => $data['captured_date'],
             'notes' => $data['notes'] ?? null,
             'file_path' => $path,

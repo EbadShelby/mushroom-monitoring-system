@@ -25,4 +25,3 @@ test('alerts go to user numbers and settings numbers without duplicates', functi
         ->toBe(['09123456789', '09987654321']);
     Http::assertSentCount(2);
 });
-

@@ -35,12 +35,25 @@ class DashboardController extends Controller
                 'day_count' => (int) now()->diffInDays($activeCycle->start_date) + 1,
             ] : null),
 
-            'latestSnapshot' => Inertia::defer(fn () => $activeCycle
-                ? CameraSnapshot::where('growing_cycle_id', $activeCycle->id)
+            'latestSnapshot' => Inertia::defer(function () use ($activeCycle) {
+                if (! $activeCycle) {
+                    return null;
+                }
+
+                $snapshot = CameraSnapshot::where('growing_cycle_id', $activeCycle->id)
                     ->orderByDesc('captured_date')
                     ->orderByDesc('id')
-                    ->first(['id', 'file_path', 'file_name', 'flush_number', 'captured_date'])
-                : null),
+                    ->first(['id', 'file_path', 'file_name', 'flush_number', 'captured_date']);
+
+                if ($snapshot) {
+                    $snapshot->setAttribute(
+                        'snapshot_number',
+                        CameraSnapshot::where('growing_cycle_id', $activeCycle->id)->count()
+                    );
+                }
+
+                return $snapshot;
+            }),
 
             'lastAlert' => Inertia::defer(fn () => AlertLog::orderByDesc('sent_at')
                 ->first(['id', 'sensor', 'value_at_alert', 'threshold_exceeded', 'message', 'status', 'sent_at'])),

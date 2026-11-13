@@ -85,8 +85,8 @@ defineProps<{
                     <span class="text-emerald-400">Control System</span>
                 </h2>
                 <p class="max-w-xs text-sm leading-relaxed text-emerald-200/70">
-                    Monitor temperature, humidity, CO₂, light, and soil moisture
-                    conditions for
+                    Monitor temperature, humidity, CO₂, light, and substrate
+                    moisture conditions for
                     <em>Pleurotus sajor-caju</em> cultivation in real-time.
                 </p>
 
@@ -110,7 +110,7 @@ defineProps<{
                     >
                     <span
                         class="rounded-full bg-emerald-800/60 px-3 py-1 text-xs text-emerald-300"
-                        >🌱 Soil</span
+                        >🌱 Substrate</span
                     >
                 </div>
             </div>

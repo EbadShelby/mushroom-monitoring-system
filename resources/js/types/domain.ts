@@ -20,6 +20,7 @@ export interface CameraSnapshot {
     file_name: string;
     captured_date?: string;
     flush_number?: number;
+    snapshot_number?: number;
     notes?: string | null;
     uploaded_by?: number;
     growing_cycle?: { id: number; name: string };

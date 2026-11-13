@@ -61,7 +61,7 @@ const sensorOptions = [
     { value: 'humidity', label: 'Humidity' },
     { value: 'co2_raw', label: 'CO₂' },
     { value: 'light_level', label: 'Light' },
-    { value: 'soil_moisture', label: 'Soil Moisture' },
+    { value: 'soil_moisture', label: 'Substrate Moisture' },
     { value: 'water_tank', label: 'Water Tank' },
 ];
 
@@ -128,7 +128,7 @@ const sensorLabel: Record<string, string> = {
     humidity: 'Humidity',
     co2_raw: 'CO₂',
     light_level: 'Light',
-    soil_moisture: 'Soil',
+    soil_moisture: 'Substrate',
     water_tank: 'Water Tank',
 };
 </script>

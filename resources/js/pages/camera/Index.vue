@@ -77,6 +77,29 @@ const groupedSnapshots = computed(() => {
         .map(([date, items]) => ({ date, items }));
 });
 
+const snapshotNumberMap = computed(() => {
+    const sorted = [...props.snapshots].sort((a, b) => {
+        const dateComp = (a.captured_date ?? '').localeCompare(b.captured_date ?? '');
+        if (dateComp !== 0) {
+            return dateComp;
+        }
+
+        return a.id - b.id;
+    });
+
+    const cycleCounts = new Map<number | string, number>();
+    const map = new Map<number, number>();
+
+    for (const snap of sorted) {
+        const cycleKey = snap.growing_cycle_id ?? 'all';
+        const nextNum = (cycleCounts.get(cycleKey) ?? 0) + 1;
+        cycleCounts.set(cycleKey, nextNum);
+        map.set(snap.id, nextNum);
+    }
+
+    return map;
+});
+
 // ── Upload form ───────────────────────────────────────────────────────────────
 const showUpload = ref(false);
 const uploading = ref(false);
@@ -95,7 +118,6 @@ const defaultCycleId = computed(() => {
 
 const uploadForm = ref({
     growing_cycle_id: defaultCycleId.value,
-    flush_number: '1',
     captured_date: new Date().toISOString().split('T')[0],
     notes: '',
 });
@@ -224,7 +246,6 @@ async function submitUpload() {
     const fd = new FormData();
     fd.append('photo', photoFile.value);
     fd.append('growing_cycle_id', uploadForm.value.growing_cycle_id);
-    fd.append('flush_number', uploadForm.value.flush_number);
     fd.append('captured_date', uploadForm.value.captured_date);
 
     if (uploadForm.value.notes) {
@@ -468,9 +489,9 @@ function formatDate(d: string | null) {
                             class="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-2 opacity-0 transition duration-200 group-hover:opacity-100"
                         >
                             <span
-                                v-if="snap.flush_number"
+                                v-if="snapshotNumberMap.has(snap.id)"
                                 class="text-xs font-bold text-foreground dark:text-white"
-                                >Flush {{ snap.flush_number }}</span
+                                >Snapshot {{ snapshotNumberMap.get(snap.id) }}</span
                             >
                             <span
                                 v-if="snap.notes"
@@ -536,8 +557,8 @@ function formatDate(d: string | null) {
 
                     <!-- Form -->
                     <form class="space-y-4 p-6" @submit.prevent="submitUpload">
-                        <!-- Cycle + Flush -->
-                        <div class="grid grid-cols-2 gap-4">
+                        <!-- Cycle + Date -->
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
@@ -567,37 +588,16 @@ function formatDate(d: string | null) {
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Flush #
+                                    >Capture Date
                                     <span class="text-red-400">*</span></label
                                 >
                                 <input
-                                    v-model="uploadForm.flush_number"
-                                    type="number"
-                                    min="1"
+                                    v-model="uploadForm.captured_date"
+                                    type="date"
                                     class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    style="color-scheme: dark"
                                 />
-                                <p
-                                    v-if="uploadErrors.flush_number"
-                                    class="mt-1 text-xs text-red-400"
-                                >
-                                    {{ uploadErrors.flush_number }}
-                                </p>
                             </div>
-                        </div>
-
-                        <!-- Date -->
-                        <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                >Capture Date
-                                <span class="text-red-400">*</span></label
-                            >
-                            <input
-                                v-model="uploadForm.captured_date"
-                                type="date"
-                                class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                style="color-scheme: dark"
-                            />
                         </div>
 
                         <!-- Photo dropzone -->
@@ -758,10 +758,10 @@ function formatDate(d: string | null) {
                             {{ formatDate(lightboxSnap.captured_date ?? null) }}
                         </p>
                         <p
-                            v-if="lightboxSnap.flush_number"
+                            v-if="snapshotNumberMap.has(lightboxSnap.id)"
                             class="text-xs text-muted-foreground dark:text-slate-400"
                         >
-                            Flush {{ lightboxSnap.flush_number }}
+                            Snapshot {{ snapshotNumberMap.get(lightboxSnap.id) }}
                         </p>
                         <p
                             v-if="lightboxSnap.notes"

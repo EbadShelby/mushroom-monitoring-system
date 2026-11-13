@@ -36,7 +36,7 @@ const sensorOptions = [
     { key: 'humidity', label: 'Humidity (%)', color: '#3b82f6' },
     { key: 'co2_raw', label: 'CO₂ (ppm)', color: '#a855f7' },
     { key: 'light_level', label: 'Light (lux)', color: '#eab308' },
-    { key: 'soil_moisture', label: 'Soil Moisture (%)', color: '#22c55e' },
+    { key: 'soil_moisture', label: 'Substrate Moisture (%)', color: '#22c55e' },
 ];
 
 // Data
@@ -151,7 +151,7 @@ const columnLabels: Record<string, string> = {
     humidity: 'Humidity (%)',
     co2_raw: 'CO₂ (ppm)',
     light_level: 'Light (lux)',
-    soil_moisture: 'Soil (%)',
+    soil_moisture: 'Substrate (%)',
 };
 
 // Initial load

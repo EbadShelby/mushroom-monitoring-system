@@ -175,7 +175,7 @@ const breachCards = computed(() => [
         bg: 'bg-purple-500/10',
     },
     {
-        label: 'Soil Moisture',
+        label: 'Substrate Moisture',
         value: props.breachSummary?.soil_moisture ?? 0,
         range: '≥ 30%',
         icon: Leaf,
@@ -267,6 +267,25 @@ const groupedSnapshots = computed(() => {
     }
 
     return Array.from(map.entries()).map(([date, items]) => ({ date, items }));
+});
+
+const snapshotNumberMap = computed(() => {
+    const snaps = props.snapshots ?? [];
+    const sorted = [...snaps].sort((a, b) => {
+        const dateComp = (a.captured_date ?? '').localeCompare(b.captured_date ?? '');
+        if (dateComp !== 0) {
+            return dateComp;
+        }
+
+        return a.id - b.id;
+    });
+
+    const map = new Map<number, number>();
+    sorted.forEach((snap, idx) => {
+        map.set(snap.id, idx + 1);
+    });
+
+    return map;
 });
 
 async function deleteSnapshot(id: number) {
@@ -763,10 +782,10 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             >
                                 <div class="p-2">
                                     <p
-                                        v-if="snap.flush_number"
+                                        v-if="snapshotNumberMap.has(snap.id)"
                                         class="text-xs font-semibold text-foreground dark:text-white"
                                     >
-                                        Flush {{ snap.flush_number }}
+                                        Snapshot {{ snapshotNumberMap.get(snap.id) }}
                                     </p>
                                 </div>
                             </div>

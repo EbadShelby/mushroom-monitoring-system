@@ -847,7 +847,7 @@ const triggerLabels: Record<string, string> = {
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >Soil Warning SMS</span
+                                >Substrate Warning SMS</span
                             >
                             <span class="font-semibold text-foreground"
                                 >&lt; {{ thresholds.soil_warning }}%</span
@@ -857,7 +857,7 @@ const triggerLabels: Record<string, string> = {
                             class="flex justify-between rounded-lg bg-muted/30 px-4 py-2"
                         >
                             <span class="text-muted-foreground"
-                                >Soil Critical SMS</span
+                                >Substrate Critical SMS</span
                             >
                             <span class="font-semibold text-foreground"
                                 >&lt; {{ thresholds.soil_critical }}%</span

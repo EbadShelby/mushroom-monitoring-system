@@ -85,11 +85,11 @@ const snapshotLabel = computed(() => {
         return 'No photo yet (sample preview)';
     }
 
-    if (props.latestSnapshot.flush_number) {
-        return `Flush ${props.latestSnapshot.flush_number} • ${props.latestSnapshot.captured_date ?? ''}`;
+    if (props.latestSnapshot.snapshot_number) {
+        return `Snapshot ${props.latestSnapshot.snapshot_number} • ${props.latestSnapshot.captured_date ?? ''}`;
     }
 
-    return props.latestSnapshot.captured_date ?? '';
+    return `Snapshot • ${props.latestSnapshot.captured_date ?? ''}`;
 });
 
 watchEffect(() => {
@@ -271,7 +271,7 @@ const alertSensorLabel: Record<string, string> = {
     humidity: 'Humidity',
     co2_raw: 'CO₂',
     light_level: 'Light',
-    soil_moisture: 'Soil',
+    soil_moisture: 'Substrate',
 };
 
 function alertStatusClass(status: string) {
@@ -858,7 +858,7 @@ function formatDuration(totalSeconds: number): string {
 
             <!-- Bottom Section: Soil & Actuators -->
             <div class="grid gap-6 md:grid-cols-3">
-                <!-- Soil Moisture -->
+                <!-- Substrate Moisture -->
                 <div
                     class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg md:col-span-1"
                 >
@@ -871,7 +871,7 @@ function formatDuration(totalSeconds: number): string {
                         <h3
                             class="font-semibold tracking-wide text-muted-foreground"
                         >
-                            SOIL MOISTURE
+                            SUBSTRATE MOISTURE
                         </h3>
                     </div>
 

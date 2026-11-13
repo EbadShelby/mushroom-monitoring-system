@@ -55,4 +55,19 @@ test('dashboard loads successfully with active cycle and latest camera snapshot'
         ->has('tank.capacity_ml')
         ->has('tank.percent')
     );
+
+    $page = $response->viewData('page');
+    $version = is_array($page) ? ($page['version'] ?? null) : null;
+
+    $deferredResponse = $this->actingAs($user)
+        ->withHeaders(array_filter([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $version,
+            'X-Inertia-Partial-Component' => 'Dashboard',
+            'X-Inertia-Partial-Data' => 'latestSnapshot',
+        ]))
+        ->get(route('dashboard'));
+
+    $deferredResponse->assertOk()
+        ->assertJsonPath('props.latestSnapshot.snapshot_number', 2);
 });
