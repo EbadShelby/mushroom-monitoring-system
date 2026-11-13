@@ -11,8 +11,7 @@ import {
 import type { ApexOptions } from 'apexcharts';
 import { ref, computed, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
-import SmsMuteControl from '@/components/SmsMuteControl.vue';
-import type { AlertLog, Paginated, SmsMuteStatus } from '@/types';
+import type { AlertLog, Paginated } from '@/types';
 
 defineOptions({
     layout: {
@@ -24,7 +23,6 @@ const props = defineProps<{
     logs?: Paginated<AlertLog>;
     chartData?: { sensor: string; count: number }[];
     filters?: { sensor?: string; from?: string; to?: string };
-    smsMute?: SmsMuteStatus | null;
 }>();
 
 const logsData = ref<Paginated<AlertLog> | null>(props.logs ?? null);
@@ -145,18 +143,15 @@ const sensorLabel: Record<string, string> = {
             class="z-10 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col space-y-8 p-4 md:p-8 md:pt-6"
         >
             <!-- Header -->
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h1
-                        class="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
-                    >
-                        Alert Logs
-                    </h1>
-                    <p class="mt-1 text-muted-foreground">
-                        SMS alert history and frequency analysis.
-                    </p>
-                </div>
-                <SmsMuteControl :initial-status="smsMute" />
+            <div>
+                <h1
+                    class="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
+                >
+                    Alert Logs
+                </h1>
+                <p class="mt-1 text-muted-foreground">
+                    SMS alert history and frequency analysis.
+                </p>
             </div>
 
             <!-- Alert Frequency Chart -->

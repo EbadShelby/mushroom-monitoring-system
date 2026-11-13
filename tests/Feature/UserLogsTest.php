@@ -41,15 +41,10 @@ test('user actions record audit logs', function () {
         'start_date' => now()->toDateString(),
     ])->assertOk();
 
-    $this->actingAs($admin)->postJson('/api/alerts/mute', [
-        'minutes' => 15,
-    ])->assertOk();
-
     $this->actingAs($admin)->putJson('/api/settings', [
         'system_name' => 'CotSU Lab',
     ])->assertOk();
 
     expect(UserLog::where('user_id', $admin->id)->where('action', 'Created growing cycle')->where('details', 'Audit Cycle')->exists())->toBeTrue()
-        ->and(UserLog::where('user_id', $admin->id)->where('action', 'Paused SMS alerts')->where('details', '15 minutes')->exists())->toBeTrue()
         ->and(UserLog::where('user_id', $admin->id)->where('action', 'Updated system settings')->exists())->toBeTrue();
 });

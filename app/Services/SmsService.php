@@ -6,7 +6,6 @@ use App\Models\AlertLog;
 use App\Models\Setting;
 use App\Models\User;
 use App\Rules\PhilippineMobileNumber;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -18,101 +17,10 @@ class SmsService
 
     private const ENDPOINT = 'https://api.semaphore.co/api/v4/messages';
 
-    private const MUTE_SETTING_KEY = 'sms_muted_until';
-
     public function __construct()
     {
         $this->apiKey = (string) config('services.semaphore.api_key');
         $this->senderName = (string) config('services.semaphore.sender_name', 'CotSU-IoT');
-    }
-
-    /**
-     * Whether SMS alerts are currently muted.
-     */
-    public function isMuted(): bool
-    {
-        $raw = (string) Setting::get(self::MUTE_SETTING_KEY, '');
-
-        if ($raw === '') {
-            return false;
-        }
-
-        if ($raw === 'indefinite') {
-            return true;
-        }
-
-        try {
-            return now()->lt(Carbon::parse($raw));
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * Current SMS mute state for UI display.
-     *
-     * @return array{muted: bool, indefinite: bool, muted_until: string|null}
-     */
-    public function muteStatus(): array
-    {
-        $raw = (string) Setting::get(self::MUTE_SETTING_KEY, '');
-
-        if ($raw === 'indefinite') {
-            return [
-                'muted' => true,
-                'indefinite' => true,
-                'muted_until' => null,
-            ];
-        }
-
-        if ($raw !== '') {
-            try {
-                $until = Carbon::parse($raw);
-                if (now()->lt($until)) {
-                    return [
-                        'muted' => true,
-                        'indefinite' => false,
-                        'muted_until' => $until->toIso8601String(),
-                    ];
-                }
-            } catch (\Throwable) {
-                // Treat invalid values as unmuted.
-            }
-        }
-
-        return [
-            'muted' => false,
-            'indefinite' => false,
-            'muted_until' => null,
-        ];
-    }
-
-    /**
-     * Mute SMS alerts for a number of minutes, or indefinitely if null.
-     *
-     * @return array{muted: bool, indefinite: bool, muted_until: string|null}
-     */
-    public function mute(?int $minutes = null): array
-    {
-        $value = $minutes === null
-            ? 'indefinite'
-            : now()->addMinutes($minutes)->toIso8601String();
-
-        Setting::set(self::MUTE_SETTING_KEY, $value);
-
-        return $this->muteStatus();
-    }
-
-    /**
-     * Resume SMS alerts immediately.
-     *
-     * @return array{muted: bool, indefinite: bool, muted_until: string|null}
-     */
-    public function unmute(): array
-    {
-        Setting::set(self::MUTE_SETTING_KEY, '');
-
-        return $this->muteStatus();
     }
 
     /**
@@ -154,12 +62,6 @@ class SmsService
         $value = $payload['value'];
         $threshold = $payload['threshold'];
         $message = $payload['message'];
-
-        if ($this->isMuted()) {
-            Log::info('SMS alerts muted — skipped', compact('sensor'));
-
-            return;
-        }
 
         if (! $this->apiKey) {
             Log::warning('Semaphore API key not configured — SMS skipped', compact('sensor'));

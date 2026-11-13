@@ -37,8 +37,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Alert Logs (SMS)
         Route::get('alerts', [AlertLogController::class, 'index'])->name('alerts');
         Route::get('api/alert-logs/chart', [AlertLogController::class, 'chart'])->name('alerts.chart');
-        Route::post('api/alerts/mute', [AlertLogController::class, 'mute'])->name('alerts.mute');
-        Route::post('api/alerts/unmute', [AlertLogController::class, 'unmute'])->name('alerts.unmute');
     });
 
     // Admin Only Routes

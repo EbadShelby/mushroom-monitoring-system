@@ -201,9 +201,3 @@ export interface Paginated<T> {
     to: number | null;
     links: { url: string | null; label: string; active: boolean }[];
 }
-
-export interface SmsMuteStatus {
-    muted: boolean;
-    indefinite: boolean;
-    muted_until: string | null;
-}

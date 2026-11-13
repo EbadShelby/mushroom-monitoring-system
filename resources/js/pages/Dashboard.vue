@@ -26,7 +26,6 @@ import axios from 'axios';
 import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import { toast } from 'vue-sonner';
 import VueApexCharts from 'vue3-apexcharts';
-import SmsMuteControl from '@/components/SmsMuteControl.vue';
 import { dashboard } from '@/routes';
 import { useSensorStore } from '@/stores/useSensorStore';
 
@@ -37,7 +36,6 @@ import type {
     AlertLog,
     HumidifierMist,
     HumidifierTank,
-    SmsMuteStatus,
 } from '@/types';
 
 defineOptions({
@@ -58,7 +56,6 @@ const props = defineProps<{
     chartData?: any[];
     tank?: HumidifierTank;
     mist?: HumidifierMist;
-    smsMute?: SmsMuteStatus | null;
 }>();
 
 const page = usePage();
@@ -1480,24 +1477,19 @@ function formatDuration(totalSeconds: number): string {
                 <!-- Last SMS Alert -->
                 <div
                     v-if="userRole !== 'student'"
-                    class="relative rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+                    class="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-lg"
                 >
-                    <div
-                        class="mb-4 flex flex-wrap items-center justify-between gap-2"
-                    >
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="rounded-lg bg-red-500/10 p-2 text-red-500 shadow-inner"
-                            >
-                                <Bell class="h-5 w-5" />
-                            </div>
-                            <h3
-                                class="font-semibold tracking-wide text-muted-foreground"
-                            >
-                                LAST SMS ALERT
-                            </h3>
+                    <div class="mb-4 flex items-center gap-2">
+                        <div
+                            class="rounded-lg bg-red-500/10 p-2 text-red-500 shadow-inner"
+                        >
+                            <Bell class="h-5 w-5" />
                         </div>
-                        <SmsMuteControl :initial-status="smsMute" compact />
+                        <h3
+                            class="font-semibold tracking-wide text-muted-foreground"
+                        >
+                            LAST SMS ALERT
+                        </h3>
                     </div>
 
                     <!-- Skeleton -->
