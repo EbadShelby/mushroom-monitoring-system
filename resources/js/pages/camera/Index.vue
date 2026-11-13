@@ -80,6 +80,7 @@ const groupedSnapshots = computed(() => {
 const snapshotNumberMap = computed(() => {
     const sorted = [...props.snapshots].sort((a, b) => {
         const dateComp = (a.captured_date ?? '').localeCompare(b.captured_date ?? '');
+
         if (dateComp !== 0) {
             return dateComp;
         }
