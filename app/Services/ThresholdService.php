@@ -10,7 +10,7 @@ class ThresholdService
 {
     // ─── Stage: Colonization (spawn running — mycelium spreads through substrate) ─
     private const COLONIZATION_DEFAULTS = [
-        'temp_min' => 28.0,  // ideal 28–32°C
+        'temp_min' => 26.0,  // ideal 26–32°C
         'temp_max' => 32.0,
         'humidity_low' => 75.0,  // humidifier ON below 75%
         'humidity_high' => 95.0,  // humidifier OFF at 95%
@@ -22,7 +22,7 @@ class ThresholdService
 
     // ─── Stage: Fruiting (mushrooms forming and growing) ──────────────────────────
     private const FRUITING_DEFAULTS = [
-        'temp_min' => 28.0,  // ideal 28–32°C
+        'temp_min' => 26.0,  // ideal 26–32°C
         'temp_max' => 32.0,
         'humidity_low' => 75.0,  // humidifier ON below 75%
         'humidity_high' => 95.0,  // humidifier OFF at 95%

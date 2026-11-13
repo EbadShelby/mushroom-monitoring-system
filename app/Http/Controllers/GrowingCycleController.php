@@ -92,7 +92,7 @@ class GrowingCycleController extends Controller
 
                 // Use stage-appropriate breach boundaries
                 $isColonization = $cycle->growing_stage === 'colonization';
-                $tempMin = $isColonization ? 28 : 28;
+                $tempMin = $isColonization ? 26 : 26;
                 $tempMax = $isColonization ? 32 : 32;
                 $humLow = 75;
                 $humHigh = 95;

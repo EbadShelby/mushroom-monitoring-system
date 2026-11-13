@@ -13,7 +13,7 @@ class SettingsSeeder extends Seeder
     public function run(): void
     {
         $settings = [
-            ['key' => 'temp_min', 'value' => '28'],
+            ['key' => 'temp_min', 'value' => '26'],
             ['key' => 'temp_max', 'value' => '32'],
             ['key' => 'humidity_min', 'value' => '75'],
             ['key' => 'humidity_max', 'value' => '95'],
