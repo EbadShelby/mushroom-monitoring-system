@@ -4,11 +4,13 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 
 <template>
     <div
-        class="flex aspect-square size-9 items-center justify-center overflow-hidden rounded-full bg-emerald-700/10 p-0.5 shadow-sm dark:bg-emerald-950/40"
+        class="flex aspect-square size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-700/10 p-0.5 shadow-sm transition-all group-data-[collapsible=icon]:size-8 dark:bg-emerald-950/40"
     >
         <AppLogoIcon class="size-full rounded-full object-contain" />
     </div>
-    <div class="ml-2 grid flex-1 text-left text-sm leading-tight">
+    <div
+        class="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden"
+    >
         <span class="truncate font-bold text-emerald-700 dark:text-emerald-400"
             >MycoSense</span
         >

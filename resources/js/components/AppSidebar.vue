@@ -141,7 +141,12 @@ const adminNavItems = computed(() => {
         <SidebarHeader>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
+                    <SidebarMenuButton
+                        size="lg"
+                        as-child
+                        tooltip="MycoSense"
+                        class="group-data-[collapsible=icon]:justify-center"
+                    >
                         <Link :href="dashboard()">
                             <AppLogo />
                         </Link>
