@@ -35,6 +35,7 @@ defineOptions({
 const props = defineProps<{
     cycles: Paginated<GrowingCycle>;
     filters: { status?: string | null };
+    hasActiveCycle: boolean;
 }>();
 
 const page = usePage();
@@ -105,17 +106,20 @@ function syncSubstrateType() {
 
 function toggleCommonSubstrate(label: string) {
     const idx = selectedSubstrates.value.indexOf(label);
+
     if (idx >= 0) {
         selectedSubstrates.value.splice(idx, 1);
     } else {
         selectedSubstrates.value.push(label);
     }
+
     syncSubstrateType();
 }
 
 function toggleOtherSubstrate() {
     hasOtherSubstrate.value = !hasOtherSubstrate.value;
     syncSubstrateType();
+
     if (hasOtherSubstrate.value) {
         nextTick(() => {
             customSubstrateInputRef.value?.focus();
@@ -136,12 +140,21 @@ function clearSubstrates() {
 
 function toggleManualOverride() {
     isManualOverride.value = !isManualOverride.value;
+
     if (!isManualOverride.value) {
         syncSubstrateType();
     }
 }
 
 function openModal() {
+    if (props.hasActiveCycle) {
+        toast.error(
+            'An active growing cycle is already running. Please end or cancel it first.',
+        );
+
+        return;
+    }
+
     formErrors.value = {};
     showModal.value = true;
 }
@@ -164,10 +177,14 @@ async function createCycle() {
         };
         clearSubstrates();
         isManualOverride.value = false;
-        router.reload({ only: ['cycles'] });
+        router.reload({ only: ['cycles', 'hasActiveCycle'] });
     } catch (e: any) {
         if (e.response?.status === 422) {
             formErrors.value = e.response.data.errors ?? {};
+
+            if (e.response.data.message && !e.response.data.errors) {
+                toast.error(e.response.data.message);
+            }
         } else {
             toast.error('Failed to create cycle');
         }
@@ -220,7 +237,7 @@ async function endCycle(cycle: GrowingCycle) {
     try {
         await axios.post(`/api/cycles/${cycle.id}/end`);
         toast.success('Cycle marked as completed');
-        router.reload({ only: ['cycles'] });
+        router.reload({ only: ['cycles', 'hasActiveCycle'] });
     } catch {
         toast.error('Failed to end cycle');
     } finally {
@@ -238,7 +255,7 @@ async function cancelCycle(cycle: GrowingCycle) {
     try {
         await axios.delete(`/api/cycles/${cycle.id}`);
         toast.success('Cycle cancelled');
-        router.reload({ only: ['cycles'] });
+        router.reload({ only: ['cycles', 'hasActiveCycle'] });
     } catch {
         toast.error('Failed to cancel cycle');
     } finally {
@@ -339,7 +356,13 @@ function formatDate(d: string | null) {
             <button
                 v-if="userRole !== 'student'"
                 id="create-cycle-btn"
-                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
+                :disabled="hasActiveCycle"
+                :title="
+                    hasActiveCycle
+                        ? 'End or cancel the active growing cycle before starting a new one'
+                        : 'Create a new growing cycle'
+                "
+                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-emerald-600 disabled:active:scale-100 dark:text-white"
                 @click="openModal"
             >
                 <Plus class="h-4 w-4" />
@@ -579,9 +602,9 @@ function formatDate(d: string | null) {
                             <div class="flex items-center justify-end gap-2">
                                 <Link
                                     :href="cyclesApi.show(cycle.id)"
-                                    class="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted-foreground/20 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                                    class="flex shrink-0 items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium whitespace-nowrap text-foreground transition hover:bg-muted-foreground/20 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                                 >
-                                    <Eye class="h-3.5 w-3.5" />
+                                    <Eye class="h-3.5 w-3.5 shrink-0" />
                                     View
                                 </Link>
                                 <!-- Switch Stage button (active cycles only) -->
@@ -591,7 +614,7 @@ function formatDate(d: string | null) {
                                         userRole !== 'student'
                                     "
                                     :disabled="switchingStage === cycle.id"
-                                    class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition disabled:opacity-50"
+                                    class="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap ring-1 transition disabled:opacity-50"
                                     :class="
                                         cycle.growing_stage === 'colonization'
                                             ? 'bg-purple-100 text-purple-700 ring-purple-600/20 hover:bg-purple-200 dark:bg-purple-600/20 dark:text-purple-300 dark:ring-purple-500/30 dark:hover:bg-purple-600/30'
@@ -602,11 +625,11 @@ function formatDate(d: string | null) {
                                 >
                                     <span
                                         v-if="switchingStage === cycle.id"
-                                        class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                                        class="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
                                     />
                                     <ArrowLeftRight
                                         v-else
-                                        class="h-3.5 w-3.5"
+                                        class="h-3.5 w-3.5 shrink-0"
                                     />
                                     →
                                     {{
@@ -621,10 +644,10 @@ function formatDate(d: string | null) {
                                         userRole !== 'student'
                                     "
                                     :disabled="actioning === cycle.id"
-                                    class="flex items-center gap-1.5 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 ring-1 ring-blue-600/20 transition hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-600/20 dark:text-blue-300 dark:ring-blue-500/30 dark:hover:bg-blue-600/30"
+                                    class="flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-blue-700 ring-1 ring-blue-600/20 transition hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-600/20 dark:text-blue-300 dark:ring-blue-500/30 dark:hover:bg-blue-600/30"
                                     @click="endCycle(cycle)"
                                 >
-                                    <SquareCheck class="h-3.5 w-3.5" />
+                                    <SquareCheck class="h-3.5 w-3.5 shrink-0" />
                                     End
                                 </button>
                                 <button
@@ -633,10 +656,10 @@ function formatDate(d: string | null) {
                                         userRole !== 'student'
                                     "
                                     :disabled="actioning === cycle.id"
-                                    class="flex items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 ring-1 ring-red-600/20 transition hover:bg-red-200 disabled:opacity-50 dark:bg-red-600/20 dark:text-red-300 dark:ring-red-500/30 dark:hover:bg-red-600/30"
+                                    class="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-red-700 ring-1 ring-red-600/20 transition hover:bg-red-200 disabled:opacity-50 dark:bg-red-600/20 dark:text-red-300 dark:ring-red-500/30 dark:hover:bg-red-600/30"
                                     @click="cancelCycle(cycle)"
                                 >
-                                    <Ban class="h-3.5 w-3.5" />
+                                    <Ban class="h-3.5 w-3.5 shrink-0" />
                                     Cancel
                                 </button>
                             </div>
@@ -712,7 +735,7 @@ function formatDate(d: string | null) {
                 >
                     <div
                         v-if="showModal"
-                        class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-border/50 bg-card shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
+                        class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border/50 bg-card shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
                     >
                         <!-- Modal header -->
                         <div
@@ -754,7 +777,7 @@ function formatDate(d: string | null) {
                                 <input
                                     v-model="form.name"
                                     type="text"
-                                    placeholder="e.g. Batch 2024-A"
+                                    placeholder="Batch 2026-A"
                                     class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                 />
                                 <p
@@ -786,7 +809,9 @@ function formatDate(d: string | null) {
 
                             <!-- Substrate Type -->
                             <div>
-                                <div class="mb-1.5 flex items-center justify-between">
+                                <div
+                                    class="mb-1.5 flex items-center justify-between"
+                                >
                                     <label
                                         class="block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >
@@ -839,8 +864,11 @@ function formatDate(d: string | null) {
                                         placeholder="e.g. Sawdust, Rice straw (80/20 mix)"
                                         class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                                     />
-                                    <p class="mt-1 text-xs text-muted-foreground dark:text-slate-400">
-                                        Directly enter your custom substrate formulation.
+                                    <p
+                                        class="mt-1 text-xs text-muted-foreground dark:text-slate-400"
+                                    >
+                                        Directly enter your custom substrate
+                                        formulation.
                                     </p>
                                 </div>
 
@@ -853,26 +881,38 @@ function formatDate(d: string | null) {
                                             type="button"
                                             class="flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-xs font-medium transition select-none"
                                             :class="
-                                                selectedSubstrates.includes(sub.label)
+                                                selectedSubstrates.includes(
+                                                    sub.label,
+                                                )
                                                     ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-300'
                                                     : 'border-border bg-card text-foreground/80 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600'
                                             "
-                                            @click="toggleCommonSubstrate(sub.label)"
+                                            @click="
+                                                toggleCommonSubstrate(sub.label)
+                                            "
                                         >
                                             <div
                                                 class="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition"
                                                 :class="
-                                                    selectedSubstrates.includes(sub.label)
+                                                    selectedSubstrates.includes(
+                                                        sub.label,
+                                                    )
                                                         ? 'border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-500'
                                                         : 'border-slate-400/60 bg-transparent dark:border-slate-600'
                                                 "
                                             >
                                                 <Check
-                                                    v-if="selectedSubstrates.includes(sub.label)"
+                                                    v-if="
+                                                        selectedSubstrates.includes(
+                                                            sub.label,
+                                                        )
+                                                    "
                                                     class="h-3 w-3 stroke-[3]"
                                                 />
                                             </div>
-                                            <span class="truncate">{{ sub.label }}</span>
+                                            <span class="truncate">{{
+                                                sub.label
+                                            }}</span>
                                         </button>
 
                                         <!-- Other / Custom toggle button -->
@@ -899,12 +939,17 @@ function formatDate(d: string | null) {
                                                     class="h-3 w-3 stroke-[3]"
                                                 />
                                             </div>
-                                            <span class="truncate">Other / Custom...</span>
+                                            <span class="truncate"
+                                                >Other / Custom...</span
+                                            >
                                         </button>
                                     </div>
 
                                     <!-- Custom substrate text field when 'Other' is checked -->
-                                    <div v-if="hasOtherSubstrate" class="pt-0.5">
+                                    <div
+                                        v-if="hasOtherSubstrate"
+                                        class="pt-0.5"
+                                    >
                                         <input
                                             ref="customSubstrateInputRef"
                                             v-model="customSubstrate"
@@ -920,7 +965,9 @@ function formatDate(d: string | null) {
                                         v-if="form.substrate_type"
                                         class="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs"
                                     >
-                                        <span class="text-[11px] font-medium text-muted-foreground dark:text-slate-400">
+                                        <span
+                                            class="text-[11px] font-medium text-muted-foreground dark:text-slate-400"
+                                        >
                                             Selected:
                                         </span>
                                         <span

@@ -26,11 +26,18 @@ class GrowingCycleController extends Controller
         return Inertia::render('cycles/Index', [
             'cycles' => $cycles,
             'filters' => ['status' => $status],
+            'hasActiveCycle' => GrowingCycle::where('status', 'active')->exists(),
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
+        if (GrowingCycle::where('status', 'active')->exists()) {
+            return response()->json([
+                'message' => 'An active growing cycle is already running. Please end or cancel it before creating a new one.',
+            ], 422);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'mushroom_variety' => ['required', 'string', 'max:255'],
@@ -137,6 +144,14 @@ class GrowingCycleController extends Controller
             'growing_stage' => ['sometimes', 'string', 'in:colonization,fruiting'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        if (($data['status'] ?? null) === 'active' && $cycle->status !== 'active') {
+            if (GrowingCycle::where('status', 'active')->where('id', '!=', $cycle->id)->exists()) {
+                return response()->json([
+                    'message' => 'Another growing cycle is already active. Please end or cancel it before reactivating this cycle.',
+                ], 422);
+            }
+        }
 
         $cycle->update($data);
 

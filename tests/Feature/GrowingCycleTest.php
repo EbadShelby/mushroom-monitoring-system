@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\GrowingCycle;
 use App\Models\User;
 
 test('authorized user can create growing cycle with single common substrate', function () {
@@ -105,4 +106,96 @@ test('student cannot create a growing cycle', function () {
     ]);
 
     $response->assertStatus(403);
+});
+
+test('cannot create a new growing cycle while an active cycle exists', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+
+    GrowingCycle::create([
+        'name' => 'Active Batch',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+        'growing_stage' => 'colonization',
+    ]);
+
+    $response = $this->actingAs($user)->postJson('/api/cycles', [
+        'name' => 'Second Batch',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'growing_stage' => 'colonization',
+    ]);
+
+    $response->assertStatus(422);
+    $this->assertDatabaseMissing('growing_cycles', [
+        'name' => 'Second Batch',
+    ]);
+});
+
+test('can create a new growing cycle when previous cycles are completed or archived', function () {
+    $user = User::factory()->create(['role' => 'faculty']);
+
+    GrowingCycle::create([
+        'name' => 'Completed Batch',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->subDays(10)->toDateString(),
+        'end_date' => now()->subDay()->toDateString(),
+        'status' => 'completed',
+        'growing_stage' => 'fruiting',
+    ]);
+
+    GrowingCycle::create([
+        'name' => 'Archived Batch',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->subDays(5)->toDateString(),
+        'status' => 'archived',
+        'growing_stage' => 'colonization',
+    ]);
+
+    $response = $this->actingAs($user)->postJson('/api/cycles', [
+        'name' => 'New Active Batch',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'growing_stage' => 'colonization',
+    ]);
+
+    $response->assertSuccessful();
+    $this->assertDatabaseHas('growing_cycles', [
+        'name' => 'New Active Batch',
+        'status' => 'active',
+    ]);
+});
+
+test('cannot reactivate a cycle while another cycle is active', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+
+    GrowingCycle::create([
+        'name' => 'Active Batch',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+        'growing_stage' => 'colonization',
+    ]);
+
+    $completed = GrowingCycle::create([
+        'name' => 'Completed Batch',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->subDays(10)->toDateString(),
+        'status' => 'completed',
+        'growing_stage' => 'fruiting',
+    ]);
+
+    $response = $this->actingAs($user)->putJson("/api/cycles/{$completed->id}", [
+        'status' => 'active',
+    ]);
+
+    $response->assertStatus(422);
+    expect($completed->fresh()->status)->toBe('completed');
 });
