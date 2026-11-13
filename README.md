@@ -4,6 +4,11 @@ An IoT system designed for monitoring and automating the cultivation environment
 
 The system uses an ESP32 microcontroller to collect environmental data from various sensors (temperature, humidity, CO2, light, and soil moisture) and automatically controls actuators (humidifier, grow light) based on specific thresholds. The data is sent to a Laravel backend, where it is stored in MySQL for historical tracking and pushed to a Firebase Realtime Database for live dashboard monitoring built with Vue.js.
 
+## Preview
+
+![System Preview](public/mycosense.png)
+![System Preview](public/sample-image.jpg)
+
 ## System Architecture
 
 ```
@@ -81,13 +86,13 @@ The system automatically switches environmental target profiles based on the act
 
 _Mycelium spreads throughout the substrate bag — requires warmth, darkness, and high CO₂ tolerance._
 
-| Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                   |
-| :------------------------ | :---------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **26–32°C**             | DHT22      | `< 26°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).               |
+| Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                              |
+| :------------------------ | :---------------------- | :--------- | :------------------------------------------------------------------------------------------- |
+| 🌡️ **Temperature**        | **26–32°C**             | DHT22      | `< 26°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).                           |
 | 💧 **Humidity**           | **70–80% RH**           | DHT22      | `<= 72%` → Auto-activate humidifier (SMS only if `< 70%`). `>= 79%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → SMS alert (ventilate manually).                                   |
-| 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.           |
-| 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                        |
+| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → SMS alert (ventilate manually).                                              |
+| 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.                      |
+| 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                                   |
 
 ---
 
@@ -95,13 +100,13 @@ _Mycelium spreads throughout the substrate bag — requires warmth, darkness, an
 
 _Bags opened — requires high humidity, fresh air, and indirect light._
 
-| Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                   |
-| :------------------------ | :------------------------- | :--------- | :-------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **26–32°C**                | DHT22      | `< 26°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).               |
+| Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                              |
+| :------------------------ | :------------------------- | :--------- | :------------------------------------------------------------------------------------------- |
+| 🌡️ **Temperature**        | **26–32°C**                | DHT22      | `< 26°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).                           |
 | 💧 **Humidity**           | **85–95% RH**              | DHT22      | `<= 87%` → Auto-activate humidifier (SMS only if `< 85%`). `>= 94%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → SMS alert (ventilate manually).                                   |
-| 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.    |
-| 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                        |
+| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → SMS alert (ventilate manually).                                              |
+| 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.               |
+| 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                                   |
 
 ---
 
