@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActuatorLog;
 use App\Models\GrowingCycle;
 use App\Models\Setting;
+use App\Models\UserLog;
 use App\Services\FirebaseService;
 use App\Services\HumidifierMistService;
 use App\Services\ThresholdService;
@@ -89,6 +90,8 @@ class ActuatorController extends Controller
     {
         $refilledAt = $this->mist->refillTank();
 
+        UserLog::record('Refilled water tank');
+
         return response()->json([
             'success' => true,
             'refilled_at' => $refilledAt->toIso8601String(),
@@ -117,6 +120,8 @@ class ActuatorController extends Controller
             'triggered_at' => now(),
         ]);
 
+        UserLog::record('Toggled actuator', "{$actuator} -> {$action}");
+
         return response()->json(['success' => true, 'actuator' => $actuator, 'action' => $action]);
     }
 
@@ -139,6 +144,11 @@ class ActuatorController extends Controller
 
         Setting::set("override_{$actuator}", $active ? '1' : '0');
 
+        UserLog::record(
+            $active ? 'Enabled manual override' : 'Disabled manual override',
+            $actuator,
+        );
+
         return response()->json([
             'success' => true,
             'actuator' => $actuator,
@@ -155,6 +165,11 @@ class ActuatorController extends Controller
 
         Setting::set('led_on_hour', (string) $request->integer('on_hour'));
         Setting::set('led_off_hour', (string) $request->integer('off_hour'));
+
+        UserLog::record(
+            'Updated LED schedule',
+            sprintf('%02d:00 - %02d:00', $request->integer('on_hour'), $request->integer('off_hour')),
+        );
 
         return response()->json([
             'success' => true,

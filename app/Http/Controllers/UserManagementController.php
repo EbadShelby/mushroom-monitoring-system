@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserLog;
 use App\Rules\PhilippineMobileNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,9 +13,9 @@ use Inertia\Response;
 
 class UserManagementController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        if (auth()->user()?->role !== 'admin') {
+        if ($request->user()?->role !== 'admin') {
             abort(403);
         }
 
@@ -27,7 +28,7 @@ class UserManagementController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if (auth()->user()?->role !== 'admin') {
+        if ($request->user()?->role !== 'admin') {
             abort(403);
         }
 
@@ -52,12 +53,14 @@ class UserManagementController extends Controller
             'is_active' => true,
         ]);
 
+        UserLog::record('Created user', "{$user->name} ({$user->role})");
+
         return response()->json(['success' => true, 'user' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at'])]);
     }
 
     public function update(Request $request, User $user): JsonResponse
     {
-        if (auth()->user()?->role !== 'admin') {
+        if ($request->user()?->role !== 'admin') {
             abort(403);
         }
 
@@ -73,31 +76,37 @@ class UserManagementController extends Controller
 
         $user->update($data);
 
+        UserLog::record('Updated user', "{$user->name} ({$user->role})");
+
         return response()->json(['success' => true, 'user' => $user->fresh()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at'])]);
     }
 
-    public function deactivate(User $user): JsonResponse
+    public function deactivate(Request $request, User $user): JsonResponse
     {
-        if (auth()->user()?->role !== 'admin') {
+        if ($request->user()?->role !== 'admin') {
             abort(403);
         }
 
-        if ($user->id === auth()->id()) {
+        if ($user->id === $request->user()->id) {
             return response()->json(['error' => 'Cannot deactivate yourself.'], 422);
         }
 
         $user->update(['is_active' => false]);
 
+        UserLog::record('Deactivated user', $user->name);
+
         return response()->json(['success' => true]);
     }
 
-    public function activate(User $user): JsonResponse
+    public function activate(Request $request, User $user): JsonResponse
     {
-        if (auth()->user()?->role !== 'admin') {
+        if ($request->user()?->role !== 'admin') {
             abort(403);
         }
 
         $user->update(['is_active' => true]);
+
+        UserLog::record('Activated user', $user->name);
 
         return response()->json(['success' => true]);
     }

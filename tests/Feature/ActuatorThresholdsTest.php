@@ -18,7 +18,7 @@ test('actuator page shows thresholds for the active growing stage', function () 
         ->assertInertia(fn ($page) => $page
             ->where('thresholds.humidity_low', 75)
             ->where('thresholds.humidity_high', 95)
-            ->where('thresholds.humidifier_on_at', 77)
+            ->where('thresholds.humidifier_on_at', 78)
             ->where('thresholds.humidifier_off_at', 94)
             ->missing('overrides.fan'));
 });

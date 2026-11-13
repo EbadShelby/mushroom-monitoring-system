@@ -199,3 +199,37 @@ test('cannot reactivate a cycle while another cycle is active', function () {
     $response->assertStatus(422);
     expect($completed->fresh()->status)->toBe('completed');
 });
+
+test('growing cycle dayCount starts at day 1 and increments daily', function () {
+    $todayCycle = GrowingCycle::create([
+        'name' => 'Today Cycle',
+        'mushroom_variety' => 'Oyster',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+        'growing_stage' => 'colonization',
+    ]);
+
+    $yesterdayCycle = GrowingCycle::create([
+        'name' => 'Yesterday Cycle',
+        'mushroom_variety' => 'Oyster',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->subDay()->toDateString(),
+        'status' => 'completed',
+        'end_date' => now()->toDateString(),
+        'growing_stage' => 'fruiting',
+    ]);
+
+    $futureCycle = GrowingCycle::create([
+        'name' => 'Future Cycle',
+        'mushroom_variety' => 'Oyster',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->addDay()->toDateString(),
+        'status' => 'completed',
+        'growing_stage' => 'colonization',
+    ]);
+
+    expect($todayCycle->dayCount())->toBe(1)
+        ->and($yesterdayCycle->dayCount())->toBe(2)
+        ->and($futureCycle->dayCount())->toBe(1);
+});

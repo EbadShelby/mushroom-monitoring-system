@@ -5,16 +5,21 @@ use App\Models\GrowingCycle;
 use App\Services\FirebaseService;
 use App\Services\ThresholdService;
 
-beforeEach(function () {
-    $this->firebase = Mockery::mock(FirebaseService::class);
-});
+/**
+ * @param  array<string, string>  $actuators
+ */
+function thresholdServiceWithActuators(array $actuators): ThresholdService
+{
+    $firebase = Mockery::mock(FirebaseService::class);
+    $firebase->shouldReceive('getActuators')->once()->andReturn($actuators);
+
+    return new ThresholdService($firebase);
+}
 
 test('low humidity turns on humidifier when rested', function () {
-    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
+    $service = thresholdServiceWithActuators([
         'humidifier' => 'off',
     ]);
-
-    $service = new ThresholdService($this->firebase);
     $cycle = GrowingCycle::create([
         'name' => 'Test Cycle',
         'mushroom_variety' => 'Gray Oyster',
@@ -35,7 +40,7 @@ test('low humidity turns on humidifier when rested', function () {
 });
 
 test('humidifier continuous runtime limit shuts off after 15 minutes', function () {
-    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
+    $service = thresholdServiceWithActuators([
         'humidifier' => 'on',
     ]);
 
@@ -48,7 +53,6 @@ test('humidifier continuous runtime limit shuts off after 15 minutes', function 
         'triggered_at' => now()->subMinutes(16),
     ]);
 
-    $service = new ThresholdService($this->firebase);
     $cycle = GrowingCycle::create([
         'name' => 'Test Cycle',
         'mushroom_variety' => 'Gray Oyster',
@@ -71,11 +75,9 @@ test('humidifier continuous runtime limit shuts off after 15 minutes', function 
 });
 
 test('high temperature and CO2 only raise alerts without actuator commands', function () {
-    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
+    $service = thresholdServiceWithActuators([
         'humidifier' => 'off',
     ]);
-
-    $service = new ThresholdService($this->firebase);
     $cycle = GrowingCycle::create([
         'name' => 'Test Cycle',
         'mushroom_variety' => 'Gray Oyster',
@@ -99,7 +101,7 @@ test('high temperature and CO2 only raise alerts without actuator commands', fun
 });
 
 test('humidifier stall alert fires when humidity stays low after 5 minutes of misting', function () {
-    $this->firebase->shouldReceive('getActuators')->once()->andReturn([
+    $service = thresholdServiceWithActuators([
         'humidifier' => 'on',
     ]);
 
@@ -111,7 +113,6 @@ test('humidifier stall alert fires when humidity stays low after 5 minutes of mi
         'triggered_at' => now()->subMinutes(6),
     ]);
 
-    $service = new ThresholdService($this->firebase);
     $cycle = GrowingCycle::create([
         'name' => 'Test Cycle',
         'mushroom_variety' => 'Gray Oyster',
@@ -128,15 +129,15 @@ test('humidifier stall alert fires when humidity stays low after 5 minutes of mi
 });
 
 dataset('humidity control band (75-95)', [
-    'off, 77 turns on early, no SMS' => ['off', 77.0, 'on', false],
-    'off, 78 inside band does nothing' => ['off', 78.0, null, false],
+    'off, 78 turns on early, no SMS' => ['off', 78.0, 'on', false],
+    'off, 79 inside band does nothing' => ['off', 79.0, null, false],
     'off, 74 turns on with SMS' => ['off', 74.0, 'on', true],
     'on, 93 keeps running' => ['on', 93.0, null, false],
     'on, 94 turns off before 95' => ['on', 94.0, 'off', false],
 ]);
 
 test('humidifier uses an inner control band so humidity stays in range', function (string $state, float $humidity, ?string $command, bool $sendsSms) {
-    $this->firebase->shouldReceive('getActuators')->once()->andReturn(['humidifier' => $state]);
+    $service = thresholdServiceWithActuators(['humidifier' => $state]);
 
     if ($state === 'on') {
         ActuatorLog::create([
@@ -157,7 +158,7 @@ test('humidifier uses an inner control band so humidity stays in range', functio
         'growing_stage' => 'fruiting',
     ]);
 
-    $result = (new ThresholdService($this->firebase))->evaluate(['humidity' => $humidity], $cycle);
+    $result = $service->evaluate(['humidity' => $humidity], $cycle);
 
     expect($result['commands']['humidifier'])->toBe($command)
         ->and(collect($result['alerts'])->contains('sensor', 'humidity'))->toBe($sendsSms);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
+use App\Models\UserLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -66,16 +67,21 @@ class CameraController extends Controller
             'notes' => $data['notes'] ?? null,
             'file_path' => $path,
             'file_name' => $fileName,
-            'uploaded_by' => auth()->id(),
+            'uploaded_by' => $request->user()?->id,
         ]);
+
+        UserLog::record('Uploaded camera snapshot', $snapshot->file_name);
 
         return response()->json(['success' => true, 'snapshot' => $snapshot]);
     }
 
     public function destroy(CameraSnapshot $cameraSnapshot): JsonResponse
     {
+        $fileName = $cameraSnapshot->file_name;
         Storage::disk('public')->delete($cameraSnapshot->file_path);
         $cameraSnapshot->delete();
+
+        UserLog::record('Deleted camera snapshot', $fileName);
 
         return response()->json(['success' => true]);
     }

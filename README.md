@@ -108,7 +108,7 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
 - **Humidifier Failsafe Runtime**: Continuous humidifier operation is capped at 15 minutes with a mandatory 3-minute resting period, protecting the mist maker from overheating and alerting if the water reservoir runs dry.
-- **Humidity Control Band**: The humidifier switches ON at _lower limit + 2_ and OFF at _upper limit − 1_ (adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit.
+- **Humidity Control Band**: The humidifier switches ON at _lower limit + 3_ and OFF at _upper limit − 1_ (adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
 - **Smart SMS Alerts**: Environmental SMS alerts only dispatch when an **active growing cycle** is running (preventing false alarms when the chamber is idle), and humidifier alerts only trigger on activation, not while recovering. Faculty/Admin can also temporarily **Pause SMS** (15 min, 30 min, 1 hr, 2 hrs, or until resumed) from the Dashboard or Alert Logs page.
 - **Mist & Water Tank Tracking** (Actuator Control page): Mist output and tank level are _estimates_ calculated from the humidifier relay's on-time in `actuator_logs` (not measured by a sensor).

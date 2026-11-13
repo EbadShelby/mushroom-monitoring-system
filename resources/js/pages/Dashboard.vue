@@ -77,7 +77,7 @@ const isColonization = computed(() => activeStage.value === 'colonization');
 const snapshotImage = computed(() => {
     return props.latestSnapshot?.file_path
         ? `/storage/${props.latestSnapshot.file_path}`
-        : '/sample-image.png';
+        : '/sample-image.jpg';
 });
 
 const snapshotAlt = computed(() => {

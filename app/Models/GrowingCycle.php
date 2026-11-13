@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -48,5 +49,16 @@ class GrowingCycle extends Model
     public function snapshots(): HasMany
     {
         return $this->hasMany(CameraSnapshot::class);
+    }
+
+    /**
+     * Number of days elapsed in this cycle (1-indexed, minimum 1).
+     */
+    public function dayCount(): int
+    {
+        $start = Carbon::parse($this->start_date)->startOfDay();
+        $end = ($this->end_date !== null ? Carbon::parse($this->end_date) : now())->startOfDay();
+
+        return max(1, (int) $start->diffInDays($end) + 1);
     }
 }

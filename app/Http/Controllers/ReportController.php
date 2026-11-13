@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -53,9 +52,7 @@ class ReportController extends Controller
             ->orderBy('observed_date')
             ->get();
 
-        $dayCount = $cycle->end_date
-            ? (int) Carbon::parse($cycle->start_date)->diffInDays($cycle->end_date) + 1
-            : (int) now()->diffInDays($cycle->start_date) + 1;
+        $dayCount = $cycle->dayCount();
 
         $pdf = Pdf::loadView('reports.cycle-report', compact(
             'cycle',

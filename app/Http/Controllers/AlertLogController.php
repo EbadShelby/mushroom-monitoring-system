@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AlertLog;
+use App\Models\UserLog;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,18 +49,28 @@ class AlertLogController extends Controller
         ]);
 
         $minutes = isset($data['minutes']) ? (int) $data['minutes'] : null;
+        $status = $this->sms->mute($minutes);
+
+        UserLog::record(
+            'Paused SMS alerts',
+            $minutes === null ? 'Until resumed' : "{$minutes} minutes",
+        );
 
         return response()->json([
             'success' => true,
-            'smsMute' => $this->sms->mute($minutes),
+            'smsMute' => $status,
         ]);
     }
 
     public function unmute(): JsonResponse
     {
+        $status = $this->sms->unmute();
+
+        UserLog::record('Resumed SMS alerts');
+
         return response()->json([
             'success' => true,
-            'smsMute' => $this->sms->unmute(),
+            'smsMute' => $status,
         ]);
     }
 

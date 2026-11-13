@@ -32,12 +32,12 @@ return [
     |
     | The humidifier switches ON at (humidity_low + on margin) and OFF at
     | (humidity_high - off margin), so humidity is corrected before it leaves
-    | the target range. Example (75-95%) with margins 2 and 1:
-    | ON at 77% or below, OFF at 94% or above.
+    | the target range. Example (75-95%) with margins 3 and 1:
+    | ON at 78% or below, OFF at 94% or above.
     |
     */
 
-    'humidity_on_margin' => (float) env('HUMIDIFIER_HUMIDITY_ON_MARGIN', 2),
+    'humidity_on_margin' => (float) env('HUMIDIFIER_HUMIDITY_ON_MARGIN', 3),
 
     'humidity_off_margin' => (float) env('HUMIDIFIER_HUMIDITY_OFF_MARGIN', 1),
 

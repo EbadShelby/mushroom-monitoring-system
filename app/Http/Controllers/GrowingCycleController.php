@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
-use Carbon\Carbon;
+use App\Models\UserLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -53,6 +53,8 @@ class GrowingCycleController extends Controller
             'growing_stage' => $data['growing_stage'] ?? 'colonization',
         ]);
 
+        UserLog::record('Created growing cycle', $cycle->name);
+
         return response()->json(['success' => true, 'cycle' => $cycle]);
     }
 
@@ -69,9 +71,7 @@ class GrowingCycleController extends Controller
                 'status' => $cycle->status,
                 'growing_stage' => $cycle->growing_stage,
                 'notes' => $cycle->notes,
-                'day_count' => $cycle->end_date
-                    ? (int) Carbon::parse($cycle->start_date)->diffInDays($cycle->end_date) + 1
-                    : (int) now()->diffInDays($cycle->start_date) + 1,
+                'day_count' => $cycle->dayCount(),
             ],
 
             'dailyAverages' => Inertia::defer(function () use ($cycle) {
@@ -155,6 +155,8 @@ class GrowingCycleController extends Controller
 
         $cycle->update($data);
 
+        UserLog::record('Updated growing cycle', $cycle->name);
+
         return response()->json(['success' => true, 'cycle' => $cycle->fresh()]);
     }
 
@@ -173,6 +175,8 @@ class GrowingCycleController extends Controller
 
         $cycle->update(['growing_stage' => $data['growing_stage']]);
 
+        UserLog::record('Switched cycle stage', "{$cycle->name} -> {$cycle->growing_stage}");
+
         return response()->json([
             'success' => true,
             'growing_stage' => $cycle->growing_stage,
@@ -187,12 +191,16 @@ class GrowingCycleController extends Controller
             'end_date' => now()->toDateString(),
         ]);
 
+        UserLog::record('Ended growing cycle', $cycle->name);
+
         return response()->json(['success' => true, 'cycle' => $cycle->fresh()]);
     }
 
     public function destroy(GrowingCycle $cycle): JsonResponse
     {
         $cycle->update(['status' => 'cancelled']);
+
+        UserLog::record('Cancelled growing cycle', $cycle->name);
 
         return response()->json(['success' => true]);
     }

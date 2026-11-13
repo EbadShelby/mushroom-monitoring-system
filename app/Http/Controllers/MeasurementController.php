@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GrowingCycle;
 use App\Models\MushroomMeasurement;
+use App\Models\UserLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,14 +12,14 @@ use Inertia\Response;
 
 class MeasurementController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $measurements = MushroomMeasurement::with(['growingCycle', 'user:id,name'])
             ->orderByDesc('observed_date')
             ->orderByDesc('id')
             ->paginate(15);
 
-        $cycles = auth()->user()->role !== 'student'
+        $cycles = $request->user()?->role !== 'student'
             ? GrowingCycle::where('status', 'active')->get(['id', 'name'])
             : [];
 
@@ -43,17 +44,22 @@ class MeasurementController extends Controller
 
         $measurement = MushroomMeasurement::create([
             ...$data,
-            'user_id' => auth()->id(),
+            'user_id' => $request->user()?->id,
         ]);
 
         $measurement->load('user:id,name');
+
+        UserLog::record('Logged mushroom measurement', "Cycle #{$measurement->growing_cycle_id}, Flush {$measurement->flush_number}");
 
         return response()->json(['success' => true, 'measurement' => $measurement]);
     }
 
     public function destroy(MushroomMeasurement $mushroomMeasurement): JsonResponse
     {
+        $details = "Cycle #{$mushroomMeasurement->growing_cycle_id}, Flush {$mushroomMeasurement->flush_number}";
         $mushroomMeasurement->delete();
+
+        UserLog::record('Deleted mushroom measurement', $details);
 
         return response()->json(['success' => true]);
     }

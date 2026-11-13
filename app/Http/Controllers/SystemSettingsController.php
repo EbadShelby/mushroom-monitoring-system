@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Models\UserLog;
 use App\Rules\PhilippineMobileNumber;
 use App\Services\ThresholdService;
 use Closure;
@@ -70,10 +71,16 @@ class SystemSettingsController extends Controller
             'system_name' => ['nullable', 'string', 'max:100'],
         ]);
 
+        $updatedKeys = [];
         foreach ($data as $key => $value) {
             if ($value !== null) {
                 Setting::set($key, (string) $value);
+                $updatedKeys[] = $key;
             }
+        }
+
+        if ($updatedKeys !== []) {
+            UserLog::record('Updated system settings', implode(', ', $updatedKeys));
         }
 
         return response()->json(['success' => true]);
