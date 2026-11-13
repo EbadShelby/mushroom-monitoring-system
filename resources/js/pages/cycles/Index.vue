@@ -60,16 +60,46 @@ function clearFilter() {
 }
 
 // ── Create cycle modal ─────────────────────────────────────────────────────────
+const MUSHROOM_VARIETIES = [
+    'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+    'White Oyster Mushroom (Pleurotus ostreatus)',
+    'Pink Oyster Mushroom (Pleurotus djamor)',
+    'Blue Oyster Mushroom (Pleurotus columbinus)',
+    'Golden / Yellow Oyster Mushroom (Pleurotus citrinopileatus)',
+    'King Oyster Mushroom (Pleurotus eryngii)',
+    'Phoenix / Indian Oyster Mushroom (Pleurotus pulmonarius)',
+] as const;
+
 const showModal = ref(false);
 const creating = ref(false);
+const selectedVariety = ref<string>(MUSHROOM_VARIETIES[0]);
+const customVariety = ref('');
+const customVarietyInputRef = ref<HTMLInputElement | null>(null);
 const form = ref({
     name: '',
-    mushroom_variety: 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+    mushroom_variety: MUSHROOM_VARIETIES[0] as string,
     substrate_type: '',
     start_date: new Date().toISOString().split('T')[0],
     growing_stage: 'colonization' as 'colonization' | 'fruiting',
     notes: '',
 });
+
+function onVarietyChange() {
+    if (selectedVariety.value === '__other__') {
+        form.value.mushroom_variety = customVariety.value.trim();
+        nextTick(() => {
+            customVarietyInputRef.value?.focus();
+        });
+    } else {
+        form.value.mushroom_variety = selectedVariety.value;
+    }
+}
+
+function onCustomVarietyInput() {
+    if (selectedVariety.value === '__other__') {
+        form.value.mushroom_variety = customVariety.value.trim();
+    }
+}
 
 const formErrors = ref<Record<string, string>>({});
 
@@ -169,12 +199,14 @@ async function createCycle() {
         showModal.value = false;
         form.value = {
             name: '',
-            mushroom_variety: 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+            mushroom_variety: MUSHROOM_VARIETIES[0],
             substrate_type: '',
             start_date: new Date().toISOString().split('T')[0],
             growing_stage: 'colonization',
             notes: '',
         };
+        selectedVariety.value = MUSHROOM_VARIETIES[0];
+        customVariety.value = '';
         clearSubstrates();
         isManualOverride.value = false;
         router.reload({ only: ['cycles', 'hasActiveCycle'] });
@@ -788,14 +820,36 @@ function formatDate(d: string | null) {
 
                             <div>
                                 <label
+                                    for="mushroom-variety-select"
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
                                     >Mushroom Variety
                                     <span class="text-red-400">*</span></label
                                 >
+                                <select
+                                    id="mushroom-variety-select"
+                                    v-model="selectedVariety"
+                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    @change="onVarietyChange"
+                                >
+                                    <option
+                                        v-for="variety in MUSHROOM_VARIETIES"
+                                        :key="variety"
+                                        :value="variety"
+                                    >
+                                        {{ variety }}
+                                    </option>
+                                    <option value="__other__">
+                                        Other / Custom...
+                                    </option>
+                                </select>
                                 <input
-                                    v-model="form.mushroom_variety"
+                                    v-if="selectedVariety === '__other__'"
+                                    ref="customVarietyInputRef"
+                                    v-model="customVariety"
                                     type="text"
-                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    placeholder="Enter custom mushroom variety..."
+                                    class="mt-2 w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    @input="onCustomVarietyInput"
                                 />
                                 <p
                                     v-if="formErrors.mushroom_variety"

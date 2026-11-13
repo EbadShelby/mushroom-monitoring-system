@@ -172,13 +172,16 @@ onUnmounted(() => {
     }
 });
 
+const hasActiveCycle = computed(() => Boolean(props.activeCycle));
+
 const anyWarning = computed(
     () =>
-        store.temperatureStatus !== 'normal' ||
-        store.humidityStatus !== 'normal' ||
-        store.co2Status !== 'normal' ||
-        store.lightStatus !== 'normal' ||
-        store.soilStatus !== 'normal',
+        hasActiveCycle.value &&
+        (store.temperatureStatus !== 'normal' ||
+            store.humidityStatus !== 'normal' ||
+            store.co2Status !== 'normal' ||
+            store.lightStatus !== 'normal' ||
+            store.soilStatus !== 'normal'),
 );
 
 // Chart Interval Selection
@@ -494,7 +497,7 @@ function formatDuration(totalSeconds: number): string {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
-                        store.temperatureStatus !== 'normal'
+                        hasActiveCycle && store.temperatureStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -544,8 +547,13 @@ function formatDuration(totalSeconds: number): string {
                         <span class="font-medium text-muted-foreground"
                             >Target: 26–32°C</span
                         >
+                        <span
+                            v-if="!hasActiveCycle"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Idle</span
+                        >
                         <div
-                            v-if="store.temperatureStatus !== 'normal'"
+                            v-else-if="store.temperatureStatus !== 'normal'"
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" /> Out of range
@@ -563,7 +571,7 @@ function formatDuration(totalSeconds: number): string {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
-                        store.humidityStatus !== 'normal'
+                        hasActiveCycle && store.humidityStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -613,8 +621,13 @@ function formatDuration(totalSeconds: number): string {
                         <span class="font-medium text-muted-foreground"
                             >Target: 75–95%</span
                         >
+                        <span
+                            v-if="!hasActiveCycle"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Idle</span
+                        >
                         <div
-                            v-if="store.humidityStatus !== 'normal'"
+                            v-else-if="store.humidityStatus !== 'normal'"
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" /> Out of range
@@ -632,7 +645,7 @@ function formatDuration(totalSeconds: number): string {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
-                        store.co2Status !== 'normal'
+                        hasActiveCycle && store.co2Status !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -684,8 +697,13 @@ function formatDuration(totalSeconds: number): string {
                             {{ isColonization ? '< 5,000' : '< 1,000' }}
                             ppm</span
                         >
+                        <span
+                            v-if="!hasActiveCycle"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Idle</span
+                        >
                         <div
-                            v-if="store.co2Status !== 'normal'"
+                            v-else-if="store.co2Status !== 'normal'"
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" /> High
@@ -703,7 +721,7 @@ function formatDuration(totalSeconds: number): string {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
-                        store.lightStatus !== 'normal'
+                        hasActiveCycle && store.lightStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -758,8 +776,13 @@ function formatDuration(totalSeconds: number): string {
                                     : '200–800 lux'
                             }}</span
                         >
+                        <span
+                            v-if="!hasActiveCycle"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Idle</span
+                        >
                         <div
-                            v-if="store.lightStatus !== 'normal'"
+                            v-else-if="store.lightStatus !== 'normal'"
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" />
@@ -779,7 +802,7 @@ function formatDuration(totalSeconds: number): string {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
-                        store.soilStatus !== 'normal'
+                        hasActiveCycle && store.soilStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -834,8 +857,13 @@ function formatDuration(totalSeconds: number): string {
                         <span class="font-medium text-muted-foreground"
                             >Target: ≥ 30%</span
                         >
+                        <span
+                            v-if="!hasActiveCycle"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Idle</span
+                        >
                         <div
-                            v-if="store.soilStatus !== 'normal'"
+                            v-else-if="store.soilStatus !== 'normal'"
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" />
