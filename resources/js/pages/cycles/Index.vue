@@ -5,6 +5,7 @@ import {
     Plus,
     ChevronLeft,
     ChevronRight,
+    Check,
     CheckCircle2,
     XCircle,
     Clock,
@@ -20,7 +21,7 @@ import {
     ArrowLeftRight,
 } from '@lucide/vue';
 import axios from 'axios';
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { toast } from 'vue-sonner';
 import * as cyclesApi from '@/routes/cycles';
 import type { GrowingCycle, Paginated } from '@/types';
@@ -71,6 +72,80 @@ const form = ref({
 
 const formErrors = ref<Record<string, string>>({});
 
+// ── Common substrates checklist ───────────────────────────────────────────────
+const COMMON_SUBSTRATES = [
+    { id: 'sawdust', label: 'Sawdust' },
+    { id: 'rice_straw', label: 'Rice Straw' },
+    { id: 'sugarcane_bagasse', label: 'Sugarcane Bagasse' },
+    { id: 'corn_cobs', label: 'Corn Cobs' },
+    { id: 'coco_coir', label: 'Coco Coir' },
+    { id: 'coffee_grounds', label: 'Coffee Grounds' },
+    { id: 'wheat_straw', label: 'Wheat Straw' },
+] as const;
+
+const selectedSubstrates = ref<string[]>([]);
+const hasOtherSubstrate = ref(false);
+const customSubstrate = ref('');
+const isManualOverride = ref(false);
+const customSubstrateInputRef = ref<HTMLInputElement | null>(null);
+
+function syncSubstrateType() {
+    if (isManualOverride.value) {
+        return;
+    }
+
+    const items: string[] = [...selectedSubstrates.value];
+
+    if (hasOtherSubstrate.value && customSubstrate.value.trim()) {
+        items.push(customSubstrate.value.trim());
+    }
+
+    form.value.substrate_type = items.join(', ');
+}
+
+function toggleCommonSubstrate(label: string) {
+    const idx = selectedSubstrates.value.indexOf(label);
+    if (idx >= 0) {
+        selectedSubstrates.value.splice(idx, 1);
+    } else {
+        selectedSubstrates.value.push(label);
+    }
+    syncSubstrateType();
+}
+
+function toggleOtherSubstrate() {
+    hasOtherSubstrate.value = !hasOtherSubstrate.value;
+    syncSubstrateType();
+    if (hasOtherSubstrate.value) {
+        nextTick(() => {
+            customSubstrateInputRef.value?.focus();
+        });
+    }
+}
+
+function onCustomSubstrateInput() {
+    syncSubstrateType();
+}
+
+function clearSubstrates() {
+    selectedSubstrates.value = [];
+    hasOtherSubstrate.value = false;
+    customSubstrate.value = '';
+    form.value.substrate_type = '';
+}
+
+function toggleManualOverride() {
+    isManualOverride.value = !isManualOverride.value;
+    if (!isManualOverride.value) {
+        syncSubstrateType();
+    }
+}
+
+function openModal() {
+    formErrors.value = {};
+    showModal.value = true;
+}
+
 async function createCycle() {
     formErrors.value = {};
     creating.value = true;
@@ -87,6 +162,8 @@ async function createCycle() {
             growing_stage: 'colonization',
             notes: '',
         };
+        clearSubstrates();
+        isManualOverride.value = false;
         router.reload({ only: ['cycles'] });
     } catch (e: any) {
         if (e.response?.status === 422) {
@@ -263,7 +340,7 @@ function formatDate(d: string | null) {
                 v-if="userRole !== 'student'"
                 id="create-cycle-btn"
                 class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
-                @click="showModal = true"
+                @click="openModal"
             >
                 <Plus class="h-4 w-4" />
                 New Cycle
@@ -373,7 +450,7 @@ function formatDate(d: string | null) {
                 </div>
                 <button
                     class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-foreground hover:bg-emerald-500 dark:text-white"
-                    @click="showModal = true"
+                    @click="openModal"
                 >
                     Create First Cycle
                 </button>
@@ -635,11 +712,11 @@ function formatDate(d: string | null) {
                 >
                     <div
                         v-if="showModal"
-                        class="w-full max-w-lg rounded-2xl border border-border/50 bg-slate-900 shadow-2xl dark:border-border dark:border-slate-700/50"
+                        class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-border/50 bg-card shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
                     >
                         <!-- Modal header -->
                         <div
-                            class="flex items-center justify-between border-b border-border/50 px-6 py-4 dark:border-border dark:border-slate-700/50"
+                            class="sticky top-0 z-10 flex items-center justify-between border-b border-border/50 bg-card/95 px-6 py-4 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-slate-900/95"
                         >
                             <div class="flex items-center gap-3">
                                 <div
@@ -656,7 +733,7 @@ function formatDate(d: string | null) {
                                 </h2>
                             </div>
                             <button
-                                class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:text-white"
+                                class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                                 @click="showModal = false"
                             >
                                 <X class="h-4 w-4" />
@@ -707,18 +784,153 @@ function formatDate(d: string | null) {
                                 </p>
                             </div>
 
+                            <!-- Substrate Type -->
                             <div>
-                                <label
-                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Substrate Type
-                                    <span class="text-red-400">*</span></label
-                                >
-                                <input
-                                    v-model="form.substrate_type"
-                                    type="text"
-                                    placeholder="e.g. Rice straw, Sawdust"
-                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                />
+                                <div class="mb-1.5 flex items-center justify-between">
+                                    <label
+                                        class="block text-sm font-medium text-foreground/80 dark:text-slate-300"
+                                    >
+                                        Substrate Type
+                                        <span class="text-red-400">*</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            v-if="
+                                                selectedSubstrates.length > 0 ||
+                                                hasOtherSubstrate ||
+                                                customSubstrate ||
+                                                form.substrate_type
+                                            "
+                                            type="button"
+                                            class="text-xs text-muted-foreground transition hover:text-foreground dark:text-slate-400 dark:hover:text-slate-200"
+                                            @click="clearSubstrates"
+                                        >
+                                            Clear
+                                        </button>
+                                        <span
+                                            v-if="
+                                                selectedSubstrates.length > 0 ||
+                                                hasOtherSubstrate ||
+                                                customSubstrate ||
+                                                form.substrate_type
+                                            "
+                                            class="text-xs text-muted-foreground/40 dark:text-slate-600"
+                                            >&bull;</span
+                                        >
+                                        <button
+                                            type="button"
+                                            class="text-xs font-medium text-emerald-600 transition hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                            @click="toggleManualOverride"
+                                        >
+                                            {{
+                                                isManualOverride
+                                                    ? 'Use checklist'
+                                                    : 'Edit raw text'
+                                            }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Manual Raw Text Input -->
+                                <div v-if="isManualOverride">
+                                    <input
+                                        v-model="form.substrate_type"
+                                        type="text"
+                                        placeholder="e.g. Sawdust, Rice straw (80/20 mix)"
+                                        class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    />
+                                    <p class="mt-1 text-xs text-muted-foreground dark:text-slate-400">
+                                        Directly enter your custom substrate formulation.
+                                    </p>
+                                </div>
+
+                                <!-- Checklist Mode -->
+                                <div v-else class="space-y-2.5">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button
+                                            v-for="sub in COMMON_SUBSTRATES"
+                                            :key="sub.id"
+                                            type="button"
+                                            class="flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-xs font-medium transition select-none"
+                                            :class="
+                                                selectedSubstrates.includes(sub.label)
+                                                    ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                    : 'border-border bg-card text-foreground/80 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600'
+                                            "
+                                            @click="toggleCommonSubstrate(sub.label)"
+                                        >
+                                            <div
+                                                class="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition"
+                                                :class="
+                                                    selectedSubstrates.includes(sub.label)
+                                                        ? 'border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-500'
+                                                        : 'border-slate-400/60 bg-transparent dark:border-slate-600'
+                                                "
+                                            >
+                                                <Check
+                                                    v-if="selectedSubstrates.includes(sub.label)"
+                                                    class="h-3 w-3 stroke-[3]"
+                                                />
+                                            </div>
+                                            <span class="truncate">{{ sub.label }}</span>
+                                        </button>
+
+                                        <!-- Other / Custom toggle button -->
+                                        <button
+                                            type="button"
+                                            class="flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-xs font-medium transition select-none"
+                                            :class="
+                                                hasOtherSubstrate
+                                                    ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                    : 'border-dashed border-border bg-card text-muted-foreground hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600'
+                                            "
+                                            @click="toggleOtherSubstrate"
+                                        >
+                                            <div
+                                                class="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition"
+                                                :class="
+                                                    hasOtherSubstrate
+                                                        ? 'border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-500'
+                                                        : 'border-slate-400/60 bg-transparent dark:border-slate-600'
+                                                "
+                                            >
+                                                <Check
+                                                    v-if="hasOtherSubstrate"
+                                                    class="h-3 w-3 stroke-[3]"
+                                                />
+                                            </div>
+                                            <span class="truncate">Other / Custom...</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Custom substrate text field when 'Other' is checked -->
+                                    <div v-if="hasOtherSubstrate" class="pt-0.5">
+                                        <input
+                                            ref="customSubstrateInputRef"
+                                            v-model="customSubstrate"
+                                            type="text"
+                                            placeholder="Specify other substrate / supplement (e.g. Cotton waste, Wheat bran)"
+                                            class="w-full rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                            @input="onCustomSubstrateInput"
+                                        />
+                                    </div>
+
+                                    <!-- Selection Summary Badge / Preview -->
+                                    <div
+                                        v-if="form.substrate_type"
+                                        class="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs"
+                                    >
+                                        <span class="text-[11px] font-medium text-muted-foreground dark:text-slate-400">
+                                            Selected:
+                                        </span>
+                                        <span
+                                            class="inline-flex items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-700 dark:text-emerald-300"
+                                        >
+                                            {{ form.substrate_type }}
+                                        </span>
+                                    </div>
+                                </div>
+
                                 <p
                                     v-if="formErrors.substrate_type"
                                     class="mt-1 text-xs text-red-400"
