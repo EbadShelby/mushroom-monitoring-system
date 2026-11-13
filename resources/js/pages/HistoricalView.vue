@@ -135,13 +135,21 @@ const chartOptions = computed<ApexOptions>(() => ({
         labels: {
             style: { colors: '#94a3b8', fontSize: '10px' },
             datetimeUTC: false,
+            datetimeFormatter: {
+                year: 'yyyy',
+                month: 'MMM',
+                day: 'dd MMM',
+                hour: 'h:mm TT',
+                minute: 'h:mm TT',
+                second: 'h:mm:ss TT',
+            },
         },
         axisBorder: { show: false },
     },
     yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
     grid: { borderColor: '#1e293b', strokeDashArray: 4 },
     legend: { labels: { colors: '#94a3b8' } },
-    tooltip: { theme: 'dark', x: { format: 'dd MMM HH:mm' } },
+    tooltip: { theme: 'dark', x: { format: 'dd MMM, h:mm TT' } },
 }));
 
 // Column header map

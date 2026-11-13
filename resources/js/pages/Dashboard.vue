@@ -223,6 +223,14 @@ function buildChartOptions(label: string, color: string): ApexOptions {
             labels: {
                 style: { colors: '#94a3b8', fontSize: '10px' },
                 datetimeUTC: false,
+                datetimeFormatter: {
+                    year: 'yyyy',
+                    month: 'MMM',
+                    day: 'dd MMM',
+                    hour: 'h:mm TT',
+                    minute: 'h:mm TT',
+                    second: 'h:mm:ss TT',
+                },
             },
             axisBorder: { show: false },
             axisTicks: { show: false },
@@ -242,7 +250,7 @@ function buildChartOptions(label: string, color: string): ApexOptions {
         },
         tooltip: {
             theme: 'dark',
-            x: { show: true },
+            x: { show: true, format: 'dd MMM, h:mm TT' },
             y: {
                 formatter: (v: number) =>
                     `${v.toFixed(1)} ${label === 'Temperature' ? '°C' : '%'}`,
