@@ -164,7 +164,7 @@
 
 <div class="footer">
     <span>Cotabato State University — IoT Mushroom Monitoring System</span>
-    <span>Gray Oyster Mushroom (Pleurotus sajor-caju)</span>
+    <span>Gray Oyster Mushroom (Pleurotus ostreatus)</span>
     <span>Printed: {{ now()->format('Y-m-d H:i') }}</span>
 </div>
 

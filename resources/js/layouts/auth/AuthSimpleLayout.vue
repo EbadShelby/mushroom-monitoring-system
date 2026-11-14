@@ -87,7 +87,7 @@ defineProps<{
                 <p class="max-w-xs text-sm leading-relaxed text-emerald-200/70">
                     Monitor temperature, humidity, CO₂, light, and substrate
                     moisture conditions for
-                    <em>Pleurotus sajor-caju</em> cultivation in real-time.
+                    <em>Pleurotus ostreatus</em> cultivation in real-time.
                 </p>
 
                 <!-- Sensor stat pills -->

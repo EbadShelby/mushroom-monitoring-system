@@ -46,7 +46,7 @@ void pollActuatorCommands();
 void setup() {
   Serial.begin(115200);
   Serial.println("=== IoT Mushroom Monitoring System ===");
-  Serial.println("Gray Oyster Mushroom — Pleurotus sajor-caju");
+  Serial.println("Gray Oyster Mushroom — Pleurotus ostreatus");
   Serial.println("Relay: N3=Humidifier | N2=LED");
 
   pinMode(RELAY_HUMIDIFIER, OUTPUT); digitalWrite(RELAY_HUMIDIFIER, HIGH);

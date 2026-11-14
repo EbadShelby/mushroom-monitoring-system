@@ -1,6 +1,6 @@
 # IoT-Based Environmental Monitoring System for Oyster Mushroom Cultivation
 
-An IoT system designed for monitoring and automating the cultivation environment of Gray Oyster Mushrooms (_Pleurotus sajor-caju_). This system was developed for Cotabato State University — BS Agriculture Program.
+An IoT system designed for monitoring and automating the cultivation environment of Gray Oyster Mushrooms (_Pleurotus ostreatus_). This system was developed for Cotabato State University — BS Agriculture Program.
 
 The system uses an ESP32 microcontroller to collect environmental data from various sensors (temperature, humidity, CO2, light, and soil moisture) and automatically controls actuators (humidifier, grow light) based on specific thresholds. The data is sent to a Laravel backend, where it is stored in MySQL for historical tracking and pushed to a Firebase Realtime Database for live dashboard monitoring built with Vue.js.
 
@@ -95,7 +95,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
 - **Humidifier Failsafe Runtime & Stall Detection**:
-    - Continuous humidifier operation is capped at **15 minutes** with a mandatory **3-minute resting cooldown** , protecting the ultrasonic mist makers from overheating if the reservoir runs dry.
+    - Continuous humidifier operation is capped at **15 minutes** with a mandatory **3-minute resting cooldown**, protecting the ultrasonic mist makers from overheating if the reservoir runs dry.
     - If the humidifier runs continuously for **5 minutes** while humidity remains below the low threshold (`75%`), a **Stall Alert** SMS is sent to check the water tank, mist maker, and sensor.
 - **Humidity Control Band**: The humidifier switches ON at _lower limit + 3_ (`78%`) and OFF at _upper limit − 1_ (`94%`, adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit (`75%`).
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
@@ -127,7 +127,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 | **Git**            | 2.x+            | For cloning the repository                                    |
 | **Arduino IDE**    | 2.x             | Or PlatformIO (VS Code extension) for ESP32 firmware flashing |
 
-> **Recommended Setup**: [XAMPP](https://www.apachefriends.org/) (PHP 8.2+, MySQL 8) or [Laragon](https://laragon.org/) satisfies the Apache + MySQL + PHP stack in a single Windows installer.
+> **Recommended Setup**: [XAMPP](https://www.apachefriends.org/) (PHP 8.4+, MySQL 8) or [Laragon](https://laragon.org/) satisfies the Apache + MySQL + PHP stack in a single Windows installer.
 
 ---
 
@@ -286,4 +286,4 @@ Follow these steps when powering up the physical mushroom monitoring setup:
     - _(Optional)_ Monitor live status via Arduino IDE/PlatformIO Serial Monitor at **115200 baud**.
 
 6. **Live Dashboard Verified ✅**
-    - After ~35 seconds, the dashboard at `/dashboard` displays live temperature, humidity, CO₂, light, and soil moisture metrics updated via Firebase.
+    - After ~35 seconds, the dashboard at `/dashboard` displays live temperature, humidity, CO₂, light, and substrate moisture metrics updated via Firebase.
