@@ -78,50 +78,33 @@ _All actuators use separate power rails — ESP32 only sends a relay signal. Rel
 - **Humidifier** (4 × Ultrasonic Mist Maker, wired together on one relay) → Relay N3 → GPIO 14
 - **LED Grow Light Strip** (5V USB) → Relay N2 → GPIO 27
 
-## Threshold Values & Stage-Based Automation Logic (Gray Oyster Mushroom)
+## Environmental Thresholds & Automation Logic
 
-The system automatically switches environmental target profiles based on the active cycle's **Growth Stage**:
+The system evaluates incoming sensor readings against a unified set of configurable **Environmental Thresholds** (customizable by Admin in **System Settings**):
 
-### 1. Colonization Stage (Spawn Running Phase)
-
-_Mycelium spreads throughout the substrate bag — requires warmth, darkness, and high CO₂ tolerance._
-
-| Environmental Factor      | Target Range            | Sensor     | System Automation & Alert Logic                                                              |
-| :------------------------ | :---------------------- | :--------- | :------------------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **26–32°C**             | DHT22      | `< 26°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).                           |
-| 💧 **Humidity**           | **70–80% RH**           | DHT22      | `<= 72%` → Auto-activate humidifier (SMS only if `< 70%`). `>= 79%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **2,000–5,000 ppm**     | MQ-135     | `> 5,000 ppm` → SMS alert (ventilate manually).                                              |
-| 💡 **Light Level**        | **0–50 lux** (Dark/Dim) | BH1750     | `> 100 lux` → Alert (spawn running requires darkness). Grow lights OFF.                      |
-| 🌱 **Substrate Moisture** | **60–65%**              | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                                   |
-
----
-
-### 2. Fruiting Stage (Mushroom Formation & Growth Phase)
-
-_Bags opened — requires high humidity, fresh air, and indirect light._
-
-| Environmental Factor      | Target Range               | Sensor     | System Automation & Alert Logic                                                              |
+| Environmental Factor      | Default Target Range       | Sensor     | System Automation & Alert Logic                                                              |
 | :------------------------ | :------------------------- | :--------- | :------------------------------------------------------------------------------------------- |
-| 🌡️ **Temperature**        | **26–32°C**                | DHT22      | `< 26°C` → Low temp alert. `> 32°C` → SMS alert (no auto-cooling).                           |
-| 💧 **Humidity**           | **85–95% RH**              | DHT22      | `<= 87%` → Auto-activate humidifier (SMS only if `< 85%`). `>= 94%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **600–1,000 ppm**          | MQ-135     | `> 1,000 ppm` → SMS alert (ventilate manually).                                              |
-| 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dark. `> 800 lux` → Alert too bright. LED on schedule.               |
-| 🌱 **Substrate Moisture** | **55–65%**                 | Capacitive | `< 40%` → Warning SMS alert. `< 25%` → Critical SMS alert.                                   |
+| 🌡️ **Temperature**        | **26–32°C**                | DHT22      | `< 26°C` → Low temp SMS alert. `> 32°C` → High temp SMS alert (no auto-cooling).             |
+| 💧 **Humidity**           | **75–95% RH**              | DHT22      | `<= 78%` → Auto-activate humidifier (SMS only if `< 75%`). `>= 94%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level**          | **< 1,000 ppm**            | MQ-135     | `> 1,000 ppm` → High CO₂ SMS alert (ventilate chamber manually).                             |
+| 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dim. `> 800 lux` → Alert too bright. LED runs on daily schedule.     |
+| 🌱 **Substrate Moisture** | **≥ 30%**                  | Capacitive | `< 30%` → Warning (Dry) SMS alert. `< 20%` → Critical SMS alert.                             |
 
 ---
 
 ### ⚡ Actuator Interlock, Safety & Override Logic
 
-- **Humidifier Failsafe Runtime**: Continuous humidifier operation is capped at 15 minutes with a mandatory 3-minute resting period, protecting the mist maker from overheating and alerting if the water reservoir runs dry.
-- **Humidity Control Band**: The humidifier switches ON at _lower limit + 3_ and OFF at _upper limit − 1_ (adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit.
+- **Humidifier Failsafe Runtime & Stall Detection**:
+    - Continuous humidifier operation is capped at **15 minutes** with a mandatory **3-minute resting cooldown** , protecting the ultrasonic mist makers from overheating if the reservoir runs dry.
+    - If the humidifier runs continuously for **5 minutes** while humidity remains below the low threshold (`75%`), a **Stall Alert** SMS is sent to check the water tank, mist maker, and sensor.
+- **Humidity Control Band**: The humidifier switches ON at _lower limit + 3_ (`78%`) and OFF at _upper limit − 1_ (`94%`, adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit (`75%`).
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
-- **Smart SMS Alerts**: Environmental SMS alerts only dispatch when an **active growing cycle** is running (preventing false alarms when the chamber is idle), and humidifier alerts only trigger on activation, not while recovering.
-- **Mist & Water Tank Tracking** (Actuator Control page): Mist output and tank level are _estimates_ calculated from the humidifier relay's on-time in `actuator_logs` (not measured by a sensor).
-    - Each of the 4 units is rated at 0.013 mL/s, so total output is 4 × 0.013 = 0.052 mL/s. The page shows today's total mist, a 7-day chart, and per-session mist in the logs table.
-    - Each unit has its own tank (300 mL usable). After refilling **all** tanks, press **Log refill** — tank tracking starts from that moment (until then the card shows "Not tracking yet" and a full tank). Only the refill time is stored (`settings.humidifier_tank_refilled_at`); the level is recomputed on every load.
+- **Single Active Cycle & Smart SMS Alerts**: Only one growing cycle can be active at a time. When no cycle is active, dashboard sensor cards display an `Idle` state and environmental SMS alerts are suppressed so an empty chamber does not consume SMS credits.
+- **Mist & Water Tank Tracking** (Dashboard & Actuator Control pages): Mist output and tank level are _estimates_ calculated from the humidifier relay's on-time in `actuator_logs` (not measured by a physical sensor).
+    - Each of the 4 units is rated at 0.013 mL/s, so total output is 4 × 0.013 = 0.052 mL/s. Both the Dashboard and Actuator Control pages show today's total mist, a 7-day bar chart, and remaining tank capacity.
+    - Each unit has its own tank (300 mL usable). After refilling **all** tanks, press **Log Refill** (on the Dashboard or Actuator Control page) — tank tracking starts from that moment (until then the card shows "Not tracking yet" and a full tank). Only the refill timestamp is stored (`settings.humidifier_tank_refilled_at`); the level is recomputed on every load.
     - An SMS ("Water Tank" in Alert Logs) is sent to Admin/Faculty when the tank drops to 10% or below while misting, repeated at most every 3 hours.
     - Tune via `.env`: `HUMIDIFIER_MIST_RATE`, `HUMIDIFIER_UNIT_COUNT`, `HUMIDIFIER_TANK_CAPACITY`, `HUMIDIFIER_LOW_TANK_PERCENT` (see `config/humidifier.php`).
-- **Automatic Stage Switch**: Users can switch growth stages on the dashboard or cycles page, instantly updating live gauges, target indicators, Pinia status evaluators, and backend automation logic.
 
 ## User Roles
 
@@ -135,7 +118,7 @@ _Bags opened — requires high humidity, fresh air, and indirect light._
 
 | Requirement        | Minimum Version | Notes                                                         |
 | :----------------- | :-------------- | :------------------------------------------------------------ |
-| **PHP**            | 8.2+            | PHP 8.5 recommended                                           |
+| **PHP**            | 8.4+            | PHP 8.5 recommended                                           |
 | **Composer**       | 2.x             | PHP dependency manager                                        |
 | **Node.js**        | 18.x LTS+       | Node 20 LTS recommended                                       |
 | **npm**            | 9.x+            | Bundled with Node.js                                          |
@@ -293,7 +276,7 @@ Follow these steps when powering up the physical mushroom monitoring setup:
 4. **Access the Dashboard**
     - Open browser: `http://localhost:8080` (or `http://192.168.254.138:8080`)
     - Log in with your credentials.
-    - After refilling the humidifier tanks, open **Actuator Control** and press **Log refill** so the water-tank tracker restarts.
+    - After refilling the humidifier tanks, press **Log Refill** on the **Dashboard** or **Actuator Control** page so the water-tank tracker restarts.
 
 5. **Power On ESP32**
     - Plug in the ESP32 board.

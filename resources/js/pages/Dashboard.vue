@@ -65,7 +65,7 @@ const store = useSensorStore();
 const snapshotImage = computed(() => {
     return props.latestSnapshot?.file_path
         ? `/storage/${props.latestSnapshot.file_path}`
-        : '/sample-image.jpg';
+        : null;
 });
 
 const snapshotAlt = computed(() => {
@@ -74,7 +74,7 @@ const snapshotAlt = computed(() => {
 
 const snapshotLabel = computed(() => {
     if (!props.latestSnapshot) {
-        return 'No photo yet (sample preview)';
+        return '';
     }
 
     if (props.latestSnapshot.snapshot_number) {
@@ -757,7 +757,7 @@ function formatDuration(totalSeconds: number): string {
                             <p
                                 class="text-sm font-semibold tracking-wide text-muted-foreground"
                             >
-                                SUBSTRATE
+                                SUBSTRATE MOISTURE
                             </p>
                         </div>
                         <span
@@ -1355,7 +1355,7 @@ function formatDuration(totalSeconds: number): string {
                         <div class="mt-2 h-3 w-2/3 rounded bg-muted"></div>
                     </div>
 
-                    <div v-else>
+                    <div v-else-if="snapshotImage">
                         <div
                             class="cursor-pointer overflow-hidden rounded-lg border border-border/50 ring-offset-background transition-all hover:ring-2 hover:ring-emerald-500/50"
                             @click="showLightbox = true"
@@ -1369,6 +1369,13 @@ function formatDuration(totalSeconds: number): string {
                         <p class="mt-2 text-xs text-muted-foreground">
                             {{ snapshotLabel }}
                         </p>
+                    </div>
+                    <div
+                        v-else
+                        class="flex flex-col items-center justify-center py-6 text-center text-muted-foreground"
+                    >
+                        <Camera class="mb-2 h-10 w-10 opacity-30" />
+                        <p class="text-sm">No snapshot yet</p>
                     </div>
                 </div>
 
@@ -1459,7 +1466,7 @@ function formatDuration(totalSeconds: number): string {
             leave-to-class="opacity-0 scale-95"
         >
             <div
-                v-if="showLightbox"
+                v-if="showLightbox && snapshotImage"
                 class="fixed inset-0 z-100 flex items-center justify-center"
                 style="background: rgba(0, 0, 0, 0.93)"
                 @click.self="showLightbox = false"
