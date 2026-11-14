@@ -58,13 +58,13 @@ function clearFilter() {
 
 // ── Create cycle modal ─────────────────────────────────────────────────────────
 const MUSHROOM_VARIETIES = [
-    'Gray Oyster Mushroom (Pleurotus sajor-caju)',
-    'White Oyster Mushroom (Pleurotus ostreatus)',
-    'Pink Oyster Mushroom (Pleurotus djamor)',
-    'Blue Oyster Mushroom (Pleurotus columbinus)',
-    'Golden / Yellow Oyster Mushroom (Pleurotus citrinopileatus)',
-    'King Oyster Mushroom (Pleurotus eryngii)',
-    'Phoenix / Indian Oyster Mushroom (Pleurotus pulmonarius)',
+    'Gray Oyster Mushroom',
+    'White Oyster Mushroom',
+    'Pink Oyster Mushroom',
+    'Blue Oyster Mushroom',
+    'Golden / Yellow Oyster Mushroom',
+    'King Oyster Mushroom',
+    'Phoenix / Indian Oyster Mushroom',
 ] as const;
 
 const showModal = ref(false);

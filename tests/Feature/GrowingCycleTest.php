@@ -8,7 +8,7 @@ test('authorized user can create growing cycle with single common substrate', fu
 
     $response = $this->actingAs($user)->postJson('/api/cycles', [
         'name' => 'Batch 2026-Sawdust',
-        'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
     ]);
@@ -28,7 +28,7 @@ test('authorized user can create growing cycle with multiple common substrates',
 
     $response = $this->actingAs($user)->postJson('/api/cycles', [
         'name' => 'Batch 2026-Mixed',
-        'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => 'Sawdust, Rice Straw, Corn Cobs',
         'start_date' => now()->toDateString(),
     ]);
@@ -48,7 +48,7 @@ test('authorized user can create growing cycle with custom substrate', function 
 
     $response = $this->actingAs($user)->postJson('/api/cycles', [
         'name' => 'Batch 2026-Custom',
-        'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => 'Cotton Waste',
         'start_date' => now()->toDateString(),
     ]);
@@ -65,7 +65,7 @@ test('authorized user can create growing cycle with combined common and custom s
 
     $response = $this->actingAs($user)->postJson('/api/cycles', [
         'name' => 'Batch 2026-Enriched',
-        'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => 'Sawdust, Rice Bran (15%), Lime (1%)',
         'start_date' => now()->toDateString(),
     ]);
@@ -82,7 +82,7 @@ test('substrate type is required when creating growing cycle', function () {
 
     $response = $this->actingAs($user)->postJson('/api/cycles', [
         'name' => 'Batch 2026-NoSubstrate',
-        'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => '',
         'start_date' => now()->toDateString(),
     ]);
