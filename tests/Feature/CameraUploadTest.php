@@ -15,7 +15,6 @@ test('admin or faculty can upload a growth photo', function () {
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'colonization',
     ]);
 
     $response = $this->actingAs($user)->postJson('/api/camera/upload', [
@@ -40,7 +39,6 @@ test('admin or faculty can upload a growth photo without specifying flush number
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'colonization',
     ]);
 
     $response = $this->actingAs($user)->postJson('/api/camera/upload', [

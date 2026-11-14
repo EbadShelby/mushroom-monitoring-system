@@ -6,7 +6,6 @@ export interface GrowingCycle {
     start_date: string;
     end_date: string | null;
     status: 'active' | 'completed' | 'cancelled';
-    growing_stage: 'colonization' | 'fruiting';
     notes: string | null;
     day_count?: number;
     created_at?: string;
@@ -96,25 +95,16 @@ export interface AppUser {
 }
 
 export interface SystemSettings {
-    // Colonization thresholds
-    threshold_col_temp_min?: string;
-    threshold_col_temp_max?: string;
-    threshold_col_humidity_low?: string;
-    threshold_col_humidity_high?: string;
-    threshold_col_co2_max?: string;
-    threshold_col_light_max?: string;
-    threshold_col_soil_warning?: string;
-    threshold_col_soil_critical?: string;
-    // Fruiting thresholds
-    threshold_fruit_temp_min?: string;
-    threshold_fruit_temp_max?: string;
-    threshold_fruit_humidity_low?: string;
-    threshold_fruit_humidity_high?: string;
-    threshold_fruit_co2_max?: string;
-    threshold_fruit_light_min?: string;
-    threshold_fruit_light_max?: string;
-    threshold_fruit_soil_warning?: string;
-    threshold_fruit_soil_critical?: string;
+    // Environmental thresholds
+    threshold_temp_min?: string;
+    threshold_temp_max?: string;
+    threshold_humidity_low?: string;
+    threshold_humidity_high?: string;
+    threshold_co2_max?: string;
+    threshold_light_min?: string;
+    threshold_light_max?: string;
+    threshold_soil_warning?: string;
+    threshold_soil_critical?: string;
     // Other
     led_on_hour?: string;
     led_off_hour?: string;

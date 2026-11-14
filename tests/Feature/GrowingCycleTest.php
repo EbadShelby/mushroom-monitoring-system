@@ -11,7 +11,6 @@ test('authorized user can create growing cycle with single common substrate', fu
         'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
-        'growing_stage' => 'colonization',
     ]);
 
     $response->assertSuccessful();
@@ -32,7 +31,6 @@ test('authorized user can create growing cycle with multiple common substrates',
         'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
         'substrate_type' => 'Sawdust, Rice Straw, Corn Cobs',
         'start_date' => now()->toDateString(),
-        'growing_stage' => 'colonization',
     ]);
 
     $response->assertSuccessful();
@@ -53,7 +51,6 @@ test('authorized user can create growing cycle with custom substrate', function 
         'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
         'substrate_type' => 'Cotton Waste',
         'start_date' => now()->toDateString(),
-        'growing_stage' => 'colonization',
     ]);
 
     $response->assertSuccessful();
@@ -71,7 +68,6 @@ test('authorized user can create growing cycle with combined common and custom s
         'mushroom_variety' => 'Gray Oyster Mushroom (Pleurotus sajor-caju)',
         'substrate_type' => 'Sawdust, Rice Bran (15%), Lime (1%)',
         'start_date' => now()->toDateString(),
-        'growing_stage' => 'colonization',
     ]);
 
     $response->assertSuccessful();
@@ -117,7 +113,6 @@ test('cannot create a new growing cycle while an active cycle exists', function 
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'colonization',
     ]);
 
     $response = $this->actingAs($user)->postJson('/api/cycles', [
@@ -125,7 +120,6 @@ test('cannot create a new growing cycle while an active cycle exists', function 
         'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
-        'growing_stage' => 'colonization',
     ]);
 
     $response->assertStatus(422);
@@ -144,7 +138,6 @@ test('can create a new growing cycle when previous cycles are completed or archi
         'start_date' => now()->subDays(10)->toDateString(),
         'end_date' => now()->subDay()->toDateString(),
         'status' => 'completed',
-        'growing_stage' => 'fruiting',
     ]);
 
     GrowingCycle::create([
@@ -153,7 +146,6 @@ test('can create a new growing cycle when previous cycles are completed or archi
         'substrate_type' => 'Sawdust',
         'start_date' => now()->subDays(5)->toDateString(),
         'status' => 'archived',
-        'growing_stage' => 'colonization',
     ]);
 
     $response = $this->actingAs($user)->postJson('/api/cycles', [
@@ -161,7 +153,6 @@ test('can create a new growing cycle when previous cycles are completed or archi
         'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
-        'growing_stage' => 'colonization',
     ]);
 
     $response->assertSuccessful();
@@ -180,7 +171,6 @@ test('cannot reactivate a cycle while another cycle is active', function () {
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'colonization',
     ]);
 
     $completed = GrowingCycle::create([
@@ -189,7 +179,6 @@ test('cannot reactivate a cycle while another cycle is active', function () {
         'substrate_type' => 'Sawdust',
         'start_date' => now()->subDays(10)->toDateString(),
         'status' => 'completed',
-        'growing_stage' => 'fruiting',
     ]);
 
     $response = $this->actingAs($user)->putJson("/api/cycles/{$completed->id}", [
@@ -207,7 +196,6 @@ test('growing cycle dayCount starts at day 1 and increments daily', function () 
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'colonization',
     ]);
 
     $yesterdayCycle = GrowingCycle::create([
@@ -217,7 +205,6 @@ test('growing cycle dayCount starts at day 1 and increments daily', function () 
         'start_date' => now()->subDay()->toDateString(),
         'status' => 'completed',
         'end_date' => now()->toDateString(),
-        'growing_stage' => 'fruiting',
     ]);
 
     $futureCycle = GrowingCycle::create([
@@ -226,7 +213,6 @@ test('growing cycle dayCount starts at day 1 and increments daily', function () 
         'substrate_type' => 'Sawdust',
         'start_date' => now()->addDay()->toDateString(),
         'status' => 'completed',
-        'growing_stage' => 'colonization',
     ]);
 
     expect($todayCycle->dayCount())->toBe(1)

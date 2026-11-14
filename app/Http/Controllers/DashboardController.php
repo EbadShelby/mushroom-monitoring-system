@@ -30,8 +30,8 @@ class DashboardController extends Controller
                 'name' => $activeCycle->name,
                 'mushroom_variety' => $activeCycle->mushroom_variety,
                 'substrate_type' => $activeCycle->substrate_type,
+                'start_date' => $activeCycle->start_date,
                 'status' => $activeCycle->status,
-                'growing_stage' => $activeCycle->growing_stage ?? 'colonization',
                 'day_count' => $activeCycle->dayCount(),
             ] : null),
 

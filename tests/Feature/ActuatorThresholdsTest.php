@@ -3,14 +3,13 @@
 use App\Models\GrowingCycle;
 use App\Models\User;
 
-test('actuator page shows thresholds for the active growing stage', function () {
+test('actuator page shows configured environmental thresholds', function () {
     GrowingCycle::create([
         'name' => 'Test Cycle',
         'mushroom_variety' => 'Gray Oyster',
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'colonization',
     ]);
 
     $this->actingAs(User::factory()->create(['role' => 'admin']))

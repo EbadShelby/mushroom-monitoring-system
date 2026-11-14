@@ -6,8 +6,6 @@ import {
     Sun,
     Monitor,
     ShieldX,
-    Microscope,
-    Layers,
 } from '@lucide/vue';
 import axios from 'axios';
 import { ref, computed } from 'vue';
@@ -155,403 +153,202 @@ function formatHour(hour: number | string | undefined | null): string {
 
                 <!-- ======= SENSOR THRESHOLDS TAB ======= -->
                 <div v-if="activeTab === 'thresholds'" class="space-y-6">
-                    <!-- Colonization Stage Thresholds -->
+                    <!-- Environmental Thresholds -->
                     <div
-                        class="rounded-2xl border border-amber-500/20 bg-card/60 p-6 shadow-sm backdrop-blur-md"
+                        class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
                     >
                         <div class="mb-6 flex items-center gap-3">
                             <div
-                                class="rounded-lg bg-amber-500/10 p-2 text-amber-500 shadow-inner"
+                                class="rounded-lg bg-primary/10 p-2 text-primary shadow-inner"
                             >
-                                <Microscope class="h-4 w-4" />
+                                <Sliders class="h-4 w-4" />
                             </div>
                             <div>
-                                <h2 class="font-semibold text-amber-400">
-                                    COLONIZATION STAGE THRESHOLDS
+                                <h2 class="font-semibold text-foreground">
+                                    ENVIRONMENTAL THRESHOLDS
                                 </h2>
                                 <p class="text-xs text-muted-foreground">
-                                    Mycelium spawn running phase — warm, dark,
-                                    high CO₂ tolerated
+                                    Target chamber bounds for humidifier
+                                    automation and SMS alerts
                                 </p>
                             </div>
                         </div>
                         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                             <div class="space-y-1">
                                 <label
-                                    for="col-temp-min"
+                                    for="threshold-temp-min"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >Temp Min (°C)</label
                                 >
                                 <input
-                                    id="col-temp-min"
-                                    v-model="
-                                        settingsForm.threshold_col_temp_min
-                                    "
+                                    id="threshold-temp-min"
+                                    v-model="settingsForm.threshold_temp_min"
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_col_temp_min',
+                                            'threshold_temp_min',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="col-temp-max"
+                                    for="threshold-temp-max"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >Temp Max (°C)</label
                                 >
                                 <input
-                                    id="col-temp-max"
-                                    v-model="
-                                        settingsForm.threshold_col_temp_max
-                                    "
+                                    id="threshold-temp-max"
+                                    v-model="settingsForm.threshold_temp_max"
                                     type="number"
                                     step="0.1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_col_temp_max',
+                                            'threshold_temp_max',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="col-hum-low"
+                                    for="threshold-hum-low"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >Humidity Low — Humidifier ON (%)</label
                                 >
                                 <input
-                                    id="col-hum-low"
+                                    id="threshold-hum-low"
                                     v-model="
-                                        settingsForm.threshold_col_humidity_low
+                                        settingsForm.threshold_humidity_low
                                     "
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_col_humidity_low',
+                                            'threshold_humidity_low',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="col-hum-high"
+                                    for="threshold-hum-high"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >Humidity High — Humidifier OFF (%)</label
                                 >
                                 <input
-                                    id="col-hum-high"
+                                    id="threshold-hum-high"
                                     v-model="
-                                        settingsForm.threshold_col_humidity_high
+                                        settingsForm.threshold_humidity_high
                                     "
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_col_humidity_high',
+                                            'threshold_humidity_high',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="col-co2"
+                                    for="threshold-co2"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >CO₂ Max — SMS Alert (ppm)</label
                                 >
                                 <input
-                                    id="col-co2"
-                                    v-model="settingsForm.threshold_col_co2_max"
+                                    id="threshold-co2"
+                                    v-model="settingsForm.threshold_co2_max"
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_col_co2_max',
+                                            'threshold_co2_max',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="col-light-max"
+                                    for="threshold-light-min"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Light Max — Keep Dark (lux)</label
+                                    >Light Min — Indirect Light (lux)</label
                                 >
                                 <input
-                                    id="col-light-max"
-                                    v-model="
-                                        settingsForm.threshold_col_light_max
-                                    "
+                                    id="threshold-light-min"
+                                    v-model="settingsForm.threshold_light_min"
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_col_light_max',
+                                            'threshold_light_min',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="col-soil-warn"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Substrate Moisture Warning (%)</label
-                                >
-                                <input
-                                    id="col-soil-warn"
-                                    v-model="
-                                        settingsForm.threshold_col_soil_warning
-                                    "
-                                    type="number"
-                                    step="1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_col_soil_warning',
-                                        )
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1">
-                                <label
-                                    for="col-soil-crit"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Substrate Moisture Critical (%)</label
-                                >
-                                <input
-                                    id="col-soil-crit"
-                                    v-model="
-                                        settingsForm.threshold_col_soil_critical
-                                    "
-                                    type="number"
-                                    step="1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_col_soil_critical',
-                                        )
-                                    "
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Fruiting Stage Thresholds -->
-                    <div
-                        class="rounded-2xl border border-purple-500/20 bg-card/60 p-6 shadow-sm backdrop-blur-md"
-                    >
-                        <div class="mb-6 flex items-center gap-3">
-                            <div
-                                class="rounded-lg bg-purple-500/10 p-2 text-purple-500 shadow-inner"
-                            >
-                                <Layers class="h-4 w-4" />
-                            </div>
-                            <div>
-                                <h2 class="font-semibold text-purple-400">
-                                    FRUITING STAGE THRESHOLDS
-                                </h2>
-                                <p class="text-xs text-muted-foreground">
-                                    Mushroom formation phase — cooler, high
-                                    humidity, fresh air, indirect light
-                                </p>
-                            </div>
-                        </div>
-                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            <div class="space-y-1">
-                                <label
-                                    for="fruit-temp-min"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Temp Min (°C)</label
-                                >
-                                <input
-                                    id="fruit-temp-min"
-                                    v-model="
-                                        settingsForm.threshold_fruit_temp_min
-                                    "
-                                    type="number"
-                                    step="0.1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_fruit_temp_min',
-                                        )
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1">
-                                <label
-                                    for="fruit-temp-max"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Temp Max (°C)</label
-                                >
-                                <input
-                                    id="fruit-temp-max"
-                                    v-model="
-                                        settingsForm.threshold_fruit_temp_max
-                                    "
-                                    type="number"
-                                    step="0.1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_fruit_temp_max',
-                                        )
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1">
-                                <label
-                                    for="fruit-hum-low"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Humidity Low — Humidifier ON (%)</label
-                                >
-                                <input
-                                    id="fruit-hum-low"
-                                    v-model="
-                                        settingsForm.threshold_fruit_humidity_low
-                                    "
-                                    type="number"
-                                    step="1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_fruit_humidity_low',
-                                        )
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1">
-                                <label
-                                    for="fruit-hum-high"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Humidity High — Humidifier OFF (%)</label
-                                >
-                                <input
-                                    id="fruit-hum-high"
-                                    v-model="
-                                        settingsForm.threshold_fruit_humidity_high
-                                    "
-                                    type="number"
-                                    step="1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_fruit_humidity_high',
-                                        )
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1">
-                                <label
-                                    for="fruit-co2"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >CO₂ Max — SMS Alert (ppm)</label
-                                >
-                                <input
-                                    id="fruit-co2"
-                                    v-model="
-                                        settingsForm.threshold_fruit_co2_max
-                                    "
-                                    type="number"
-                                    step="1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_fruit_co2_max',
-                                        )
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1">
-                                <label
-                                    for="fruit-light-min"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Light Min — Needs Indirect Light
-                                    (lux)</label
-                                >
-                                <input
-                                    id="fruit-light-min"
-                                    v-model="
-                                        settingsForm.threshold_fruit_light_min
-                                    "
-                                    type="number"
-                                    step="1"
-                                    :class="inputClass()"
-                                    :placeholder="
-                                        thresholdPlaceholder(
-                                            'threshold_fruit_light_min',
-                                        )
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1">
-                                <label
-                                    for="fruit-light-max"
+                                    for="threshold-light-max"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >Light Max — Too Bright (lux)</label
                                 >
                                 <input
-                                    id="fruit-light-max"
-                                    v-model="
-                                        settingsForm.threshold_fruit_light_max
-                                    "
+                                    id="threshold-light-max"
+                                    v-model="settingsForm.threshold_light_max"
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_fruit_light_max',
+                                            'threshold_light_max',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="fruit-soil-warn"
+                                    for="threshold-soil-warn"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >Substrate Moisture Warning (%)</label
                                 >
                                 <input
-                                    id="fruit-soil-warn"
+                                    id="threshold-soil-warn"
                                     v-model="
-                                        settingsForm.threshold_fruit_soil_warning
+                                        settingsForm.threshold_soil_warning
                                     "
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_fruit_soil_warning',
+                                            'threshold_soil_warning',
                                         )
                                     "
                                 />
                             </div>
                             <div class="space-y-1">
                                 <label
-                                    for="fruit-soil-crit"
+                                    for="threshold-soil-crit"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                                     >Substrate Moisture Critical (%)</label
                                 >
                                 <input
-                                    id="fruit-soil-crit"
+                                    id="threshold-soil-crit"
                                     v-model="
-                                        settingsForm.threshold_fruit_soil_critical
+                                        settingsForm.threshold_soil_critical
                                     "
                                     type="number"
                                     step="1"
                                     :class="inputClass()"
                                     :placeholder="
                                         thresholdPlaceholder(
-                                            'threshold_fruit_soil_critical',
+                                            'threshold_soil_critical',
                                         )
                                     "
                                 />
@@ -630,8 +427,8 @@ function formatHour(hour: number | string | undefined | null): string {
                                 LED GROW LIGHT SCHEDULE
                             </h2>
                             <p class="text-xs text-muted-foreground">
-                                LED runs on schedule during Fruiting stage only.
-                                Colonization keeps lights off.
+                                Daily automated schedule for the LED grow light
+                                relay.
                             </p>
                         </div>
                     </div>
@@ -681,8 +478,7 @@ function formatHour(hour: number | string | undefined | null): string {
                         Lights ON at
                         {{ formatHour(settingsForm.led_on_hour ?? 6) }} and OFF
                         at
-                        {{ formatHour(settingsForm.led_off_hour ?? 18) }} daily
-                        (for fruiting photoperiod).
+                        {{ formatHour(settingsForm.led_off_hour ?? 18) }} daily.
                     </p>
                     <button
                         id="btn-save-schedule-settings"

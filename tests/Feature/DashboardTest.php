@@ -25,7 +25,6 @@ test('dashboard loads successfully with active cycle and latest camera snapshot'
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'colonization',
     ]);
 
     CameraSnapshot::create([

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActuatorLog;
-use App\Models\GrowingCycle;
 use App\Models\Setting;
 use App\Models\UserLog;
 use App\Services\FirebaseService;
@@ -20,10 +19,9 @@ class ActuatorController extends Controller
 
     public function index(): Response
     {
-        $activeCycle = GrowingCycle::where('status', 'active')->latest('start_date')->first();
-        $stageThresholds = $this->thresholdService->thresholdsForStage($activeCycle->growing_stage ?? 'fruiting');
+        $thresholds = $this->thresholdService->thresholds();
 
-        $humidityBand = $this->thresholdService->humidityControlBand($stageThresholds);
+        $humidityBand = $this->thresholdService->humidityControlBand($thresholds);
 
         return Inertia::render('ActuatorView', [
             'logs' => Inertia::defer(fn () => ActuatorLog::query()
@@ -37,14 +35,14 @@ class ActuatorController extends Controller
                 'off_hour' => (int) Setting::get('led_off_hour', 18),
             ],
             'thresholds' => [
-                'temp_max' => (float) $stageThresholds['temp_max'],
-                'humidity_low' => (float) $stageThresholds['humidity_low'],
-                'humidity_high' => (float) $stageThresholds['humidity_high'],
+                'temp_max' => (float) $thresholds['temp_max'],
+                'humidity_low' => (float) $thresholds['humidity_low'],
+                'humidity_high' => (float) $thresholds['humidity_high'],
                 'humidifier_on_at' => $humidityBand['on_at'],
                 'humidifier_off_at' => $humidityBand['off_at'],
-                'co2_max' => (int) $stageThresholds['co2_max'],
-                'soil_warning' => (int) $stageThresholds['soil_warning'],
-                'soil_critical' => (int) $stageThresholds['soil_critical'],
+                'co2_max' => (int) $thresholds['co2_max'],
+                'soil_warning' => (int) $thresholds['soil_warning'],
+                'soil_critical' => (int) $thresholds['soil_critical'],
             ],
             'overrides' => [
                 'humidifier' => Setting::get('override_humidifier') === '1',

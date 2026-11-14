@@ -14,16 +14,13 @@ import {
     Camera,
     Bell,
     Calendar,
-    Microscope,
-    Layers,
-    ArrowRightLeft,
     X,
     Droplet,
     RefreshCw,
 } from '@lucide/vue';
 import type { ApexOptions } from 'apexcharts';
 import axios from 'axios';
-import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import VueApexCharts from 'vue3-apexcharts';
 import { dashboard } from '@/routes';
@@ -65,12 +62,6 @@ const userRole = computed(
 
 const store = useSensorStore();
 
-// Stage awareness
-const activeStage = computed(
-    () => props.activeCycle?.growing_stage ?? 'colonization',
-);
-const isColonization = computed(() => activeStage.value === 'colonization');
-
 const snapshotImage = computed(() => {
     return props.latestSnapshot?.file_path
         ? `/storage/${props.latestSnapshot.file_path}`
@@ -92,42 +83,6 @@ const snapshotLabel = computed(() => {
 
     return `Snapshot • ${props.latestSnapshot.captured_date ?? ''}`;
 });
-
-watchEffect(() => {
-    store.setStage(activeStage.value);
-});
-
-const switchingStage = ref(false);
-async function toggleStage() {
-    if (!props.activeCycle?.id) {
-        return;
-    }
-
-    const nextStage = isColonization.value ? 'fruiting' : 'colonization';
-    const stageLabel = nextStage === 'fruiting' ? 'Fruiting' : 'Colonization';
-
-    if (
-        !confirm(
-            `Switch "${props.activeCycle.name}" to ${stageLabel} stage? This updates active environmental targets & automation logic.`,
-        )
-    ) {
-        return;
-    }
-
-    switchingStage.value = true;
-
-    try {
-        await axios.post(`/api/cycles/${props.activeCycle.id}/switch-stage`, {
-            growing_stage: nextStage,
-        });
-        toast.success(`Switched to ${stageLabel} stage — thresholds updated.`);
-        router.reload({ only: ['activeCycle'] });
-    } catch (e: any) {
-        toast.error(e.response?.data?.error ?? 'Failed to switch stage');
-    } finally {
-        switchingStage.value = false;
-    }
-}
 
 // Real-time clock for the dashboard header
 const currentTime = ref('');
@@ -401,22 +356,10 @@ function formatDuration(totalSeconds: number): string {
                         </h1>
                         <span
                             v-if="activeCycle"
-                            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ring-1 ring-inset"
-                            :class="
-                                isColonization
-                                    ? 'bg-amber-100 text-amber-700 ring-amber-600/20 dark:bg-amber-500/15 dark:text-amber-400 dark:ring-amber-500/30'
-                                    : 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-500/15 dark:text-purple-400 dark:ring-purple-500/30'
-                            "
+                            class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm ring-1 ring-emerald-600/20 ring-inset dark:bg-emerald-500/15 dark:text-emerald-400 dark:ring-emerald-500/30"
                         >
-                            <component
-                                :is="isColonization ? Microscope : Layers"
-                                class="h-3.5 w-3.5"
-                            />
-                            {{
-                                isColonization
-                                    ? 'Colonization Stage'
-                                    : 'Fruiting Stage'
-                            }}
+                            <Sprout class="h-3.5 w-3.5" />
+                            {{ activeCycle.name }}
                         </span>
                     </div>
                     <p
@@ -480,9 +423,8 @@ function formatDuration(totalSeconds: number): string {
             >
                 <AlertTriangle class="h-4 w-4 shrink-0" />
                 <span class="font-medium"
-                    >One or more sensor readings are outside the
-                    {{ isColonization ? 'Colonization' : 'Fruiting' }} optimal
-                    stage range. Check actuator status.</span
+                    >One or more sensor readings are outside the optimal
+                    environmental range. Check actuator status.</span
                 >
             </div>
 
@@ -690,9 +632,7 @@ function formatDuration(totalSeconds: number): string {
                         class="relative z-10 mt-4 flex items-center justify-between text-sm"
                     >
                         <span class="font-medium text-muted-foreground"
-                            >Target:
-                            {{ isColonization ? '< 5,000' : '< 1,000' }}
-                            ppm</span
+                            >Target: &lt; 1,000 ppm</span
                         >
                         <span
                             v-if="!hasActiveCycle"
@@ -766,12 +706,7 @@ function formatDuration(totalSeconds: number): string {
                         class="relative z-10 mt-4 flex items-center justify-between text-sm"
                     >
                         <span class="font-medium text-muted-foreground"
-                            >Target:
-                            {{
-                                isColonization
-                                    ? '0–50 lux (Dim)'
-                                    : '200–800 lux'
-                            }}</span
+                            >Target: 200–800 lux</span
                         >
                         <span
                             v-if="!hasActiveCycle"
@@ -783,14 +718,14 @@ function formatDuration(totalSeconds: number): string {
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" />
-                            {{ isColonization ? 'Too Bright' : 'Out of range' }}
+                            Out of range
                         </div>
                         <div
                             v-else
                             class="flex items-center gap-1 font-medium text-primary"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{ isColonization ? 'Dark' : 'Optimal' }}
+                            Optimal
                         </div>
                     </div>
                 </div>
@@ -1357,43 +1292,6 @@ function formatDuration(totalSeconds: number): string {
                         <div
                             class="mt-3 space-y-2 text-sm text-muted-foreground"
                         >
-                            <div class="flex items-center justify-between">
-                                <span>Stage</span>
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ring-1 ring-inset"
-                                        :class="
-                                            isColonization
-                                                ? 'bg-amber-100 text-amber-700 ring-amber-600/20 dark:bg-amber-500/20 dark:text-amber-400 dark:ring-amber-500/30'
-                                                : 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-500/20 dark:text-purple-400 dark:ring-purple-500/30'
-                                        "
-                                    >
-                                        <component
-                                            :is="
-                                                isColonization
-                                                    ? Microscope
-                                                    : Layers
-                                            "
-                                            class="h-3 w-3"
-                                        />
-                                        {{
-                                            isColonization
-                                                ? 'Colonization'
-                                                : 'Fruiting'
-                                        }}
-                                    </span>
-                                    <button
-                                        v-if="userRole !== 'student'"
-                                        @click="toggleStage"
-                                        :disabled="switchingStage"
-                                        class="inline-flex items-center gap-1 rounded-md bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-secondary-foreground transition-colors hover:bg-secondary"
-                                        title="Switch active growth stage"
-                                    >
-                                        <ArrowRightLeft class="h-3 w-3" />
-                                        Switch
-                                    </button>
-                                </div>
-                            </div>
                             <div class="flex justify-between">
                                 <span>Variety</span>
                                 <span class="font-medium text-foreground">{{

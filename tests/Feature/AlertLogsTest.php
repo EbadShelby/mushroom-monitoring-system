@@ -62,7 +62,6 @@ test('sensor data sends environmental SMS alerts when an active cycle exists', f
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'fruiting',
     ]);
 
     $firebase = Mockery::mock(FirebaseService::class);

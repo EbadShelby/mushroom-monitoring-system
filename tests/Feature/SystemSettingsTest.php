@@ -10,12 +10,15 @@ test('admin can access settings page', function () {
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
         ->component('SystemSettings')
-        ->where('thresholdDefaults.threshold_col_temp_max', 32)
-        ->where('thresholdDefaults.threshold_col_soil_warning', 30)
-        ->where('thresholdDefaults.threshold_col_soil_critical', 20)
-        ->where('thresholdDefaults.threshold_fruit_temp_max', 32)
-        ->where('thresholdDefaults.threshold_fruit_soil_warning', 30)
-        ->where('thresholdDefaults.threshold_fruit_soil_critical', 20)
+        ->where('thresholdDefaults.threshold_temp_min', 26)
+        ->where('thresholdDefaults.threshold_temp_max', 32)
+        ->where('thresholdDefaults.threshold_humidity_low', 75)
+        ->where('thresholdDefaults.threshold_humidity_high', 95)
+        ->where('thresholdDefaults.threshold_co2_max', 1000)
+        ->where('thresholdDefaults.threshold_light_min', 200)
+        ->where('thresholdDefaults.threshold_light_max', 800)
+        ->where('thresholdDefaults.threshold_soil_warning', 30)
+        ->where('thresholdDefaults.threshold_soil_critical', 20)
     );
 });
 

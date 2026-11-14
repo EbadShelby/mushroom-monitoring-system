@@ -71,7 +71,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('api/cycles', [GrowingCycleController::class, 'store'])->name('cycles.store');
         Route::put('api/cycles/{cycle}', [GrowingCycleController::class, 'update'])->name('cycles.update');
         Route::post('api/cycles/{cycle}/end', [GrowingCycleController::class, 'endCycle'])->name('cycles.end');
-        Route::post('api/cycles/{cycle}/switch-stage', [GrowingCycleController::class, 'switchStage'])->name('cycles.switch-stage');
         Route::delete('api/cycles/{cycle}', [GrowingCycleController::class, 'destroy'])->name('cycles.destroy');
 
         // Camera Management

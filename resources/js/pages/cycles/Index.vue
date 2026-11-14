@@ -16,9 +16,6 @@ import {
     X,
     CalendarDays,
     FlaskConical,
-    Microscope,
-    Layers,
-    ArrowLeftRight,
 } from '@lucide/vue';
 import axios from 'axios';
 import { ref, computed, nextTick } from 'vue';
@@ -80,7 +77,6 @@ const form = ref({
     mushroom_variety: MUSHROOM_VARIETIES[0] as string,
     substrate_type: '',
     start_date: new Date().toISOString().split('T')[0],
-    growing_stage: 'colonization' as 'colonization' | 'fruiting',
     notes: '',
 });
 
@@ -202,7 +198,6 @@ async function createCycle() {
             mushroom_variety: MUSHROOM_VARIETIES[0],
             substrate_type: '',
             start_date: new Date().toISOString().split('T')[0],
-            growing_stage: 'colonization',
             notes: '',
         };
         selectedVariety.value = MUSHROOM_VARIETIES[0];
@@ -222,37 +217,6 @@ async function createCycle() {
         }
     } finally {
         creating.value = false;
-    }
-}
-
-// ── Stage switching ────────────────────────────────────────────────────────────
-const switchingStage = ref<number | null>(null);
-
-async function switchStage(cycle: GrowingCycle) {
-    const nextStage =
-        cycle.growing_stage === 'colonization' ? 'fruiting' : 'colonization';
-    const stageLabel = nextStage === 'fruiting' ? 'Fruiting' : 'Colonization';
-
-    if (
-        !confirm(
-            `Switch "${cycle.name}" to ${stageLabel} stage? This changes the active thresholds and automation logic.`,
-        )
-    ) {
-        return;
-    }
-
-    switchingStage.value = cycle.id;
-
-    try {
-        await axios.post(`/api/cycles/${cycle.id}/switch-stage`, {
-            growing_stage: nextStage,
-        });
-        toast.success(`Switched to ${stageLabel} stage — thresholds updated.`);
-        router.reload({ only: ['cycles'] });
-    } catch (e: any) {
-        toast.error(e.response?.data?.error ?? 'Failed to switch stage');
-    } finally {
-        switchingStage.value = null;
     }
 }
 
@@ -329,31 +293,6 @@ function statusCfg(status: string) {
     );
 }
 
-// ── Stage helpers ──────────────────────────────────────────────────────────────
-const stageConfig = {
-    colonization: {
-        label: 'Colonization',
-        class: 'bg-amber-100 text-amber-700 ring-amber-600/20 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-500/30',
-        icon: Microscope,
-        description:
-            'Mycelium spreading through substrate. Dark, warm, high CO₂ OK.',
-    },
-    fruiting: {
-        label: 'Fruiting',
-        class: 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-500/20 dark:text-purple-300 dark:ring-purple-500/30',
-        icon: Layers,
-        description:
-            'Mushrooms forming. Needs light, fresh air, high humidity.',
-    },
-} as const;
-
-function stageCfg(stage: string) {
-    return (
-        stageConfig[stage as keyof typeof stageConfig] ??
-        stageConfig.colonization
-    );
-}
-
 function formatDate(d: string | null) {
     if (!d) {
         return '—';
@@ -400,49 +339,6 @@ function formatDate(d: string | null) {
                 <Plus class="h-4 w-4" />
                 New Cycle
             </button>
-        </div>
-
-        <!-- Stage legend -->
-        <div class="flex flex-wrap gap-3">
-            <div
-                v-for="(cfg, key) in stageConfig"
-                :key="key"
-                class="flex items-start gap-2.5 rounded-xl border border-border/50 bg-card/40 px-4 py-3 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/40"
-            >
-                <div
-                    class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
-                    :class="
-                        key === 'colonization'
-                            ? 'bg-amber-100 dark:bg-amber-500/20'
-                            : 'bg-purple-100 dark:bg-purple-500/20'
-                    "
-                >
-                    <component
-                        :is="cfg.icon"
-                        class="h-3.5 w-3.5"
-                        :class="
-                            key === 'colonization'
-                                ? 'text-amber-600 dark:text-amber-400'
-                                : 'text-purple-600 dark:text-purple-400'
-                        "
-                    />
-                </div>
-                <div>
-                    <p
-                        class="text-xs font-semibold"
-                        :class="
-                            key === 'colonization'
-                                ? 'text-amber-700 dark:text-amber-300'
-                                : 'text-purple-700 dark:text-purple-300'
-                        "
-                    >
-                        {{ cfg.label }}
-                    </p>
-                    <p class="mt-0.5 text-xs text-slate-500">
-                        {{ cfg.description }}
-                    </p>
-                </div>
-            </div>
         </div>
 
         <!-- Filter bar -->
@@ -527,11 +423,6 @@ function formatDate(d: string | null) {
                         <th
                             class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                         >
-                            Stage
-                        </th>
-                        <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                        >
                             Start Date
                         </th>
                         <th
@@ -586,21 +477,6 @@ function formatDate(d: string | null) {
                         >
                             {{ cycle.mushroom_variety }}
                         </td>
-                        <td class="px-5 py-4">
-                            <span
-                                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset"
-                                :class="stageCfg(cycle.growing_stage).class"
-                                :title="
-                                    stageCfg(cycle.growing_stage).description
-                                "
-                            >
-                                <component
-                                    :is="stageCfg(cycle.growing_stage).icon"
-                                    class="h-3 w-3"
-                                />
-                                {{ stageCfg(cycle.growing_stage).label }}
-                            </span>
-                        </td>
                         <td
                             class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
                         >
@@ -637,37 +513,6 @@ function formatDate(d: string | null) {
                                     <Eye class="h-3.5 w-3.5 shrink-0" />
                                     View
                                 </Link>
-                                <!-- Switch Stage button (active cycles only) -->
-                                <button
-                                    v-if="
-                                        cycle.status === 'active' &&
-                                        userRole !== 'student'
-                                    "
-                                    :disabled="switchingStage === cycle.id"
-                                    class="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap ring-1 transition disabled:opacity-50"
-                                    :class="
-                                        cycle.growing_stage === 'colonization'
-                                            ? 'bg-purple-100 text-purple-700 ring-purple-600/20 hover:bg-purple-200 dark:bg-purple-600/20 dark:text-purple-300 dark:ring-purple-500/30 dark:hover:bg-purple-600/30'
-                                            : 'bg-amber-100 text-amber-700 ring-amber-600/20 hover:bg-amber-200 dark:bg-amber-600/20 dark:text-amber-300 dark:ring-amber-500/30 dark:hover:bg-amber-600/30'
-                                    "
-                                    :title="`Switch to ${cycle.growing_stage === 'colonization' ? 'Fruiting' : 'Colonization'} stage`"
-                                    @click="switchStage(cycle)"
-                                >
-                                    <span
-                                        v-if="switchingStage === cycle.id"
-                                        class="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
-                                    />
-                                    <ArrowLeftRight
-                                        v-else
-                                        class="h-3.5 w-3.5 shrink-0"
-                                    />
-                                    →
-                                    {{
-                                        cycle.growing_stage === 'colonization'
-                                            ? 'Fruiting'
-                                            : 'Colonization'
-                                    }}
-                                </button>
                                 <button
                                     v-if="
                                         cycle.status === 'active' &&
@@ -1035,64 +880,6 @@ function formatDate(d: string | null) {
                                     class="mt-1 text-xs text-red-400"
                                 >
                                     {{ formErrors.substrate_type }}
-                                </p>
-                            </div>
-
-                            <!-- Starting Stage -->
-                            <div>
-                                <label
-                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Starting Stage
-                                    <span class="text-red-400">*</span></label
-                                >
-                                <div class="grid grid-cols-2 gap-3">
-                                    <button
-                                        v-for="stage in [
-                                            'colonization',
-                                            'fruiting',
-                                        ] as const"
-                                        :key="stage"
-                                        type="button"
-                                        class="flex items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-sm transition"
-                                        :class="
-                                            form.growing_stage === stage
-                                                ? stage === 'colonization'
-                                                    ? 'border-amber-500/60 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
-                                                    : 'border-purple-500/60 bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300'
-                                                : 'border-border bg-card text-muted-foreground hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600'
-                                        "
-                                        @click="form.growing_stage = stage"
-                                    >
-                                        <component
-                                            :is="stageCfg(stage).icon"
-                                            class="h-4 w-4 shrink-0"
-                                            :class="
-                                                form.growing_stage === stage
-                                                    ? stage === 'colonization'
-                                                        ? 'text-amber-600 dark:text-amber-400'
-                                                        : 'text-purple-600 dark:text-purple-400'
-                                                    : 'text-slate-400 dark:text-slate-500'
-                                            "
-                                        />
-                                        <div>
-                                            <p class="font-semibold capitalize">
-                                                {{ stage }}
-                                            </p>
-                                            <p class="text-xs opacity-70">
-                                                {{
-                                                    stage === 'colonization'
-                                                        ? 'Spawn running phase'
-                                                        : 'Mushroom forming phase'
-                                                }}
-                                            </p>
-                                        </div>
-                                    </button>
-                                </div>
-                                <p
-                                    v-if="formErrors.growing_stage"
-                                    class="mt-1 text-xs text-red-400"
-                                >
-                                    {{ formErrors.growing_stage }}
                                 </p>
                             </div>
 

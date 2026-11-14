@@ -43,14 +43,12 @@ class GrowingCycleController extends Controller
             'mushroom_variety' => ['required', 'string', 'max:255'],
             'substrate_type' => ['required', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
-            'growing_stage' => ['sometimes', 'string', 'in:colonization,fruiting'],
             'notes' => ['nullable', 'string'],
         ]);
 
         $cycle = GrowingCycle::create([
             ...$data,
             'status' => 'active',
-            'growing_stage' => $data['growing_stage'] ?? 'colonization',
         ]);
 
         UserLog::record('Created growing cycle', $cycle->name);
@@ -69,7 +67,6 @@ class GrowingCycleController extends Controller
                 'start_date' => $cycle->start_date,
                 'end_date' => $cycle->end_date,
                 'status' => $cycle->status,
-                'growing_stage' => $cycle->growing_stage,
                 'notes' => $cycle->notes,
                 'day_count' => $cycle->dayCount(),
             ],
@@ -90,14 +87,12 @@ class GrowingCycleController extends Controller
             'breachSummary' => Inertia::defer(function () use ($cycle) {
                 $readings = SensorReading::where('growing_cycle_id', $cycle->id)->get();
 
-                // Use stage-appropriate breach boundaries
-                $isColonization = $cycle->growing_stage === 'colonization';
-                $tempMin = $isColonization ? 26 : 26;
-                $tempMax = $isColonization ? 32 : 32;
+                $tempMin = 26;
+                $tempMax = 32;
                 $humLow = 75;
                 $humHigh = 95;
-                $co2Max = $isColonization ? 5000 : 1000;
-                $soilWarn = 40;
+                $co2Max = 1000;
+                $soilWarn = 30;
 
                 return [
                     'temperature' => $readings->filter(
@@ -141,7 +136,6 @@ class GrowingCycleController extends Controller
             'start_date' => ['sometimes', 'date'],
             'end_date' => ['nullable', 'date'],
             'status' => ['sometimes', 'string', 'in:active,completed,cancelled'],
-            'growing_stage' => ['sometimes', 'string', 'in:colonization,fruiting'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -158,30 +152,6 @@ class GrowingCycleController extends Controller
         UserLog::record('Updated growing cycle', $cycle->name);
 
         return response()->json(['success' => true, 'cycle' => $cycle->fresh()]);
-    }
-
-    /**
-     * Switch between colonization and fruiting stage for an active cycle.
-     */
-    public function switchStage(Request $request, GrowingCycle $cycle): JsonResponse
-    {
-        $data = $request->validate([
-            'growing_stage' => ['required', 'string', 'in:colonization,fruiting'],
-        ]);
-
-        if ($cycle->status !== 'active') {
-            return response()->json(['error' => 'Only active cycles can switch stages.'], 422);
-        }
-
-        $cycle->update(['growing_stage' => $data['growing_stage']]);
-
-        UserLog::record('Switched cycle stage', "{$cycle->name} -> {$cycle->growing_stage}");
-
-        return response()->json([
-            'success' => true,
-            'growing_stage' => $cycle->growing_stage,
-            'cycle' => $cycle->fresh(),
-        ]);
     }
 
     public function endCycle(GrowingCycle $cycle): JsonResponse

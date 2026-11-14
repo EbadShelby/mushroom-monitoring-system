@@ -26,7 +26,6 @@ test('low humidity turns on humidifier when rested', function () {
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'fruiting',
     ]);
 
     $result = $service->evaluate([
@@ -59,7 +58,6 @@ test('humidifier continuous runtime limit shuts off after 15 minutes', function 
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'fruiting',
     ]);
 
     $result = $service->evaluate([
@@ -84,7 +82,6 @@ test('high temperature and CO2 only raise alerts without actuator commands', fun
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'fruiting',
     ]);
 
     $result = $service->evaluate([
@@ -119,7 +116,6 @@ test('humidifier stall alert fires when humidity stays low after 5 minutes of mi
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'fruiting',
     ]);
 
     $result = $service->evaluate(['humidity' => 70.0, 'temperature' => 30.0], $cycle);
@@ -155,7 +151,6 @@ test('humidifier uses an inner control band so humidity stays in range', functio
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
         'status' => 'active',
-        'growing_stage' => 'fruiting',
     ]);
 
     $result = $service->evaluate(['humidity' => $humidity], $cycle);
