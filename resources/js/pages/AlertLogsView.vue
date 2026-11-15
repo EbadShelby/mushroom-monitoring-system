@@ -198,7 +198,7 @@ const sensorLabel: Record<string, string> = {
                     </div>
                     <h2 class="font-semibold text-muted-foreground">Filters</h2>
                 </div>
-                <div class="grid gap-4 md:grid-cols-4">
+                <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                     <div class="space-y-1">
                         <label
                             for="alert-sensor-filter"
@@ -333,7 +333,7 @@ const sensorLabel: Record<string, string> = {
                                 class="border-b border-border/30 transition-colors hover:bg-muted/20"
                             >
                                 <td
-                                    class="px-4 py-3 text-xs text-muted-foreground"
+                                    class="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground"
                                 >
                                     {{
                                         new Date(log.sent_at).toLocaleString(
@@ -385,7 +385,7 @@ const sensorLabel: Record<string, string> = {
                 <!-- Pagination -->
                 <div
                     v-if="logsData && logsData.last_page > 1"
-                    class="flex items-center justify-between border-t border-border/50 px-6 py-4"
+                    class="flex flex-col gap-3 border-t border-border/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                     <p class="text-sm text-muted-foreground">
                         Page {{ logsData.current_page }} of

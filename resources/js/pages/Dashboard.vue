@@ -363,7 +363,7 @@ function formatDuration(totalSeconds: number): string {
                         </span>
                     </div>
                     <p
-                        class="mt-1 flex items-center gap-2 text-muted-foreground"
+                        class="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground"
                     >
                         <span
                             >Live environmental metrics and actuator
@@ -377,7 +377,7 @@ function formatDuration(totalSeconds: number): string {
                 </div>
 
                 <div
-                    class="flex items-center gap-3 rounded-full border px-4 py-2 text-sm font-medium shadow-sm backdrop-blur-md transition-all duration-300"
+                    class="flex items-center gap-3 self-start rounded-full border px-4 py-2 text-sm font-medium shadow-sm backdrop-blur-md transition-all duration-300 md:self-auto"
                     :class="
                         store.isLoading
                             ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-500'
@@ -816,14 +816,16 @@ function formatDuration(totalSeconds: number): string {
             </div>
 
             <!-- Live Charts Row Header & Controls -->
-            <div class="flex items-center justify-between">
+            <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            >
                 <h2 class="text-xl font-bold tracking-tight text-foreground">
                     Environmental Trends
                 </h2>
                 <select
                     v-model="chartInterval"
                     @change="onIntervalChange"
-                    class="rounded-md border border-border/50 bg-card/60 px-3 py-1.5 text-sm shadow-sm backdrop-blur-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none dark:bg-card/40"
+                    class="w-full rounded-md border border-border/50 bg-card/60 px-3 py-1.5 text-sm shadow-sm backdrop-blur-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none sm:w-auto dark:bg-card/40"
                 >
                     <option value="1m">Per 1 Min (Last Hour)</option>
                     <option value="5m">Per 5 Mins (Last 6 Hrs)</option>
@@ -845,7 +847,7 @@ function formatDuration(totalSeconds: number): string {
                             <Thermometer class="h-4 w-4" />
                         </div>
                         <h3
-                            class="font-semibold tracking-wide text-muted-foreground uppercase"
+                            class="text-xs font-semibold tracking-wide text-muted-foreground uppercase sm:text-sm"
                         >
                             TEMPERATURE — {{ chartIntervalLabel }}
                         </h3>
@@ -875,7 +877,7 @@ function formatDuration(totalSeconds: number): string {
                             <Droplets class="h-4 w-4" />
                         </div>
                         <h3
-                            class="font-semibold tracking-wide text-muted-foreground uppercase"
+                            class="text-xs font-semibold tracking-wide text-muted-foreground uppercase sm:text-sm"
                         >
                             HUMIDITY — {{ chartIntervalLabel }}
                         </h3>

@@ -75,7 +75,7 @@ function statusColor(status: string) {
 <template>
     <Head title="Cycle Reports" />
 
-    <div class="space-y-6">
+    <div class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8 md:pt-6">
         <!-- Header -->
         <div
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
@@ -121,7 +121,7 @@ function statusColor(status: string) {
             </p>
         </div>
 
-        <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div
                 v-for="cycle in filteredCycles"
                 :key="cycle.id"

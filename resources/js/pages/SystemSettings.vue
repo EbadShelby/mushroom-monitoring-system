@@ -139,7 +139,7 @@ function formatHour(hour: number | string | undefined | null): string {
                         :key="tab.id"
                         :id="`tab-${tab.id}`"
                         @click="activeTab = tab.id"
-                        class="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all"
+                        class="flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium transition-all sm:px-4 sm:py-2 sm:text-sm"
                         :class="
                             activeTab === tab.id
                                 ? 'bg-primary text-primary-foreground shadow-md'
@@ -173,7 +173,7 @@ function formatHour(hour: number | string | undefined | null): string {
                                 </p>
                             </div>
                         </div>
-                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             <div class="space-y-1">
                                 <label
                                     for="threshold-temp-min"
@@ -432,7 +432,7 @@ function formatHour(hour: number | string | undefined | null): string {
                             </p>
                         </div>
                     </div>
-                    <div class="grid max-w-md gap-4 md:grid-cols-2">
+                    <div class="grid max-w-md gap-4 sm:grid-cols-2">
                         <div class="space-y-1">
                             <label
                                 for="sched-on"

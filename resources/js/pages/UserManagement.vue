@@ -205,7 +205,7 @@ function inputClass() {
                     </div>
                     <button
                         @click="showCreateForm = !showCreateForm"
-                        class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95"
+                        class="flex items-center gap-2 self-start rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95 sm:self-auto"
                     >
                         <Plus class="h-4 w-4" />
                         Create User
@@ -320,7 +320,7 @@ function inputClass() {
                     class="overflow-x-auto rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md"
                 >
                     <table
-                        class="w-full text-left text-sm text-muted-foreground"
+                        class="w-full min-w-[640px] text-left text-sm text-muted-foreground"
                     >
                         <thead
                             class="bg-muted/50 text-xs text-foreground uppercase"

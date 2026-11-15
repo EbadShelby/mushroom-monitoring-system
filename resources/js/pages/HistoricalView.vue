@@ -194,7 +194,7 @@ onMounted(() => {
                 <button
                     id="btn-export-csv"
                     @click="exportCsv"
-                    class="flex items-center gap-2 rounded-xl border border-border/50 bg-card/60 px-4 py-2 text-sm font-medium text-muted-foreground backdrop-blur-md transition-all hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
+                    class="flex items-center gap-2 self-start rounded-xl border border-border/50 bg-card/60 px-4 py-2 text-sm font-medium text-muted-foreground backdrop-blur-md transition-all hover:border-primary/30 hover:bg-primary/10 hover:text-primary md:self-auto"
                 >
                     <Download class="h-4 w-4" />
                     Export CSV
@@ -213,7 +213,7 @@ onMounted(() => {
                     </div>
                     <h2 class="font-semibold text-muted-foreground">Filters</h2>
                 </div>
-                <div class="grid gap-4 md:grid-cols-3">
+                <div class="grid gap-4 sm:grid-cols-3">
                     <!-- Date From -->
                     <div class="space-y-1">
                         <label
@@ -378,7 +378,9 @@ onMounted(() => {
                                 :key="row.id"
                                 class="border-b border-border/30 transition-colors hover:bg-muted/20"
                             >
-                                <td class="px-4 py-3 text-muted-foreground">
+                                <td
+                                    class="px-4 py-3 whitespace-nowrap text-muted-foreground"
+                                >
                                     {{
                                         new Date(
                                             row.recorded_at,
@@ -408,7 +410,7 @@ onMounted(() => {
                 <!-- Pagination -->
                 <div
                     v-if="readings && readings.last_page > 1"
-                    class="flex items-center justify-between border-t border-border/50 px-6 py-4"
+                    class="flex flex-col gap-3 border-t border-border/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                     <p class="text-sm text-muted-foreground">
                         Page {{ readings.current_page }} of

@@ -540,7 +540,9 @@ const triggerLabels: Record<string, string> = {
                             Water Tanks ({{ mist.unit_count }} units)
                         </h2>
                     </div>
-                    <div class="flex items-end justify-between">
+                    <div
+                        class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"
+                    >
                         <p class="text-3xl font-bold text-foreground">
                             <span>{{ tankRemainingMl.toFixed(1) }}</span>
                             <span
@@ -710,7 +712,7 @@ const triggerLabels: Record<string, string> = {
                             LED GROW LIGHT SCHEDULE
                         </h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="space-y-1">
                             <label
                                 for="led-on-hour"
@@ -895,32 +897,32 @@ const triggerLabels: Record<string, string> = {
                         <thead>
                             <tr class="border-b border-border/50 bg-muted/30">
                                 <th
-                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                 >
                                     Time
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                 >
                                     Actuator
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                 >
                                     Action
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                 >
                                     Trigger
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                 >
                                     Triggered By
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                    class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                 >
                                     Run / Mist (est.)
                                 </th>
@@ -946,7 +948,7 @@ const triggerLabels: Record<string, string> = {
                                 class="border-b border-border/30 transition-colors hover:bg-muted/20"
                             >
                                 <td
-                                    class="px-4 py-3 text-xs text-muted-foreground"
+                                    class="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground"
                                 >
                                     {{
                                         new Date(
@@ -1009,7 +1011,7 @@ const triggerLabels: Record<string, string> = {
                 <!-- Pagination -->
                 <div
                     v-if="logsData && logsData.last_page > 1"
-                    class="flex items-center justify-between border-t border-border/50 px-6 py-4"
+                    class="flex flex-col gap-3 border-t border-border/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                     <p class="text-sm text-muted-foreground">
                         Page {{ logsData.current_page }} of

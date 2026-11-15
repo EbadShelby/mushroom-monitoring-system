@@ -137,7 +137,7 @@ function goToPage(p: number) {
                             Filters
                         </h2>
                     </div>
-                    <div class="grid gap-4 md:grid-cols-4">
+                    <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <div class="space-y-1">
                             <label
                                 for="user-id-filter"
@@ -328,7 +328,7 @@ function goToPage(p: number) {
                     <!-- Pagination -->
                     <div
                         v-if="logsData && logsData.last_page > 1"
-                        class="flex items-center justify-between border-t border-border/50 px-6 py-4"
+                        class="flex flex-col gap-3 border-t border-border/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <p class="text-sm text-muted-foreground">
                             Page {{ logsData.current_page }} of

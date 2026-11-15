@@ -311,7 +311,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
 <template>
     <Head :title="`${cycle.name} — Cycle Detail`" />
 
-    <div class="space-y-6">
+    <div class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8 md:pt-6">
         <!-- Back + header -->
         <div>
             <Link
@@ -330,7 +330,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                         <Sprout class="h-6 w-6 text-emerald-400" />
                     </div>
                     <div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
                             <h1
                                 class="text-2xl font-bold text-foreground dark:text-white"
                             >
@@ -358,7 +358,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <a
                     :href="reportUrl"
                     target="_blank"
-                    class="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-blue-900/40 transition hover:bg-blue-500 active:scale-95 dark:text-white"
+                    class="flex items-center gap-2 self-start rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-blue-900/40 transition hover:bg-blue-500 active:scale-95 sm:self-auto dark:text-white"
                 >
                     <FileText class="h-4 w-4" />
                     Generate Report
@@ -447,7 +447,10 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <AlertTriangle class="h-4 w-4 text-amber-400" />
                 Threshold Breach Summary
             </h2>
-            <div v-if="!breachSummary" class="grid grid-cols-4 gap-4">
+            <div
+                v-if="!breachSummary"
+                class="grid grid-cols-2 gap-4 sm:grid-cols-4"
+            >
                 <div
                     v-for="i in 4"
                     :key="i"
@@ -501,7 +504,10 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 <Activity class="h-4 w-4 text-emerald-400" />
                 Daily Sensor Averages
             </h2>
-            <div v-if="!dailyAverages" class="grid grid-cols-2 gap-4">
+            <div
+                v-if="!dailyAverages"
+                class="grid grid-cols-1 gap-4 sm:grid-cols-2"
+            >
                 <div
                     v-for="i in 4"
                     :key="i"
@@ -586,7 +592,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
         <div
             class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
-            <div class="mb-4 flex items-center justify-between">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2
                     class="flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
                 >
@@ -726,7 +732,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
         <div
             class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
-            <div class="mb-4 flex items-center justify-between">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2
                     class="flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
                 >
@@ -740,7 +746,10 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     View All Photos
                 </Link>
             </div>
-            <div v-if="!snapshots" class="grid grid-cols-4 gap-3">
+            <div
+                v-if="!snapshots"
+                class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6"
+            >
                 <div
                     v-for="i in 8"
                     :key="i"
@@ -795,7 +804,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             </div>
                             <button
                                 v-if="userRole !== 'student'"
-                                class="absolute top-1 right-1 rounded-lg bg-red-500/80 p-1 opacity-0 transition group-hover:opacity-100"
+                                class="absolute top-1 right-1 rounded-lg bg-red-500/80 p-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100"
                                 @click.stop="deleteSnapshot(snap.id)"
                             >
                                 <Trash2
@@ -824,7 +833,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 @click.self="showMeasureModal = false"
             >
                 <div
-                    class="w-full max-w-md rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
+                    class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-border dark:border-slate-700/50 dark:bg-slate-900"
                 >
                     <div
                         class="flex items-center justify-between border-b border-border/50 px-6 py-4 dark:border-border dark:border-slate-700/50"
@@ -845,7 +854,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                         class="space-y-4 p-6"
                         @submit.prevent="saveMeasurement"
                     >
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
@@ -873,7 +882,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 />
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
@@ -904,7 +913,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 />
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"

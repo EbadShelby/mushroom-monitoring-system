@@ -120,7 +120,9 @@ async function deleteMeasurement(id: number) {
             class="z-10 mx-auto flex h-full w-full max-w-7xl flex-1 flex-col space-y-8 p-4 md:p-8 md:pt-6"
         >
             <!-- Header -->
-            <div class="flex items-center justify-between">
+            <div
+                class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            >
                 <div>
                     <h1
                         class="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent"
@@ -141,7 +143,7 @@ async function deleteMeasurement(id: number) {
                 <button
                     v-if="userRole !== 'student'"
                     @click="openModal"
-                    class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95"
+                    class="flex items-center gap-2 self-start rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95 sm:self-auto"
                 >
                     <Plus class="h-4 w-4" />
                     Log Measurement
@@ -291,9 +293,9 @@ async function deleteMeasurement(id: number) {
                     <X class="h-5 w-5" />
                 </button>
             </div>
-            <div class="space-y-4 overflow-y-auto p-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2 space-y-1">
+            <div class="space-y-4 overflow-y-auto p-4 sm:p-6">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="space-y-1 sm:col-span-2">
                         <label
                             class="text-xs font-medium text-muted-foreground uppercase"
                             >Growing Cycle</label
@@ -348,7 +350,7 @@ async function deleteMeasurement(id: number) {
                         <Activity class="h-4 w-4" /> Harvest Data
                     </h4>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="space-y-1">
                             <label
                                 class="text-xs font-medium text-muted-foreground uppercase"
@@ -377,7 +379,7 @@ async function deleteMeasurement(id: number) {
                     </div>
                 </div>
 
-                <div class="mt-4 grid grid-cols-2 gap-4">
+                <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="space-y-1">
                         <label
                             class="text-xs font-medium text-muted-foreground uppercase"

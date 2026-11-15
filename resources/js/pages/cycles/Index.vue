@@ -309,7 +309,7 @@ function formatDate(d: string | null) {
 <template>
     <Head title="Growing Cycles" />
 
-    <div class="space-y-6">
+    <div class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8 md:pt-6">
         <!-- Page header -->
         <div
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
@@ -333,7 +333,7 @@ function formatDate(d: string | null) {
                         ? 'End or cancel the active growing cycle before starting a new one'
                         : 'Create a new growing cycle'
                 "
-                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-emerald-600 disabled:active:scale-100 dark:text-white"
+                class="flex items-center gap-2 self-start rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-emerald-600 disabled:active:scale-100 sm:self-auto dark:text-white"
                 @click="openModal"
             >
                 <Plus class="h-4 w-4" />
@@ -349,7 +349,7 @@ function formatDate(d: string | null) {
             <span class="text-sm text-muted-foreground dark:text-slate-400"
                 >Filter by status:</span
             >
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
                 <button
                     v-for="opt in ['', 'active', 'completed', 'cancelled']"
                     :key="opt"
@@ -405,7 +405,8 @@ function formatDate(d: string | null) {
                 </button>
             </div>
 
-            <table v-else class="w-full">
+            <div v-else class="overflow-x-auto">
+                <table class="w-full min-w-[640px]">
                 <thead>
                     <tr
                         class="border-b border-border/50 bg-muted/30 dark:border-slate-700/50 dark:bg-slate-900/50"
@@ -541,18 +542,19 @@ function formatDate(d: string | null) {
                         </td>
                     </tr>
                 </tbody>
-            </table>
+                </table>
+            </div>
 
             <!-- Pagination -->
             <div
                 v-if="cycles.last_page > 1"
-                class="flex items-center justify-between border-t border-border/50 px-5 py-3 dark:border-slate-700/50"
+                class="flex flex-col gap-3 border-t border-border/50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700/50"
             >
                 <p class="text-xs text-muted-foreground dark:text-slate-400">
                     Showing {{ cycles.from }}–{{ cycles.to }} of
                     {{ cycles.total }} cycles
                 </p>
-                <div class="flex gap-1">
+                <div class="flex flex-wrap gap-1">
                     <button
                         :disabled="cycles.current_page === 1"
                         class="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted disabled:opacity-40 dark:bg-slate-700 dark:text-slate-400"
@@ -771,7 +773,7 @@ function formatDate(d: string | null) {
 
                                 <!-- Checklist Mode -->
                                 <div v-else class="space-y-2.5">
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                         <button
                                             v-for="sub in COMMON_SUBSTRATES"
                                             :key="sub.id"

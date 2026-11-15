@@ -6,6 +6,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import type { NavGroup } from '@/types';
@@ -15,6 +16,7 @@ defineProps<{
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
+const { setOpenMobile } = useSidebar();
 </script>
 
 <template>
@@ -32,7 +34,7 @@ const { isCurrentUrl } = useCurrentUrl();
                     :tooltip="item.title"
                     class="gap-3 data-[active=true]:bg-emerald-700/10 data-[active=true]:text-emerald-700 dark:data-[active=true]:bg-emerald-400/10 dark:data-[active=true]:text-emerald-400"
                 >
-                    <Link :href="item.href">
+                    <Link :href="item.href" @click="setOpenMobile(false)">
                         <component :is="item.icon" class="size-4 shrink-0" />
                         <span>{{ item.title }}</span>
                     </Link>

@@ -342,7 +342,7 @@ function formatDate(d: string | null) {
 <template>
     <Head title="Growth Photos" />
 
-    <div class="space-y-6">
+    <div class="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8 md:pt-6">
         <!-- Header -->
         <div
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
@@ -360,7 +360,7 @@ function formatDate(d: string | null) {
             <button
                 v-if="userRole !== 'student'"
                 id="upload-photo-btn"
-                class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
+                class="flex items-center gap-2 self-start rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 sm:self-auto dark:text-white"
                 @click="showUpload = true"
             >
                 <Upload class="h-4 w-4" />
@@ -373,16 +373,16 @@ function formatDate(d: string | null) {
             class="flex flex-wrap items-end gap-4 rounded-2xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
         >
             <Filter
-                class="h-4 w-4 shrink-0 text-muted-foreground dark:text-slate-400"
+                class="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block dark:text-slate-400"
             />
-            <div>
+            <div class="w-full sm:w-auto">
                 <label
                     class="mb-1 block text-xs font-medium text-muted-foreground dark:text-slate-400"
                     >Growing Cycle</label
                 >
                 <select
                     v-model="filterCycle"
-                    class="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    class="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     @change="applyFilters"
                 >
                     <option value="">All Cycles</option>
@@ -395,7 +395,7 @@ function formatDate(d: string | null) {
                     </option>
                 </select>
             </div>
-            <div>
+            <div class="w-full sm:w-auto">
                 <label
                     class="mb-1 block text-xs font-medium text-muted-foreground dark:text-slate-400"
                     >Date</label
@@ -403,7 +403,7 @@ function formatDate(d: string | null) {
                 <input
                     v-model="filterDate"
                     type="date"
-                    class="rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    class="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     style="color-scheme: dark"
                     @change="applyFilters"
                 />
@@ -505,7 +505,7 @@ function formatDate(d: string | null) {
                         </div>
                         <button
                             v-if="userRole !== 'student'"
-                            class="absolute top-1.5 right-1.5 rounded-lg bg-red-500/90 p-1.5 opacity-0 shadow-lg transition group-hover:opacity-100"
+                            class="absolute top-1.5 right-1.5 rounded-lg bg-red-500/90 p-1.5 opacity-100 shadow-lg transition sm:opacity-0 sm:group-hover:opacity-100"
                             @click.stop="deleteSnapshot(snap.id)"
                         >
                             <Trash2
@@ -533,7 +533,7 @@ function formatDate(d: string | null) {
                 @click.self="showUpload = false"
             >
                 <div
-                    class="w-full max-w-lg rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-slate-700/50 dark:bg-slate-900"
+                    class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border/50 bg-muted/30 shadow-2xl dark:border-slate-700/50 dark:bg-slate-900"
                 >
                     <!-- Header -->
                     <div
@@ -734,13 +734,13 @@ function formatDate(d: string | null) {
                 @click="lightboxSnap = null"
             >
                 <button
-                    class="absolute top-4 right-4 rounded-full bg-card p-2 text-foreground backdrop-blur-sm hover:bg-muted dark:bg-slate-800/80 dark:text-white"
+                    class="absolute top-4 right-4 z-10 rounded-full bg-card p-2 text-foreground backdrop-blur-sm hover:bg-muted dark:bg-slate-800/80 dark:text-white"
                     @click="lightboxSnap = null"
                 >
                     <X class="h-5 w-5" />
                 </button>
                 <button
-                    class="absolute left-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-800/80 dark:text-white"
+                    class="absolute left-2 z-10 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 sm:left-4 dark:bg-slate-800/80 dark:text-white"
                     :disabled="lightboxIdx === 0"
                     @click.stop="lightboxPrev"
                 >
@@ -782,7 +782,7 @@ function formatDate(d: string | null) {
                     </p>
                 </div>
                 <button
-                    class="absolute right-4 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 dark:bg-slate-800/80 dark:text-white"
+                    class="absolute right-2 z-10 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 sm:right-4 dark:bg-slate-800/80 dark:text-white"
                     :disabled="lightboxIdx === snapshots.length - 1"
                     @click.stop="lightboxNext"
                 >

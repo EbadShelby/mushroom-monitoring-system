@@ -26,11 +26,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarSeparator,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavGroup } from '@/types';
 
 const page = usePage();
+const { setOpenMobile } = useSidebar();
 const userRole = computed(
     () => (page.props.auth as any)?.user?.role ?? 'student',
 );
@@ -147,7 +149,7 @@ const adminNavItems = computed(() => {
                         tooltip="MycoSense"
                         class="group-data-[collapsible=icon]:justify-center"
                     >
-                        <Link :href="dashboard()">
+                        <Link :href="dashboard()" @click="setOpenMobile(false)">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>

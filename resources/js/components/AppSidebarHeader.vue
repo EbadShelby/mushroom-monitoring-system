@@ -36,17 +36,17 @@ const roleLabel = computed(() => {
 
 <template>
     <header
-        class="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/70 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4"
+        class="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/70 px-3 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sm:px-4 md:px-6"
     >
-        <div class="flex items-center gap-2">
-            <SidebarTrigger class="-ml-1" />
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+            <SidebarTrigger class="-ml-1 shrink-0" />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
+                <Breadcrumbs :breadcrumbs="breadcrumbs" class="min-w-0" />
             </template>
         </div>
 
         <!-- Right side: firebase live indicator + role badge -->
-        <div class="flex items-center gap-3">
+        <div class="flex shrink-0 items-center gap-2 sm:gap-3">
             <!-- Firebase live dot -->
             <div
                 class="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold"

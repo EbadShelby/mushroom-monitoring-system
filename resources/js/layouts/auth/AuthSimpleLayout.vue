@@ -123,7 +123,7 @@ defineProps<{
 
         <!-- Right panel: Login form -->
         <div
-            class="relative z-10 flex flex-col items-center justify-center overflow-hidden px-6 py-12 md:px-12"
+            class="relative z-10 flex flex-col items-center justify-center overflow-hidden px-4 py-8 sm:px-6 sm:py-12 md:px-12"
         >
             <!-- Subtle decorative blobs for right panel -->
             <div
@@ -151,7 +151,7 @@ defineProps<{
             </div>
 
             <div
-                class="w-full max-w-md rounded-3xl border border-border/50 bg-card/60 p-8 shadow-xl backdrop-blur-xl transition-all duration-300 hover:shadow-2xl sm:p-10"
+                class="w-full max-w-md rounded-3xl border border-border/50 bg-card/60 p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:shadow-2xl sm:p-10"
             >
                 <div class="mb-8 text-center lg:text-left">
                     <h1 class="text-2xl font-bold tracking-tight">
