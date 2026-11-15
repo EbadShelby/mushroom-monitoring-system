@@ -84,19 +84,12 @@ const snapshotLabel = computed(() => {
     return `Snapshot • ${props.latestSnapshot.captured_date ?? ''}`;
 });
 
-// Real-time clock for the dashboard header
-const currentTime = ref('');
+// Real-time timestamp for live mist calculations
 const nowMs = ref(Date.now());
 let clockInterval: ReturnType<typeof setInterval> | null = null;
 
 function updateClock() {
     nowMs.value = Date.now();
-    currentTime.value = new Date(nowMs.value).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-    });
 }
 
 // Refresh chart data from MySQL every 60 s (independent of live Firebase sensor cards)
@@ -362,17 +355,8 @@ function formatDuration(totalSeconds: number): string {
                             {{ activeCycle.name }}
                         </span>
                     </div>
-                    <p
-                        class="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground"
-                    >
-                        <span
-                            >Live environmental metrics and actuator
-                            control.</span
-                        >
-                        <span
-                            class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground shadow-sm"
-                            >{{ currentTime }}</span
-                        >
+                    <p class="mt-1 text-muted-foreground">
+                        Live environmental metrics and actuator control.
                     </p>
                 </div>
 
