@@ -11,6 +11,13 @@ import {
 import type { ApexOptions } from 'apexcharts';
 import { ref, computed, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import type { AlertLog, Paginated } from '@/types';
 
 defineOptions({
@@ -28,6 +35,7 @@ const props = defineProps<{
 const logsData = ref<Paginated<AlertLog> | null>(props.logs ?? null);
 const chartData = ref(props.chartData ?? []);
 const isLoading = ref(false);
+const selectedAlert = ref<AlertLog | null>(null);
 
 watch(
     () => props.logs,
@@ -330,7 +338,11 @@ const sensorLabel: Record<string, string> = {
                                 v-else
                                 v-for="log in logsData.data"
                                 :key="log.id"
-                                class="border-b border-border/30 transition-colors hover:bg-muted/20"
+                                tabindex="0"
+                                @click="selectedAlert = log"
+                                @keydown.enter="selectedAlert = log"
+                                @keydown.space.prevent="selectedAlert = log"
+                                class="cursor-pointer border-b border-border/30 transition-colors hover:bg-muted/30 focus:bg-muted/30 focus:outline-none"
                             >
                                 <td
                                     class="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground"
@@ -414,5 +426,66 @@ const sensorLabel: Record<string, string> = {
                 </div>
             </div>
         </div>
+
+        <Dialog
+            :open="selectedAlert !== null"
+            @update:open="(open) => { if (!open) selectedAlert = null; }"
+        >
+            <DialogContent v-if="selectedAlert" class="sm:max-w-lg">
+                <DialogHeader>
+                    <div class="flex items-center gap-2 pr-6">
+                        <DialogTitle>
+                            {{
+                                sensorLabel[selectedAlert.sensor] ??
+                                selectedAlert.sensor
+                            }}
+                            Alert
+                        </DialogTitle>
+                        <span
+                            class="rounded-full px-2 py-0.5 text-xs font-bold"
+                            :class="statusClass(selectedAlert.status)"
+                        >
+                            {{ selectedAlert.status }}
+                        </span>
+                    </div>
+                    <DialogDescription>
+                        {{
+                            new Date(selectedAlert.sent_at).toLocaleString(
+                                'en-PH',
+                            )
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-4">
+                    <div
+                        class="rounded-lg border border-border/50 bg-muted/40 p-4 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-foreground"
+                    >
+                        {{ selectedAlert.message }}
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 text-xs">
+                        <div class="rounded-lg border border-border/40 p-2.5">
+                            <p class="text-muted-foreground">Value</p>
+                            <p class="mt-0.5 font-mono font-semibold text-foreground">
+                                {{ selectedAlert.value_at_alert }}
+                            </p>
+                        </div>
+                        <div class="rounded-lg border border-border/40 p-2.5">
+                            <p class="text-muted-foreground">Threshold</p>
+                            <p class="mt-0.5 font-semibold text-foreground capitalize">
+                                {{ selectedAlert.threshold_exceeded }}
+                            </p>
+                        </div>
+                        <div class="rounded-lg border border-border/40 p-2.5">
+                            <p class="text-muted-foreground">Recipient</p>
+                            <p class="mt-0.5 truncate font-mono font-semibold text-foreground">
+                                {{ selectedAlert.recipient_number || '—' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>
