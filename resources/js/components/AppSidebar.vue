@@ -129,7 +129,7 @@ const adminNavItems = computed(() => {
                 icon: Users,
             },
             {
-                title: 'Settings',
+                title: 'System Settings',
                 href: '/settings',
                 icon: Settings,
             },
