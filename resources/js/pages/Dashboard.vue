@@ -24,6 +24,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import VueApexCharts from 'vue3-apexcharts';
 import { dashboard } from '@/routes';
+import { refill as refillHumidifierTank } from '@/routes/actuators/humidifier';
 import { useSensorStore } from '@/stores/useSensorStore';
 
 const showLightbox = ref(false);
@@ -269,7 +270,7 @@ async function refillTank() {
     refillingTank.value = true;
 
     try {
-        await axios.post('/api/actuators/tank-refill');
+        await axios.post(refillHumidifierTank.url());
         toast.success('Water tank refill logged.');
         router.reload({ only: ['tank', 'mist'] });
     } catch {

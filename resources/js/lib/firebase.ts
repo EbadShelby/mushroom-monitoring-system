@@ -31,6 +31,3 @@ export function getDb(): Database {
 
     return _db;
 }
-
-/** @deprecated Use getDb() instead — direct export causes SSR crash */
-export const db = import.meta.env.SSR ? null : getDb();

@@ -125,32 +125,36 @@ function statusColor(status: string) {
             <div
                 v-for="cycle in filteredCycles"
                 :key="cycle.id"
-                class="flex flex-col rounded-2xl border border-border/50 bg-card/50 p-5 shadow-sm backdrop-blur-sm transition-all hover:bg-muted hover:shadow-lg dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/80"
+                class="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-5 shadow-sm backdrop-blur-sm transition-all hover:bg-muted hover:shadow-lg dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/80"
             >
                 <!-- Card Header -->
-                <div class="mb-4 flex items-start justify-between">
-                    <div>
+                <div class="mb-4 space-y-1">
+                    <div class="flex items-start justify-between gap-3">
                         <h3
-                            class="line-clamp-1 font-bold text-foreground dark:text-white"
+                            class="min-w-0 flex-1 truncate font-bold text-foreground dark:text-white"
                             :title="cycle.name"
                         >
                             {{ cycle.name }}
                         </h3>
-                        <div
-                            class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground dark:text-slate-400"
+                        <span
+                            class="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase"
+                            :class="statusColor(cycle.status)"
                         >
-                            <FlaskConical class="h-3 w-3" />
-                            <span class="truncate">{{
-                                cycle.mushroom_variety || 'Oyster Mushroom'
-                            }}</span>
-                        </div>
+                            {{ cycle.status }}
+                        </span>
                     </div>
-                    <span
-                        class="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase"
-                        :class="statusColor(cycle.status)"
+                    <div
+                        class="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground dark:text-slate-400"
                     >
-                        {{ cycle.status }}
-                    </span>
+                        <FlaskConical class="h-3 w-3 shrink-0" />
+                        <span
+                            class="truncate"
+                            :title="cycle.mushroom_variety || 'Oyster Mushroom'"
+                            >{{
+                                cycle.mushroom_variety || 'Oyster Mushroom'
+                            }}</span
+                        >
+                    </div>
                 </div>
 
                 <!-- Card Body -->
@@ -158,16 +162,18 @@ function statusColor(status: string) {
                     <div
                         class="flex items-center gap-2 text-foreground/80 dark:text-slate-300"
                     >
-                        <CalendarDays class="h-4 w-4 text-slate-500" />
-                        <span class="text-slate-500">Started:</span>
-                        <span>{{ formatDate(cycle.start_date) }}</span>
+                        <CalendarDays class="h-4 w-4 shrink-0 text-slate-500" />
+                        <span class="shrink-0 text-slate-500">Started:</span>
+                        <span class="truncate">{{
+                            formatDate(cycle.start_date)
+                        }}</span>
                     </div>
                     <div
                         class="flex items-center gap-2 text-foreground/80 dark:text-slate-300"
                     >
-                        <CalendarDays class="h-4 w-4 text-slate-500" />
-                        <span class="text-slate-500">Ended:</span>
-                        <span>{{
+                        <CalendarDays class="h-4 w-4 shrink-0 text-slate-500" />
+                        <span class="shrink-0 text-slate-500">Ended:</span>
+                        <span class="truncate">{{
                             cycle.end_date
                                 ? formatDate(cycle.end_date)
                                 : 'Ongoing'
