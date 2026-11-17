@@ -74,6 +74,7 @@ void setup() {
   Serial.println("✅ MQ-135 warmup complete");
 
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
   WiFi.begin(ssid, password);
   Serial.print("📶 Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -157,14 +158,16 @@ void loop() {
   if (now - lastSend >= SEND_INTERVAL) {
     lastSend = now;
 
-    if (!isnan(temperature) && !isnan(humidity) &&
-        WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("⚠️  WiFi disconnected — attempting reconnect...");
+      WiFi.reconnect();
+    } else if (!isnan(temperature) && !isnan(humidity)) {
       sendSensorData(temperature, humidity, co2Raw,
                      lux, soilMoisture, soilStatus);
       delay(1000);
       pollActuatorCommands();
     } else {
-      Serial.println("⚠️  Skipping send — bad reading or no WiFi");
+      Serial.println("⚠️  Skipping send — bad DHT22 reading");
     }
   }
 
@@ -174,7 +177,8 @@ void loop() {
 void sendSensorData(float temp, float hum, int co2,
                     float light, int soil, String soilStatus) {
   HTTPClient http;
-  http.begin(sensorUrl);        // <-- CHANGED: was `http.begin(sensorUrl)`
+  http.setTimeout(5000);
+  http.begin(sensorUrl);
 
   // http.begin(sensorUrl);
   http.addHeader("Content-Type", "application/json");
@@ -202,6 +206,7 @@ void sendSensorData(float temp, float hum, int co2,
 
 void pollActuatorCommands() {
   HTTPClient http;
+  http.setTimeout(5000);
   http.begin(actuatorUrl);
 
   // http.begin(actuatorUrl);
