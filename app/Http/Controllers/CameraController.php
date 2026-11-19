@@ -31,7 +31,7 @@ class CameraController extends Controller
             ->when($date, fn ($q) => $q->whereDate('captured_date', $date))
             ->orderByDesc('captured_date')
             ->orderByDesc('id')
-            ->get(['id', 'growing_cycle_id', 'file_path', 'file_name', 'flush_number', 'captured_date', 'notes', 'uploaded_by']);
+            ->get(['id', 'growing_cycle_id', 'file_path', 'file_name', 'flush_number', 'captured_date', 'notes', 'uploaded_by', 'created_at']);
 
         return Inertia::render('camera/Index', [
             'snapshots' => $snapshots,

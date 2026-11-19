@@ -14,14 +14,15 @@ export interface GrowingCycle {
 
 export interface CameraSnapshot {
     id: number;
-    growing_cycle_id: number;
+    growing_cycle_id: number | null;
     file_path: string;
     file_name: string;
     captured_date?: string;
+    created_at?: string;
     flush_number?: number;
     snapshot_number?: number;
     notes?: string | null;
-    uploaded_by?: number;
+    uploaded_by?: number | null;
     growing_cycle?: { id: number; name: string };
 }
 

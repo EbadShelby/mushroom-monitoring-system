@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\CameraSnapshotController;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 function fakeJpegBytes(): string
@@ -135,4 +137,28 @@ test('manual capture succeeds without an active growing cycle', function () {
 
 test('camera command endpoint rejects a wrong token', function () {
     $this->getJson('/api/camera-command', ['X-Camera-Token' => 'wrong'])->assertUnauthorized();
+});
+
+test('scheduled capture saves as auto-captured without user attribution', function () {
+    createActiveCycle();
+
+    Cache::put(
+        CameraSnapshotController::CAPTURE_REQUEST_KEY,
+        ['scheduled' => true],
+        now()->addMinutes(5),
+    );
+
+    $this->getJson('/api/camera-command', ['X-Camera-Token' => 'secret-token'])
+        ->assertOk()
+        ->assertJsonPath('capture', true);
+
+    $this->call('POST', '/api/camera-snapshot', [], [], [], [
+        'CONTENT_TYPE' => 'image/jpeg',
+        'HTTP_X_CAMERA_TOKEN' => 'secret-token',
+        'HTTP_ACCEPT' => 'application/json',
+    ], fakeJpegBytes())->assertCreated();
+
+    $snapshot = CameraSnapshot::first();
+    expect($snapshot->uploaded_by)->toBeNull()
+        ->and($snapshot->notes)->toBe('Auto-captured by ESP32-CAM');
 });

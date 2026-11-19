@@ -13,16 +13,13 @@ const char* commandUrl  = "http://192.168.254.148:8080/api/camera-command";
 const char* cameraToken = "CHANGE_ME_LONG_RANDOM_TOKEN";   // must match CAMERA_TOKEN in Laravel .env
 
 // ─── Timing ─────────────────────────────────────────
-const unsigned long CAPTURE_INTERVAL = 3UL * 60UL * 60UL * 1000UL;  // 3 hours
-const unsigned long RETRY_INTERVAL   = 30UL * 1000UL;               // retry after a failed upload
-const unsigned long WIFI_TIMEOUT_MS  = 20UL * 1000UL;
-const unsigned long COMMAND_POLL_INTERVAL = 5UL * 1000UL;           // check for manual capture requests
+const unsigned long RETRY_INTERVAL        = 30UL * 1000UL;   // retry after a failed upload
+const unsigned long WIFI_TIMEOUT_MS       = 20UL * 1000UL;
+const unsigned long COMMAND_POLL_INTERVAL = 5UL * 1000UL;    // check Laravel for scheduled or manual captures
 
 unsigned long lastCommandPoll = 0;
-
-unsigned long lastCapture = 0;
 unsigned long retryAt = 0;
-bool firstCaptureDone = false;
+bool pendingCapture = false;
 
 // ─── AI-Thinker ESP32-CAM Pinout ────────────────────
 #define PWDN_GPIO_NUM     32
@@ -193,24 +190,22 @@ bool manualCaptureRequested() {
 void loop() {
   unsigned long now = millis();
 
-  bool due = !firstCaptureDone || (now - lastCapture >= CAPTURE_INTERVAL);
-
-  if (due && now >= retryAt) {
-    if (captureAndUpload()) {
-      firstCaptureDone = true;
-      lastCapture = now;
-      retryAt = 0;
-    } else {
-      retryAt = now + RETRY_INTERVAL;   // try again in 30 s instead of waiting 3 h
-    }
-  }
-
   if (now - lastCommandPoll >= COMMAND_POLL_INTERVAL) {
     lastCommandPoll = now;
 
     if (manualCaptureRequested()) {
-      Serial.println("🖱️  Manual capture requested from dashboard");
-      captureAndUpload();
+      Serial.println("📸 Capture requested by Laravel");
+      pendingCapture = true;
+      retryAt = 0;
+    }
+  }
+
+  if (pendingCapture && now >= retryAt) {
+    if (captureAndUpload()) {
+      pendingCapture = false;
+      retryAt = 0;
+    } else {
+      retryAt = now + RETRY_INTERVAL;
     }
   }
 

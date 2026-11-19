@@ -40,6 +40,69 @@ const filterCycle = ref<string>(
     props.filters.cycle_id ? String(props.filters.cycle_id) : '',
 );
 const filterDate = ref<string>(props.filters.date ?? '');
+const filterInterval = ref<string>('');
+const filterSource = ref<string>('');
+
+const intervalOptions = [
+    { value: '3', label: 'Every 3 Hours' },
+    { value: '6', label: 'Every 6 Hours' },
+    { value: '9', label: 'Every 9 Hours' },
+    { value: '12', label: 'Every 12 Hours' },
+    { value: '24', label: 'Daily (24 Hours)' },
+];
+
+const filteredSnapshots = computed(() => {
+    const bySource = props.snapshots.filter((snap) => {
+        if (filterSource.value === 'auto') {
+            return snap.notes === 'Auto-captured by ESP32-CAM';
+        }
+
+        if (filterSource.value === 'manual') {
+            return snap.notes?.startsWith('Manual capture') ?? false;
+        }
+
+        if (filterSource.value === 'upload') {
+            return (
+                snap.notes !== 'Auto-captured by ESP32-CAM' &&
+                !(snap.notes?.startsWith('Manual capture') ?? false)
+            );
+        }
+
+        return true;
+    });
+
+    if (!filterInterval.value) {
+        return bySource;
+    }
+
+    const intervalHours = Number(filterInterval.value);
+    // 5-minute tolerance so captures triggered a few seconds early still match
+    const minGapMs = (intervalHours * 3600 - 300) * 1000;
+    const chronological = [...bySource].sort((a, b) => {
+        const ta = a.created_at ? Date.parse(a.created_at) : 0;
+        const tb = b.created_at ? Date.parse(b.created_at) : 0;
+
+        return ta - tb;
+    });
+
+    const keptIds = new Set<number>();
+    let lastKeptMs: number | null = null;
+
+    for (const snap of chronological) {
+        if (!snap.created_at) {
+            continue;
+        }
+
+        const ts = Date.parse(snap.created_at);
+
+        if (lastKeptMs === null || ts - lastKeptMs >= minGapMs) {
+            keptIds.add(snap.id);
+            lastKeptMs = ts;
+        }
+    }
+
+    return bySource.filter((snap) => keptIds.has(snap.id));
+});
 
 function applyFilters() {
     router.get(
@@ -55,6 +118,8 @@ function applyFilters() {
 function clearFilters() {
     filterCycle.value = '';
     filterDate.value = '';
+    filterInterval.value = '';
+    filterSource.value = '';
     applyFilters();
 }
 
@@ -62,7 +127,7 @@ function clearFilters() {
 const groupedSnapshots = computed(() => {
     const map = new Map<string, CameraSnapshot[]>();
 
-    for (const s of props.snapshots) {
+    for (const s of filteredSnapshots.value) {
         const key = s.captured_date ?? '';
 
         if (!map.has(key)) {
@@ -346,20 +411,22 @@ const lightboxIdx = ref(0);
 
 function openLightbox(snap: CameraSnapshot) {
     lightboxSnap.value = snap;
-    lightboxIdx.value = props.snapshots.findIndex((s) => s.id === snap.id);
+    lightboxIdx.value = filteredSnapshots.value.findIndex(
+        (s) => s.id === snap.id,
+    );
 }
 
 function lightboxPrev() {
     if (lightboxIdx.value > 0) {
         lightboxIdx.value--;
-        lightboxSnap.value = props.snapshots[lightboxIdx.value];
+        lightboxSnap.value = filteredSnapshots.value[lightboxIdx.value];
     }
 }
 
 function lightboxNext() {
-    if (lightboxIdx.value < props.snapshots.length - 1) {
+    if (lightboxIdx.value < filteredSnapshots.value.length - 1) {
         lightboxIdx.value++;
-        lightboxSnap.value = props.snapshots[lightboxIdx.value];
+        lightboxSnap.value = filteredSnapshots.value[lightboxIdx.value];
     }
 }
 
@@ -372,6 +439,18 @@ function formatDate(d: string | null) {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+    });
+}
+
+function formatTime(iso: string | null | undefined): string {
+    if (!iso) {
+        return '';
+    }
+
+    return new Date(iso).toLocaleTimeString('en-PH', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
     });
 }
 </script>
@@ -459,8 +538,44 @@ function formatDate(d: string | null) {
                     @change="applyFilters"
                 />
             </div>
+            <div class="w-full sm:w-auto">
+                <label
+                    class="mb-1 block text-xs font-medium text-muted-foreground dark:text-slate-400"
+                    >Interval</label
+                >
+                <select
+                    v-model="filterInterval"
+                    class="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                >
+                    <option value="">All Photos</option>
+                    <option
+                        v-for="opt in intervalOptions"
+                        :key="opt.value"
+                        :value="opt.value"
+                    >
+                        {{ opt.label }}
+                    </option>
+                </select>
+            </div>
+            <div class="w-full sm:w-auto">
+                <label
+                    class="mb-1 block text-xs font-medium text-muted-foreground dark:text-slate-400"
+                    >Source</label
+                >
+                <select
+                    v-model="filterSource"
+                    class="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:outline-none sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                >
+                    <option value="">All Sources</option>
+                    <option value="auto">Auto (Every 3h)</option>
+                    <option value="manual">Manual Capture</option>
+                    <option value="upload">Uploaded Photo</option>
+                </select>
+            </div>
             <button
-                v-if="filterCycle || filterDate"
+                v-if="
+                    filterCycle || filterDate || filterInterval || filterSource
+                "
                 class="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground dark:border-slate-700 dark:text-slate-400 dark:hover:text-white"
                 @click="clearFilters"
             >
@@ -469,15 +584,15 @@ function formatDate(d: string | null) {
             <div
                 class="ml-auto text-sm text-muted-foreground dark:text-slate-400"
             >
-                {{ snapshots.length }} photo{{
-                    snapshots.length !== 1 ? 's' : ''
+                {{ filteredSnapshots.length }} photo{{
+                    filteredSnapshots.length !== 1 ? 's' : ''
                 }}
             </div>
         </div>
 
         <!-- Timeline -->
         <div
-            v-if="snapshots.length === 0"
+            v-if="filteredSnapshots.length === 0"
             class="flex flex-col items-center gap-4 rounded-2xl border border-border/50 bg-card/50 py-20 text-center backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
         >
             <div
@@ -538,6 +653,12 @@ function formatDate(d: string | null) {
                             :alt="snap.file_name"
                             class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                         />
+                        <span
+                            v-if="snap.created_at"
+                            class="absolute top-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-xs"
+                        >
+                            {{ formatTime(snap.created_at) }}
+                        </span>
                         <!-- Overlay -->
                         <div
                             class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/70 via-transparent to-transparent p-2 opacity-0 transition duration-200 group-hover:opacity-100"
@@ -811,6 +932,9 @@ function formatDate(d: string | null) {
                             class="text-sm font-semibold text-foreground dark:text-white"
                         >
                             {{ formatDate(lightboxSnap.captured_date ?? null) }}
+                            <span v-if="lightboxSnap.created_at">
+                                • {{ formatTime(lightboxSnap.created_at) }}
+                            </span>
                         </p>
                         <p
                             v-if="snapshotNumberMap.has(lightboxSnap.id)"
@@ -829,12 +953,12 @@ function formatDate(d: string | null) {
                     <p
                         class="text-xs text-muted-foreground/80 dark:text-slate-500"
                     >
-                        {{ lightboxIdx + 1 }} / {{ snapshots.length }}
+                        {{ lightboxIdx + 1 }} / {{ filteredSnapshots.length }}
                     </p>
                 </div>
                 <button
                     class="absolute right-2 z-10 rounded-full bg-card p-2 text-foreground hover:bg-muted disabled:opacity-30 sm:right-4 dark:bg-slate-800/80 dark:text-white"
-                    :disabled="lightboxIdx === snapshots.length - 1"
+                    :disabled="lightboxIdx === filteredSnapshots.length - 1"
                     @click.stop="lightboxNext"
                 >
                     <ChevronRight class="h-5 w-5" />
