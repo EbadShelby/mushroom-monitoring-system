@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActuatorLog;
 use App\Models\AlertLog;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
@@ -27,6 +28,11 @@ class DashboardController extends Controller
             'tank' => $this->mist->tank(now()),
             'mist' => fn () => $this->mist->summary(),
             'ledSchedule' => fn () => LedSchedule::window(),
+            'lastHumidifierOffAt' => fn () => ActuatorLog::query()
+                ->where('actuator', 'humidifier')
+                ->where('action', 'off')
+                ->latest('triggered_at')
+                ->value('triggered_at')?->toIso8601String(),
             'activeCycle' => Inertia::defer(fn () => $activeCycle ? [
                 'id' => $activeCycle->id,
                 'name' => $activeCycle->name,

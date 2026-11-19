@@ -92,7 +92,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 | Environmental Factor      | Default Target Range       | Sensor     | System Automation & Alert Logic                                                              |
 | :------------------------ | :------------------------- | :--------- | :------------------------------------------------------------------------------------------- |
 | 🌡️ **Temperature**        | **26–32°C**                | DHT22      | `< 26°C` → Low temp SMS alert. `> 32°C` → High temp SMS alert (no auto-cooling).             |
-| 💧 **Humidity**           | **75–95% RH**              | DHT22      | `<= 78%` → Auto-activate humidifier (SMS only if `< 75%`). `>= 93%` → Deactivate humidifier. |
+| 💧 **Humidity**           | **75–95% RH**              | DHT22      | `<= 78%` → Auto-activate humidifier (SMS only if `< 75%`). `>= 94%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **< 1,000 ppm**            | MQ-135     | `> 1,000 ppm` → High CO₂ SMS alert (calibrated from clean-air $R_0$ baseline at 400 ppm).    |
 | 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert during daytime LED-ON window only. `> 800 lux` → Alert 24/7.             |
 | 🌱 **Substrate Moisture** | **≥ 30%**                  | Capacitive | `< 30%` → Warning (Dry) SMS alert. `< 20%` → Critical SMS alert.                             |
@@ -104,7 +104,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 - **Humidifier Failsafe Runtime & Stall Detection**:
     - Continuous humidifier operation is capped at **15 minutes** with a mandatory **3-minute resting cooldown**, protecting the ultrasonic mist makers from overheating if the reservoir runs dry.
     - If the humidifier runs continuously for **5 minutes** while humidity remains below the low threshold (`75%`), a **Stall Alert** SMS is sent to check the water tank, mist maker, and sensor.
-- **Humidity Control Band**: The humidifier switches ON at _lower limit + 3_ (`78%`) and OFF at _upper limit − 2_ (`93%`, adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit (`75%`).
+- **Humidity Control Band & Settling Grace Period**: The humidifier switches ON at _lower limit + 3_ (`78%`) and OFF at _upper limit − 1_ (`94%`, adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity drops below `75%`, and high-humidity readings (`> 95%`) within **3 minutes** after the humidifier turns off are treated as `Settling (mist dissipating)` rather than false breaches.
 - **Night-Cycle Light Awareness**: Low-light SMS alerts and dashboard warnings are suppressed outside the configured LED ON window (`led_on_hour` – `led_off_hour`, default 6:00 AM – 6:00 PM), with a **2-minute turn-on grace period** at `led_on_hour` so the relay has time to switch on before alerting.
 - **Breach Summary Deduplication**: Cycle threshold breach counts (in Cycle Details and PDF reports) are deduplicated to **at most 1 breach per minute per sensor**.
 - **Automated Growth Camera (ESP32-CAM)**:

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ActuatorLog;
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
 use App\Models\User;
@@ -284,4 +285,53 @@ test('breach summary counts at most one breach per minute per sensor', function 
 
     expect($summary['humidity'])->toBe(2)
         ->and($summary['total_readings'])->toBe(4);
+});
+
+test('breach summary ignores high humidity within 3 minutes after humidifier shuts off', function () {
+    $cycle = GrowingCycle::create([
+        'name' => 'Settling Mist Test',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+    ]);
+
+    $offAt = now()->startOfMinute();
+
+    ActuatorLog::create([
+        'actuator' => 'humidifier',
+        'action' => 'off',
+        'trigger' => 'automatic',
+        'triggered_by' => 'system',
+        'triggered_at' => $offAt,
+    ]);
+
+    // 1 minute after humidifier OFF -> residual mist settling, should NOT count
+    SensorReading::create([
+        'growing_cycle_id' => $cycle->id,
+        'temperature' => 28.0,
+        'humidity' => 96.5,
+        'co2_raw' => 600,
+        'light_level' => 300,
+        'soil_moisture' => 50,
+        'soil_status' => 'moist',
+        'recorded_at' => $offAt->copy()->addMinute(),
+    ]);
+
+    // 5 minutes after humidifier OFF -> past 3-minute grace window, SHOULD count
+    SensorReading::create([
+        'growing_cycle_id' => $cycle->id,
+        'temperature' => 28.0,
+        'humidity' => 96.5,
+        'co2_raw' => 600,
+        'light_level' => 300,
+        'soil_moisture' => 50,
+        'soil_status' => 'moist',
+        'recorded_at' => $offAt->copy()->addMinutes(5),
+    ]);
+
+    $summary = $cycle->breachSummary();
+
+    expect($summary['humidity'])->toBe(1)
+        ->and($summary['total_readings'])->toBe(2);
 });

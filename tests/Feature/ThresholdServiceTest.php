@@ -128,8 +128,8 @@ dataset('humidity control band (75-95)', [
     'off, 78 turns on early, no SMS' => ['off', 78.0, 'on', false],
     'off, 79 inside band does nothing' => ['off', 79.0, null, false],
     'off, 74 turns on with SMS' => ['off', 74.0, 'on', true],
-    'on, 92.9 keeps running' => ['on', 92.9, null, false],
-    'on, 93 turns off before 95' => ['on', 93.0, 'off', false],
+    'on, 93 keeps running' => ['on', 93.0, null, false],
+    'on, 94 turns off before 95' => ['on', 94.0, 'off', false],
 ]);
 
 test('humidifier uses an inner control band so humidity stays in range', function (string $state, float $humidity, ?string $command, bool $sendsSms) {

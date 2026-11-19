@@ -74,6 +74,8 @@ class GrowingCycle extends Model
 
     /**
      * Count out-of-range threshold breaches, deduplicated to at most 1 per minute per sensor.
+     * High-humidity spikes (> 95%) within 3 minutes after the humidifier shuts off are ignored
+     * while residual mist settles.
      *
      * @return array{temperature: int, humidity: int, co2: int, soil_moisture: int, total_readings: int}
      */
@@ -81,15 +83,45 @@ class GrowingCycle extends Model
     {
         $readings = $this->sensorReadings()->get(['temperature', 'humidity', 'co2_raw', 'soil_moisture', 'recorded_at']);
 
+        $offTimestamps = ActuatorLog::query()
+            ->where('actuator', 'humidifier')
+            ->where('action', 'off')
+            ->where('triggered_at', '>=', Carbon::parse($this->start_date)->startOfDay()->subMinutes(3))
+            ->when($this->end_date !== null, fn ($q) => $q->where('triggered_at', '<=', Carbon::parse($this->end_date)->endOfDay()))
+            ->pluck('triggered_at')
+            ->map(fn ($ts) => Carbon::parse($ts)->getTimestamp())
+            ->all();
+
+        $isPostOffSettling = static function (SensorReading $r) use ($offTimestamps): bool {
+            $ts = Carbon::parse($r->recorded_at)->getTimestamp();
+
+            foreach ($offTimestamps as $offTs) {
+                $diff = $ts - $offTs;
+                if ($diff >= 0 && $diff <= 180) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
         $minuteBucket = static fn (SensorReading $r): string => Carbon::parse($r->recorded_at)->format('Y-m-d H:i');
 
         return [
             'temperature' => $readings->filter(
                 fn (SensorReading $r) => $r->temperature !== null && ($r->temperature < 26 || $r->temperature > 32)
             )->unique($minuteBucket)->count(),
-            'humidity' => $readings->filter(
-                fn (SensorReading $r) => $r->humidity !== null && ($r->humidity < 75 || $r->humidity > 95)
-            )->unique($minuteBucket)->count(),
+            'humidity' => $readings->filter(function (SensorReading $r) use ($isPostOffSettling): bool {
+                if ($r->humidity === null) {
+                    return false;
+                }
+
+                if ($r->humidity < 75) {
+                    return true;
+                }
+
+                return $r->humidity > 95 && ! $isPostOffSettling($r);
+            })->unique($minuteBucket)->count(),
             'co2' => $readings->filter(
                 fn (SensorReading $r) => $r->co2_raw !== null && $r->co2_raw > 1000
             )->unique($minuteBucket)->count(),

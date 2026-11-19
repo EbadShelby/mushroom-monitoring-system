@@ -54,6 +54,7 @@ const props = defineProps<{
     chartData?: any[];
     tank?: HumidifierTank;
     ledSchedule?: { on_hour: number; off_hour: number };
+    lastHumidifierOffAt?: string | null;
     mist?: HumidifierMist;
 }>();
 
@@ -146,11 +147,36 @@ const effectiveLightStatus = computed((): 'normal' | 'warning' | 'critical' => {
     return store.lightStatus;
 });
 
+const isHumiditySettling = computed(() => {
+    if (
+        store.sensors.humidity === null ||
+        store.sensors.humidity <= 95 ||
+        store.actuators.humidifier === 'on' ||
+        !props.lastHumidifierOffAt
+    ) {
+        return false;
+    }
+
+    const elapsedMs = nowMs.value - Date.parse(props.lastHumidifierOffAt);
+
+    return elapsedMs >= 0 && elapsedMs <= 3 * 60 * 1000;
+});
+
+const effectiveHumidityStatus = computed(
+    (): 'normal' | 'warning' | 'critical' => {
+        if (isHumiditySettling.value) {
+            return 'normal';
+        }
+
+        return store.humidityStatus;
+    },
+);
+
 const anyWarning = computed(
     () =>
         hasActiveCycle.value &&
         (store.temperatureStatus !== 'normal' ||
-            store.humidityStatus !== 'normal' ||
+            effectiveHumidityStatus.value !== 'normal' ||
             store.co2Status !== 'normal' ||
             effectiveLightStatus.value !== 'normal' ||
             store.soilStatus !== 'normal'),
@@ -521,7 +547,7 @@ function formatDuration(totalSeconds: number): string {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
-                        hasActiveCycle && store.humidityStatus !== 'normal'
+                        hasActiveCycle && effectiveHumidityStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -577,11 +603,16 @@ function formatDuration(totalSeconds: number): string {
                             >Idle</span
                         >
                         <div
-                            v-else-if="store.humidityStatus !== 'normal'"
+                            v-else-if="effectiveHumidityStatus !== 'normal'"
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" /> Out of range
                         </div>
+                        <span
+                            v-else-if="isHumiditySettling"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Settling (mist dissipating)</span
+                        >
                         <div
                             v-else
                             class="flex items-center gap-1 font-medium text-primary"
