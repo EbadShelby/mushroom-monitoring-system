@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\ActuatorLog;
 use App\Models\Setting;
 use App\Services\FirebaseService;
+use App\Support\LedSchedule;
 use Illuminate\Console\Command;
 
 class EnforceLedSchedule extends Command
@@ -23,17 +24,8 @@ class EnforceLedSchedule extends Command
             return self::SUCCESS;
         }
 
-        $onHour = (int) Setting::get('led_on_hour', 6);
-        $offHour = (int) Setting::get('led_off_hour', 18);
-        $currentHour = (int) now()->format('G');
-
-        // Determine if we're inside the ON window.
-        // Handles both normal ranges (e.g. 6 → 18) and overnight ranges (e.g. 20 → 6).
-        $isOn = $onHour < $offHour
-            ? $currentHour >= $onHour && $currentHour < $offHour
-            : $currentHour >= $onHour || $currentHour < $offHour;
-
-        $desiredAction = $isOn ? 'on' : 'off';
+        ['on_hour' => $onHour, 'off_hour' => $offHour] = LedSchedule::window();
+        $desiredAction = LedSchedule::isWithinOnWindow() ? 'on' : 'off';
 
         // Fetch the current LED state from Firebase to avoid redundant writes/logs
         $currentActuators = $firebase->getActuators();

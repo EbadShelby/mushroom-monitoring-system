@@ -7,6 +7,7 @@ use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Models\SensorReading;
 use App\Services\HumidifierMistService;
+use App\Support\LedSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -25,6 +26,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'tank' => $this->mist->tank(now()),
             'mist' => fn () => $this->mist->summary(),
+            'ledSchedule' => fn () => LedSchedule::window(),
             'activeCycle' => Inertia::defer(fn () => $activeCycle ? [
                 'id' => $activeCycle->id,
                 'name' => $activeCycle->name,

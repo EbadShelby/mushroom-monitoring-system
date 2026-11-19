@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ActuatorLog;
 use App\Models\GrowingCycle;
 use App\Models\Setting;
+use App\Support\LedSchedule;
 
 class ThresholdService
 {
@@ -235,7 +236,8 @@ class ThresholdService
         if (isset($reading['light_level'])) {
             $light = (float) $reading['light_level'];
 
-            if ($light < $t['light_min']) {
+            // Only alert on low light during the active LED ON window; darkness is expected at night.
+            if ($light < $t['light_min'] && LedSchedule::isWithinOnWindow()) {
                 $alerts[] = $this->alert(
                     sensor: 'light',
                     value: $light,

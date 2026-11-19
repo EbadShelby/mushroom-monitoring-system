@@ -158,3 +158,27 @@ test('humidifier uses an inner control band so humidity stays in range', functio
     expect($result['commands']['humidifier'])->toBe($command)
         ->and(collect($result['alerts'])->contains('sensor', 'humidity'))->toBe($sendsSms);
 })->with('humidity control band (75-95)');
+
+test('low light triggers alert during LED daytime schedule', function () {
+    $this->travelTo(now()->setTime(12, 0));
+
+    $result = app(ThresholdService::class)->evaluate(['light_level' => 50]);
+
+    expect(collect($result['alerts'])->pluck('sensor'))->toContain('light');
+});
+
+test('low light does not trigger alert during LED nighttime schedule', function () {
+    $this->travelTo(now()->setTime(20, 0));
+
+    $result = app(ThresholdService::class)->evaluate(['light_level' => 0]);
+
+    expect(collect($result['alerts'])->pluck('sensor'))->not->toContain('light');
+});
+
+test('high light still triggers alert during LED nighttime schedule', function () {
+    $this->travelTo(now()->setTime(20, 0));
+
+    $result = app(ThresholdService::class)->evaluate(['light_level' => 1200]);
+
+    expect(collect($result['alerts'])->pluck('sensor'))->toContain('light');
+});

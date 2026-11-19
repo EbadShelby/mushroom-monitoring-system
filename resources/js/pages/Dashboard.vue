@@ -53,6 +53,7 @@ const props = defineProps<{
     lastAlert?: AlertLog | null;
     chartData?: any[];
     tank?: HumidifierTank;
+    ledSchedule?: { on_hour: number; off_hour: number };
     mist?: HumidifierMist;
 }>();
 
@@ -120,13 +121,38 @@ onUnmounted(() => {
 
 const hasActiveCycle = computed(() => Boolean(props.activeCycle));
 
+const isLedDaytime = computed(() => {
+    const onHour = props.ledSchedule?.on_hour ?? 6;
+    const offHour = props.ledSchedule?.off_hour ?? 18;
+    const hour = new Date(nowMs.value).getHours();
+
+    return onHour < offHour
+        ? hour >= onHour && hour < offHour
+        : hour >= onHour || hour < offHour;
+});
+
+const isNightLowLight = computed(
+    () =>
+        !isLedDaytime.value &&
+        store.sensors.light_level !== null &&
+        store.sensors.light_level < 200,
+);
+
+const effectiveLightStatus = computed((): 'normal' | 'warning' | 'critical' => {
+    if (isNightLowLight.value) {
+        return 'normal';
+    }
+
+    return store.lightStatus;
+});
+
 const anyWarning = computed(
     () =>
         hasActiveCycle.value &&
         (store.temperatureStatus !== 'normal' ||
             store.humidityStatus !== 'normal' ||
             store.co2Status !== 'normal' ||
-            store.lightStatus !== 'normal' ||
+            effectiveLightStatus.value !== 'normal' ||
             store.soilStatus !== 'normal'),
 );
 
@@ -643,7 +669,7 @@ function formatDuration(totalSeconds: number): string {
                 <div
                     class="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     :class="
-                        hasActiveCycle && store.lightStatus !== 'normal'
+                        hasActiveCycle && effectiveLightStatus !== 'normal'
                             ? 'border-destructive/50 bg-destructive/5 backdrop-blur-md'
                             : 'border-border/50 bg-card/60 backdrop-blur-md'
                     "
@@ -699,12 +725,17 @@ function formatDuration(totalSeconds: number): string {
                             >Idle</span
                         >
                         <div
-                            v-else-if="store.lightStatus !== 'normal'"
+                            v-else-if="effectiveLightStatus !== 'normal'"
                             class="flex animate-pulse items-center gap-1 font-medium text-destructive"
                         >
                             <AlertCircle class="h-4 w-4" />
                             Out of range
                         </div>
+                        <span
+                            v-else-if="isNightLowLight"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Night cycle (LED off)</span
+                        >
                         <div
                             v-else
                             class="flex items-center gap-1 font-medium text-primary"
