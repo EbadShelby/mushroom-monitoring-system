@@ -1,7 +1,13 @@
+export interface FruitingBag {
+    variety: string;
+    count: number;
+}
+
 export interface GrowingCycle {
     id: number;
     name: string;
     mushroom_variety: string;
+    fruiting_bags?: FruitingBag[] | null;
     substrate_type: string;
     start_date: string;
     end_date: string | null;

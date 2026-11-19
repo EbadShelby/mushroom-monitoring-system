@@ -67,34 +67,46 @@ const MUSHROOM_VARIETIES = [
     'Phoenix / Indian Oyster Mushroom',
 ] as const;
 
+interface BagRow {
+    selectedVariety: string;
+    customVariety: string;
+    count: number;
+}
+
 const showModal = ref(false);
 const creating = ref(false);
-const selectedVariety = ref<string>(MUSHROOM_VARIETIES[0]);
-const customVariety = ref('');
-const customVarietyInputRef = ref<HTMLInputElement | null>(null);
+const bagRows = ref<BagRow[]>([
+    { selectedVariety: MUSHROOM_VARIETIES[0], customVariety: '', count: 10 },
+]);
 const form = ref({
     name: '',
-    mushroom_variety: MUSHROOM_VARIETIES[0] as string,
     substrate_type: '',
     start_date: new Date().toISOString().split('T')[0],
     notes: '',
 });
 
-function onVarietyChange() {
-    if (selectedVariety.value === '__other__') {
-        form.value.mushroom_variety = customVariety.value.trim();
-        nextTick(() => {
-            customVarietyInputRef.value?.focus();
-        });
-    } else {
-        form.value.mushroom_variety = selectedVariety.value;
+const totalBags = computed(() =>
+    bagRows.value.reduce((sum, r) => sum + (Number(r.count) || 0), 0),
+);
+
+function addBagRow() {
+    bagRows.value.push({
+        selectedVariety: MUSHROOM_VARIETIES[1],
+        customVariety: '',
+        count: 1,
+    });
+}
+
+function removeBagRow(idx: number) {
+    if (bagRows.value.length > 1) {
+        bagRows.value.splice(idx, 1);
     }
 }
 
-function onCustomVarietyInput() {
-    if (selectedVariety.value === '__other__') {
-        form.value.mushroom_variety = customVariety.value.trim();
-    }
+function resetBagRows() {
+    bagRows.value = [
+        { selectedVariety: MUSHROOM_VARIETIES[0], customVariety: '', count: 10 },
+    ];
 }
 
 const formErrors = ref<Record<string, string>>({});
@@ -187,21 +199,40 @@ function openModal() {
 
 async function createCycle() {
     formErrors.value = {};
+
+    const fruiting_bags = bagRows.value.map((r) => ({
+        variety:
+            r.selectedVariety === '__other__'
+                ? r.customVariety.trim()
+                : r.selectedVariety,
+        count: Number(r.count) || 0,
+    }));
+
+    if (fruiting_bags.some((b) => !b.variety || b.count < 1)) {
+        formErrors.value = {
+            fruiting_bags:
+                'Please enter a variety name and at least 1 bag for each row.',
+        };
+
+        return;
+    }
+
     creating.value = true;
 
     try {
-        await axios.post('/api/cycles', form.value);
+        await axios.post('/api/cycles', {
+            ...form.value,
+            fruiting_bags,
+        });
         toast.success('Growing cycle created!');
         showModal.value = false;
         form.value = {
             name: '',
-            mushroom_variety: MUSHROOM_VARIETIES[0],
             substrate_type: '',
             start_date: new Date().toISOString().split('T')[0],
             notes: '',
         };
-        selectedVariety.value = MUSHROOM_VARIETIES[0];
-        customVariety.value = '';
+        resetBagRows();
         clearSubstrates();
         isManualOverride.value = false;
         router.reload({ only: ['cycles', 'hasActiveCycle'] });
@@ -666,43 +697,88 @@ function formatDate(d: string | null) {
                             </div>
 
                             <div>
-                                <label
-                                    for="mushroom-variety-select"
-                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Mushroom Variety
-                                    <span class="text-red-400">*</span></label
+                                <div
+                                    class="mb-1.5 flex items-center justify-between"
                                 >
-                                <select
-                                    id="mushroom-variety-select"
-                                    v-model="selectedVariety"
-                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                    @change="onVarietyChange"
-                                >
-                                    <option
-                                        v-for="variety in MUSHROOM_VARIETIES"
-                                        :key="variety"
-                                        :value="variety"
+                                    <label
+                                        class="block text-sm font-medium text-foreground/80 dark:text-slate-300"
+                                        >Fruiting Bags
+                                        <span class="text-red-400">*</span>
+                                        <span
+                                            class="ml-1.5 text-xs font-normal text-muted-foreground dark:text-slate-400"
+                                            >({{ totalBags }} total)</span
+                                        ></label
                                     >
-                                        {{ variety }}
-                                    </option>
-                                    <option value="__other__">
-                                        Other / Custom...
-                                    </option>
-                                </select>
-                                <input
-                                    v-if="selectedVariety === '__other__'"
-                                    ref="customVarietyInputRef"
-                                    v-model="customVariety"
-                                    type="text"
-                                    placeholder="Enter custom mushroom variety..."
-                                    class="mt-2 w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                    @input="onCustomVarietyInput"
-                                />
+                                    <button
+                                        type="button"
+                                        class="flex items-center gap-1 text-xs font-medium text-emerald-600 transition hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                        @click="addBagRow"
+                                    >
+                                        <Plus class="h-3.5 w-3.5" /> Add variety
+                                    </button>
+                                </div>
+                                <div class="space-y-2">
+                                    <div
+                                        v-for="(row, idx) in bagRows"
+                                        :key="idx"
+                                        class="space-y-1.5"
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <select
+                                                v-model="row.selectedVariety"
+                                                class="min-w-0 flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                            >
+                                                <option
+                                                    v-for="variety in MUSHROOM_VARIETIES"
+                                                    :key="variety"
+                                                    :value="variety"
+                                                >
+                                                    {{ variety }}
+                                                </option>
+                                                <option value="__other__">
+                                                    Other / Custom...
+                                                </option>
+                                            </select>
+                                            <input
+                                                v-model.number="row.count"
+                                                type="number"
+                                                min="1"
+                                                max="10000"
+                                                placeholder="Qty"
+                                                class="w-20 shrink-0 rounded-xl border border-border bg-card px-3 py-2 text-center text-sm text-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                            />
+                                            <button
+                                                v-if="bagRows.length > 1"
+                                                type="button"
+                                                class="rounded-lg p-2 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive dark:text-slate-400"
+                                                @click="removeBagRow(idx)"
+                                            >
+                                                <X class="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                        <input
+                                            v-if="
+                                                row.selectedVariety ===
+                                                '__other__'
+                                            "
+                                            v-model="row.customVariety"
+                                            type="text"
+                                            placeholder="Enter custom mushroom variety..."
+                                            class="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground placeholder-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                        />
+                                    </div>
+                                </div>
                                 <p
-                                    v-if="formErrors.mushroom_variety"
+                                    v-if="
+                                        formErrors.fruiting_bags ||
+                                        formErrors.mushroom_variety
+                                    "
                                     class="mt-1 text-xs text-red-400"
                                 >
-                                    {{ formErrors.mushroom_variety }}
+                                    {{
+                                        formErrors.fruiting_bags ||
+                                        formErrors.mushroom_variety
+                                    }}
                                 </p>
                             </div>
 

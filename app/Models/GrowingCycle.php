@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $mushroom_variety
+ * @property list<array{variety: string, count: int}>|null $fruiting_bags
  * @property string $substrate_type
  * @property string $start_date
  * @property string|null $end_date
@@ -24,12 +25,23 @@ class GrowingCycle extends Model
     protected $fillable = [
         'name',
         'mushroom_variety',
+        'fruiting_bags',
         'substrate_type',
         'start_date',
         'end_date',
         'status',
         'notes',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'fruiting_bags' => 'array',
+        ];
+    }
 
     /** @return HasMany<SensorReading, $this> */
     public function sensorReadings(): HasMany

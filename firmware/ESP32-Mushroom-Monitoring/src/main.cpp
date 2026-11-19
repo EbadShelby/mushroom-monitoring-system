@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <DHT.h>
 #include <Wire.h>
@@ -10,8 +11,9 @@ const char* ssid     = "wifi_username";
 const char* password = "wifi_password";
 
 // ─── Server URLs ────────────────────────────────────
-const char* sensorUrl   = "http://YOUR_PC_IP:8080/api/sensor-data";
-const char* actuatorUrl = "http://YOUR_PC_IP:8080/api/actuator-commands";
+const char* sensorUrl   = "https://mycosense.online/api/sensor-data";
+const char* actuatorUrl = "https://mycosense.online/api/actuator-commands";
+const char* deviceToken = "CHANGE_ME_LONG_RANDOM_TOKEN";   // must match DEVICE_TOKEN in Laravel .env
 
 // ─── Pin Definitions ────────────────────────────────
 #define DHTPIN    4
@@ -176,13 +178,15 @@ void loop() {
 
 void sendSensorData(float temp, float hum, int co2,
                     float light, int soil, String soilStatus) {
+  WiFiClientSecure client;
+  client.setInsecure();
+
   HTTPClient http;
   http.setTimeout(5000);
-  http.begin(sensorUrl);
-
-  // http.begin(sensorUrl);
+  http.begin(client, sensorUrl);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Accept", "application/json");
+  http.addHeader("X-Device-Token", deviceToken);
 
   String body = "{";
   body += "\"temperature\":"   + String(temp, 1)  + ",";
@@ -205,12 +209,14 @@ void sendSensorData(float temp, float hum, int co2,
 }
 
 void pollActuatorCommands() {
+  WiFiClientSecure client;
+  client.setInsecure();
+
   HTTPClient http;
   http.setTimeout(5000);
-  http.begin(actuatorUrl);
-
-  // http.begin(actuatorUrl);
+  http.begin(client, actuatorUrl);
   http.addHeader("Accept", "application/json");
+  http.addHeader("X-Device-Token", deviceToken);
 
   Serial.println("🔁 Polling actuator commands...");
 

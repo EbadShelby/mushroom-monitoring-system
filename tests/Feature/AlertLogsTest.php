@@ -32,7 +32,10 @@ test('authenticated user can view alert logs page', function () {
 
 test('sensor data does not send environmental SMS alerts when no cycle is active', function () {
     User::factory()->create(['role' => 'admin', 'contact_number' => '09171234567']);
-    config(['services.semaphore.api_key' => 'test-key']);
+    config([
+        'services.semaphore.api_key' => 'test-key',
+        'services.device.token' => 'test-device-token',
+    ]);
     Http::fake();
 
     $firebase = Mockery::mock(FirebaseService::class);
@@ -44,7 +47,7 @@ test('sensor data does not send environmental SMS alerts when no cycle is active
     $this->postJson('/api/sensor-data', [
         'temperature' => 38.0,
         'humidity' => 50.0,
-    ])->assertCreated()
+    ], ['X-Device-Token' => 'test-device-token'])->assertCreated()
         ->assertJsonPath('cycle_id', null)
         ->assertJsonPath('alerts_triggered', 0);
 
@@ -53,7 +56,10 @@ test('sensor data does not send environmental SMS alerts when no cycle is active
 
 test('sensor data sends environmental SMS alerts when an active cycle exists', function () {
     User::factory()->create(['role' => 'admin', 'contact_number' => '09171234567']);
-    config(['services.semaphore.api_key' => 'test-key']);
+    config([
+        'services.semaphore.api_key' => 'test-key',
+        'services.device.token' => 'test-device-token',
+    ]);
     Http::fake(['https://api.semaphore.co/*' => Http::response(['message_id' => 1], 200)]);
 
     $cycle = GrowingCycle::create([
@@ -73,7 +79,7 @@ test('sensor data sends environmental SMS alerts when an active cycle exists', f
     $this->postJson('/api/sensor-data', [
         'temperature' => 38.0,
         'humidity' => 85.0,
-    ])->assertCreated()
+    ], ['X-Device-Token' => 'test-device-token'])->assertCreated()
         ->assertJsonPath('cycle_id', $cycle->id)
         ->assertJsonPath('alerts_triggered', 1);
 

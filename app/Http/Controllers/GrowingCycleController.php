@@ -40,11 +40,21 @@ class GrowingCycleController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'mushroom_variety' => ['required', 'string', 'max:255'],
+            'mushroom_variety' => ['required_without:fruiting_bags', 'nullable', 'string', 'max:255'],
+            'fruiting_bags' => ['nullable', 'array', 'min:1'],
+            'fruiting_bags.*.variety' => ['required', 'string', 'max:255'],
+            'fruiting_bags.*.count' => ['required', 'integer', 'min:1', 'max:10000'],
             'substrate_type' => ['required', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        if (! empty($data['fruiting_bags'])) {
+            $summary = collect($data['fruiting_bags'])
+                ->map(fn (array $bag): string => "{$bag['count']}× {$bag['variety']}")
+                ->implode(', ');
+            $data['mushroom_variety'] = mb_substr($summary, 0, 255);
+        }
 
         $cycle = GrowingCycle::create([
             ...$data,
@@ -63,6 +73,7 @@ class GrowingCycleController extends Controller
                 'id' => $cycle->id,
                 'name' => $cycle->name,
                 'mushroom_variety' => $cycle->mushroom_variety,
+                'fruiting_bags' => $cycle->fruiting_bags,
                 'substrate_type' => $cycle->substrate_type,
                 'start_date' => $cycle->start_date,
                 'end_date' => $cycle->end_date,

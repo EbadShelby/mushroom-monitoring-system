@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include "esp_camera.h"
 
@@ -8,8 +9,8 @@ const char* ssid     = "wifi_username";
 const char* password = "wifi_password";
 
 // ─── Server ─────────────────────────────────────────
-const char* snapshotUrl = "http://192.168.254.148:8080/api/camera-snapshot";
-const char* commandUrl  = "http://192.168.254.148:8080/api/camera-command";
+const char* snapshotUrl = "https://mycosense.online/api/camera-snapshot";
+const char* commandUrl  = "https://mycosense.online/api/camera-command";
 const char* cameraToken = "CHANGE_ME_LONG_RANDOM_TOKEN";   // must match CAMERA_TOKEN in Laravel .env
 
 // ─── Timing ─────────────────────────────────────────
@@ -131,9 +132,12 @@ bool captureAndUpload() {
 
   Serial.printf("📸 Captured %u bytes — uploading to Laravel...\n", fb->len);
 
+  WiFiClientSecure client;
+  client.setInsecure();
+
   HTTPClient http;
   http.setTimeout(10000);
-  http.begin(snapshotUrl);
+  http.begin(client, snapshotUrl);
   http.addHeader("Content-Type", "image/jpeg");
   http.addHeader("Accept", "application/json");
   http.addHeader("X-Camera-Token", cameraToken);
@@ -169,9 +173,12 @@ bool manualCaptureRequested() {
     return false;
   }
 
+  WiFiClientSecure client;
+  client.setInsecure();
+
   HTTPClient http;
   http.setTimeout(5000);
-  http.begin(commandUrl);
+  http.begin(client, commandUrl);
   http.addHeader("Accept", "application/json");
   http.addHeader("X-Camera-Token", cameraToken);
 

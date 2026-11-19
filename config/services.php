@@ -53,4 +53,9 @@ return [
         'token' => env('CAMERA_TOKEN'),
     ],
 
+    'device' => [
+        // Shared secret the main ESP32 sends in the X-Device-Token header.
+        'token' => env('DEVICE_TOKEN'),
+    ],
+
 ];

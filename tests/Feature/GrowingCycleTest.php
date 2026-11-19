@@ -219,3 +219,25 @@ test('growing cycle dayCount starts at day 1 and increments daily', function () 
         ->and($yesterdayCycle->dayCount())->toBe(2)
         ->and($futureCycle->dayCount())->toBe(1);
 });
+
+test('authorized user can create growing cycle with multiple fruiting bag types and counts', function () {
+    $user = User::factory()->create(['role' => 'faculty']);
+
+    $response = $this->actingAs($user)->postJson('/api/cycles', [
+        'name' => 'Batch 2026-Mixed-Bags',
+        'fruiting_bags' => [
+            ['variety' => 'Gray Oyster Mushroom', 'count' => 10],
+            ['variety' => 'White Oyster Mushroom', 'count' => 1],
+        ],
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonPath('cycle.mushroom_variety', '10× Gray Oyster Mushroom, 1× White Oyster Mushroom')
+        ->assertJsonPath('cycle.fruiting_bags.0.count', 10)
+        ->assertJsonPath('cycle.fruiting_bags.1.count', 1);
+
+    $cycle = GrowingCycle::first();
+    expect($cycle->fruiting_bags)->toHaveCount(2);
+});
