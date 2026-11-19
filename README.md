@@ -12,20 +12,26 @@ The system uses an ESP32 microcontroller to collect environmental data from vari
 ## System Architecture
 
 ```
-ESP32 (sensors + actuators)
-        │
-        │ HTTP POST /api/sensor-data every 30 seconds
-        ▼
-Laravel API (SINGLE entry point — all data flows through here)
-        │
-        ├── Save to MySQL (permanent storage)
-        └── Push latest values to Firebase (real-time dashboard)
-                │
-                ▼
-        Vue.js Dashboard (via Inertia.js)
-                │
-                ├── Live sensor cards ← Firebase
-                └── Historical charts ← MySQL via Laravel API
+ESP32 (sensors + actuators)                    ESP32-CAM (OV2640 + Flash)
+        │ HTTPS + X-Device-Token                       │ HTTPS + X-Camera-Token
+        │ POST /api/sensor-data (every 10s)            │ GET /api/camera-command (every 5s)
+        │ GET  /api/actuator-commands                  │ POST /api/camera-snapshot (3h clock / manual)
+        └──────────────────────┬───────────────────────┘
+                               ▼
+              Cloudflare Tunnel (https://mycosense.online)
+                               │
+                               ▼
+                Apache (httpd) + PHP-FPM → Laravel API
+                               │
+                               ├── Save to MySQL (readings, cycles, snapshots, logs)
+                               ├── Send SMS Alerts (Semaphore — Sender: MushroomIoT)
+                               └── Push latest values to Firebase Realtime Database
+                                       │
+                                       ▼
+                               Vue.js Dashboard (via Inertia.js)
+                                       │
+                                       ├── Live sensor cards ← Firebase
+                                       └── Historical charts, cycles, & photos ← MySQL
 ```
 
 ## Tech Stack
@@ -60,9 +66,10 @@ Laravel API (SINGLE entry point — all data flows through here)
 
 ### Hardware
 
-- **Microcontroller**: ESP32 WROOM-32U 38-pin (CP2102, Type-C)
-- **Programming**: Arduino IDE / PlatformIO VSCODE extension (C++)
-- **Communication**: HTTP POST to Laravel API (Every 30 seconds)
+- **Main Controller**: ESP32 WROOM-32U 38-pin (CP2102, Type-C)
+- **Camera Module**: AI-Thinker ESP32-CAM (OV2640 + `ESP32-CAM-MB` Type-C programmer)
+- **Programming**: PlatformIO VS Code extension / Arduino IDE (C++)
+- **Communication**: HTTPS (`WiFiClientSecure`) to `https://mycosense.online/api/*` authenticated via `X-Device-Token` and `X-Camera-Token` headers
 
 ## Sensors & GPIO Pins
 
@@ -85,9 +92,9 @@ The system evaluates incoming sensor readings against a unified set of configura
 | Environmental Factor      | Default Target Range       | Sensor     | System Automation & Alert Logic                                                              |
 | :------------------------ | :------------------------- | :--------- | :------------------------------------------------------------------------------------------- |
 | 🌡️ **Temperature**        | **26–32°C**                | DHT22      | `< 26°C` → Low temp SMS alert. `> 32°C` → High temp SMS alert (no auto-cooling).             |
-| 💧 **Humidity**           | **75–95% RH**              | DHT22      | `<= 78%` → Auto-activate humidifier (SMS only if `< 75%`). `>= 94%` → Deactivate humidifier. |
-| 🌬️ **CO₂ Level**          | **< 1,000 ppm**            | MQ-135     | `> 1,000 ppm` → High CO₂ SMS alert (ventilate chamber manually).                             |
-| 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert too dim. `> 800 lux` → Alert too bright. LED runs on daily schedule.     |
+| 💧 **Humidity**           | **75–95% RH**              | DHT22      | `<= 78%` → Auto-activate humidifier (SMS only if `< 75%`). `>= 93%` → Deactivate humidifier. |
+| 🌬️ **CO₂ Level**          | **< 1,000 ppm**            | MQ-135     | `> 1,000 ppm` → High CO₂ SMS alert (calibrated from clean-air $R_0$ baseline at 400 ppm).    |
+| 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert during daytime LED-ON window only. `> 800 lux` → Alert 24/7.             |
 | 🌱 **Substrate Moisture** | **≥ 30%**                  | Capacitive | `< 30%` → Warning (Dry) SMS alert. `< 20%` → Critical SMS alert.                             |
 
 ---
@@ -97,7 +104,14 @@ The system evaluates incoming sensor readings against a unified set of configura
 - **Humidifier Failsafe Runtime & Stall Detection**:
     - Continuous humidifier operation is capped at **15 minutes** with a mandatory **3-minute resting cooldown**, protecting the ultrasonic mist makers from overheating if the reservoir runs dry.
     - If the humidifier runs continuously for **5 minutes** while humidity remains below the low threshold (`75%`), a **Stall Alert** SMS is sent to check the water tank, mist maker, and sensor.
-- **Humidity Control Band**: The humidifier switches ON at _lower limit + 3_ (`78%`) and OFF at _upper limit − 1_ (`94%`, adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit (`75%`).
+- **Humidity Control Band**: The humidifier switches ON at _lower limit + 3_ (`78%`) and OFF at _upper limit − 2_ (`93%`, adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity actually drops below the lower limit (`75%`).
+- **Night-Cycle Light Awareness**: Low-light SMS alerts and dashboard warnings are suppressed outside the configured LED ON window (`led_on_hour` – `led_off_hour`, default 6:00 AM – 6:00 PM) so the 12-hour dark cycle shows `Night cycle (LED off)` instead of false alarms.
+- **Breach Summary Deduplication**: Cycle threshold breach counts (in Cycle Details and PDF reports) are deduplicated to **at most 1 breach per minute per sensor**.
+- **Automated Growth Camera (ESP32-CAM)**:
+    - Captures automatically every **3 hours on the clock** (`12 AM, 3 AM, 6 AM, 9 AM, 12 PM, 3 PM, 6 PM, 9 PM` via Laravel Scheduler) plus on-demand **Capture Now** from `/camera`.
+    - Automatically triggers the onboard flash LED (`GPIO 4`) for ~0.5s when the grow LED is off, and un-mirrors the image (`hmirror`).
+    - Photos on `/camera` display capture time, source badges (**Auto**, **Manual**, **Uploaded**), and support interval filtering (`Every 3h / 6h / 9h / 12h / Daily`).
+- **Growing Cycles & Measurements**: Cycles support multiple **Fruiting Bag** varieties and counts (e.g., `10× Gray Oyster Mushroom, 1× White Oyster Mushroom`), and measurements track **Fruiting Body Count**, **Avg Height (cm)**, and **Avg Cap Diameter (cm)**.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
 - **Single Active Cycle & Smart SMS Alerts**: Only one growing cycle can be active at a time. When no cycle is active, dashboard sensor cards display an `Idle` state and environmental SMS alerts are suppressed so an empty chamber does not consume SMS credits.
 - **Mist & Water Tank Tracking** (Dashboard & Actuator Control pages): Mist output and tank level are _estimates_ calculated from the humidifier relay's on-time in `actuator_logs` (not measured by a physical sensor).
@@ -145,11 +159,11 @@ The system evaluates incoming sensor readings against a unified set of configura
 
 ### Network Requirements
 
-- The host machine and the **ESP32 must be on the same local Wi-Fi network** (same subnet / router) for the microcontroller's HTTP POST calls to reach the Laravel server.
-- Laravel must be served with `--host=0.0.0.0` so it binds to the LAN interface, not just `localhost`.
+- **Live Hosting (`https://mycosense.online`)**: Traffic is routed via **Cloudflare Tunnel (`cloudflared`)** to Apache (`httpd`) + PHP-FPM on port `8080`. Both the main ESP32 and ESP32-CAM connect over HTTPS (`WiFiClientSecure`) using `DEVICE_TOKEN` and `CAMERA_TOKEN`, so they work from any Wi-Fi or mobile hotspot with internet access.
 - Outbound internet access is required for:
-    - **Firebase Realtime Database** — real-time sensor value sync
-    - **Semaphore SMS API** — push alerts to registered contacts
+    - **Cloudflare Tunnel** — public HTTPS routing (`mycosense.online`)
+    - **Firebase Realtime Database** — real-time sensor & actuator sync
+    - **Semaphore SMS API** — push alerts (`MushroomIoT`) to registered contacts
     - **Composer / npm** — pulling dependencies on first install
 
 ---

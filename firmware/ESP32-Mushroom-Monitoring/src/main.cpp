@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <math.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
@@ -26,11 +27,21 @@ const char* deviceToken = "CHANGE_ME_LONG_RANDOM_TOKEN";   // must match DEVICE_
 #define RELAY_HUMIDIFIER 14   // N3
 #define RELAY_LED        27   // N2
 
-// ─── Soil Calibration ───────────────────────────────
-#define DRY_VALUE     2759
-#define WET_VALUE     1605
-#define SOIL_DRY      30
-#define SOIL_CRITICAL 20
+// ─── Soil & CO2 Calibration ─────────────────────────
+#define DRY_VALUE           2759
+#define WET_VALUE           1255
+#define SOIL_DRY            30
+#define SOIL_CRITICAL       20
+#define MQ135_CLEAN_AIR_RAW 835   // Fresh-air ADC baseline (~400 ppm)
+
+int readCo2Ppm(int raw) {
+  int clamped = constrain(raw, 1, 4094);
+  float rs = (4095.0f - clamped) / (float)clamped;
+  float r0 = (4095.0f - MQ135_CLEAN_AIR_RAW) / (float)MQ135_CLEAN_AIR_RAW;
+  float ppm = 400.0f * powf(rs / r0, -2.89f);
+
+  return constrain((int)roundf(ppm), 350, 4095);
+}
 
 // ─── Objects ───────────────────────────────────────
 DHT    dht(DHTPIN, DHTTYPE);
@@ -98,7 +109,7 @@ void loop() {
 
   float lux = lightMeter.readLightLevel();
 
-  int co2Raw = analogRead(MQ135_PIN);
+  int co2Raw = readCo2Ppm(analogRead(MQ135_PIN));
 
   int soilRaw      = analogRead(SOIL_PIN);
   int soilMoisture = map(soilRaw, DRY_VALUE, WET_VALUE, 0, 100);
