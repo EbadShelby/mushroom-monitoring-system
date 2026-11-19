@@ -8,11 +8,18 @@ use Illuminate\Support\Facades\Schedule;
 // Run every minute to enforce the LED on/off schedule
 Schedule::command(EnforceLedSchedule::class)->everyMinute()->withoutOverlapping();
 
-// Request a scheduled ESP32-CAM snapshot every 3 hours on the clock (12am, 3am, 6am, 9am, 12pm, 3pm, 6pm, 9pm)
-Schedule::call(function (): void {
+$scheduleCapture = static function (): void {
     Cache::add(
         CameraSnapshotController::CAPTURE_REQUEST_KEY,
         ['scheduled' => true],
         now()->addMinutes(5),
     );
-})->cron('0 */3 * * *')->timezone('Asia/Manila')->name('camera-scheduled-capture');
+};
+
+// Daytime captures using the grow LED: 06:01 (after 6am ON), 09:00, 12:00, 15:00, 17:59 (before 6pm OFF)
+Schedule::call($scheduleCapture)->cron('1 6 * * *')->timezone('Asia/Manila')->name('camera-capture-6am');
+Schedule::call($scheduleCapture)->cron('0 9,12,15 * * *')->timezone('Asia/Manila')->name('camera-capture-day');
+Schedule::call($scheduleCapture)->cron('59 17 * * *')->timezone('Asia/Manila')->name('camera-capture-6pm');
+
+// Nighttime captures (rely on ESP32-CAM flash): 9pm, 12am, 3am
+Schedule::call($scheduleCapture)->cron('0 0,3,21 * * *')->timezone('Asia/Manila')->name('camera-capture-night');
