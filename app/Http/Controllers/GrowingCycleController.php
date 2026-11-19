@@ -95,32 +95,7 @@ class GrowingCycleController extends Controller
                     ->get();
             }),
 
-            'breachSummary' => Inertia::defer(function () use ($cycle) {
-                $readings = SensorReading::where('growing_cycle_id', $cycle->id)->get();
-
-                $tempMin = 26;
-                $tempMax = 32;
-                $humLow = 75;
-                $humHigh = 95;
-                $co2Max = 1000;
-                $soilWarn = 30;
-
-                return [
-                    'temperature' => $readings->filter(
-                        fn ($r) => $r->temperature !== null && ($r->temperature < $tempMin || $r->temperature > $tempMax)
-                    )->count(),
-                    'humidity' => $readings->filter(
-                        fn ($r) => $r->humidity !== null && ($r->humidity < $humLow || $r->humidity > $humHigh)
-                    )->count(),
-                    'co2' => $readings->filter(
-                        fn ($r) => $r->co2_raw !== null && $r->co2_raw > $co2Max
-                    )->count(),
-                    'soil_moisture' => $readings->filter(
-                        fn ($r) => $r->soil_moisture !== null && $r->soil_moisture < $soilWarn
-                    )->count(),
-                    'total_readings' => $readings->count(),
-                ];
-            }),
+            'breachSummary' => Inertia::defer(fn () => $cycle->breachSummary()),
 
             'measurements' => Inertia::defer(fn () => $cycle->measurements()
                 ->with('user:id,name')

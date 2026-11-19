@@ -71,4 +71,32 @@ class GrowingCycle extends Model
 
         return max(1, (int) $start->diffInDays($end) + 1);
     }
+
+    /**
+     * Count out-of-range threshold breaches, deduplicated to at most 1 per minute per sensor.
+     *
+     * @return array{temperature: int, humidity: int, co2: int, soil_moisture: int, total_readings: int}
+     */
+    public function breachSummary(): array
+    {
+        $readings = $this->sensorReadings()->get(['temperature', 'humidity', 'co2_raw', 'soil_moisture', 'recorded_at']);
+
+        $minuteBucket = static fn (SensorReading $r): string => Carbon::parse($r->recorded_at)->format('Y-m-d H:i');
+
+        return [
+            'temperature' => $readings->filter(
+                fn (SensorReading $r) => $r->temperature !== null && ($r->temperature < 26 || $r->temperature > 32)
+            )->unique($minuteBucket)->count(),
+            'humidity' => $readings->filter(
+                fn (SensorReading $r) => $r->humidity !== null && ($r->humidity < 75 || $r->humidity > 95)
+            )->unique($minuteBucket)->count(),
+            'co2' => $readings->filter(
+                fn (SensorReading $r) => $r->co2_raw !== null && $r->co2_raw > 1000
+            )->unique($minuteBucket)->count(),
+            'soil_moisture' => $readings->filter(
+                fn (SensorReading $r) => $r->soil_moisture !== null && $r->soil_moisture < 30
+            )->unique($minuteBucket)->count(),
+            'total_readings' => $readings->count(),
+        ];
+    }
 }

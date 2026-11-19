@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\GrowingCycle;
+use App\Models\SensorReading;
 use App\Models\User;
 
 test('authorized user can create growing cycle with single common substrate', function () {
@@ -240,4 +241,47 @@ test('authorized user can create growing cycle with multiple fruiting bag types 
 
     $cycle = GrowingCycle::first();
     expect($cycle->fruiting_bags)->toHaveCount(2);
+});
+
+test('breach summary counts at most one breach per minute per sensor', function () {
+    $cycle = GrowingCycle::create([
+        'name' => 'Breach Minute Test',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+    ]);
+
+    $base = now()->startOfMinute();
+
+    // Three low-humidity readings in the same minute -> 1 breach
+    foreach ([0, 10, 20] as $sec) {
+        SensorReading::create([
+            'growing_cycle_id' => $cycle->id,
+            'temperature' => 28.0,
+            'humidity' => 65.0,
+            'co2_raw' => 600,
+            'light_level' => 300,
+            'soil_moisture' => 50,
+            'soil_status' => 'moist',
+            'recorded_at' => $base->copy()->addSeconds($sec),
+        ]);
+    }
+
+    // One low-humidity reading in the next minute -> +1 breach
+    SensorReading::create([
+        'growing_cycle_id' => $cycle->id,
+        'temperature' => 28.0,
+        'humidity' => 65.0,
+        'co2_raw' => 600,
+        'light_level' => 300,
+        'soil_moisture' => 50,
+        'soil_status' => 'moist',
+        'recorded_at' => $base->copy()->addMinute(),
+    ]);
+
+    $summary = $cycle->breachSummary();
+
+    expect($summary['humidity'])->toBe(2)
+        ->and($summary['total_readings'])->toBe(4);
 });
