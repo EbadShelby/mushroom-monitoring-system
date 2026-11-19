@@ -83,6 +83,12 @@ bool initCamera() {
     return false;
   }
 
+  sensor_t* s = esp_camera_sensor_get();
+  if (s != nullptr) {
+    s->set_hmirror(s, 1); // Fix left-right mirror
+    // s->set_vflip(s, 1); // Uncomment if mounted upside down
+  }
+
   Serial.println("✅ OV2640 Camera ready");
   return true;
 }
