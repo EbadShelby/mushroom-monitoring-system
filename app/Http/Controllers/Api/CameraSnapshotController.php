@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
+use App\Services\FirebaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -23,7 +24,7 @@ class CameraSnapshotController extends Controller
      * The ESP32-CAM polls this endpoint. When a user pressed "Capture now" on
      * the dashboard, the pending request is consumed and `capture` is true.
      */
-    public function command(Request $request): JsonResponse
+    public function command(Request $request, FirebaseService $firebase): JsonResponse
     {
         if (! $this->hasValidToken($request)) {
             return response()->json(['error' => 'Unauthorized.'], 401);
@@ -31,12 +32,21 @@ class CameraSnapshotController extends Controller
 
         /** @var array{id?: int, name?: string, scheduled?: bool}|null $pending */
         $pending = Cache::pull(self::CAPTURE_REQUEST_KEY);
+        $flash = false;
 
-        if ($pending !== null && ! ($pending['scheduled'] ?? false)) {
-            Cache::put(self::MANUAL_CAPTURE_KEY, $pending, now()->addMinutes(5));
+        if ($pending !== null) {
+            if (! ($pending['scheduled'] ?? false)) {
+                Cache::put(self::MANUAL_CAPTURE_KEY, $pending, now()->addMinutes(5));
+            }
+
+            $actuators = $firebase->getActuators();
+            $flash = ($actuators['led'] ?? 'off') !== 'on';
         }
 
-        return response()->json(['capture' => $pending !== null]);
+        return response()->json([
+            'capture' => $pending !== null,
+            'flash' => $flash,
+        ]);
     }
 
     /**

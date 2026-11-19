@@ -403,17 +403,29 @@ async function captureNow() {
 }
 
 // ── Delete snapshot ───────────────────────────────────────────────────────────
-async function deleteSnapshot(id: number) {
-    if (!confirm('Delete this photo permanently?')) {
+const confirmDeleteId = ref<number | null>(null);
+const deleting = ref(false);
+
+function deleteSnapshot(id: number) {
+    confirmDeleteId.value = id;
+}
+
+async function confirmDelete() {
+    if (confirmDeleteId.value === null) {
         return;
     }
 
+    deleting.value = true;
+
     try {
-        await axios.delete(`/api/camera/${id}`);
+        await axios.delete(`/api/camera/${confirmDeleteId.value}`);
         toast.success('Photo deleted');
+        confirmDeleteId.value = null;
         router.reload({ only: ['snapshots'] });
     } catch {
         toast.error('Delete failed');
+    } finally {
+        deleting.value = false;
     }
 }
 
@@ -1007,5 +1019,49 @@ function formatTime(iso: string | null | undefined): string {
                 </button>
             </div>
         </Transition>
+    </Teleport>
+
+    <!-- Delete Confirmation Modal -->
+    <Teleport to="body">
+        <div
+            v-if="confirmDeleteId !== null"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            @click.self="confirmDeleteId = null"
+        >
+            <div
+                class="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            >
+                <h3 class="text-base font-bold text-foreground dark:text-white">
+                    Delete Photo?
+                </h3>
+                <p
+                    class="mt-2 text-sm text-muted-foreground dark:text-slate-400"
+                >
+                    This photo will be permanently deleted and cannot be undone.
+                </p>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        :disabled="deleting"
+                        class="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground dark:border-slate-700 dark:text-slate-300"
+                        @click="confirmDeleteId = null"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="deleting"
+                        class="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-60"
+                        @click="confirmDelete"
+                    >
+                        <Loader2
+                            v-if="deleting"
+                            class="h-4 w-4 animate-spin"
+                        />
+                        {{ deleting ? 'Deleting...' : 'Delete' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </Teleport>
 </template>

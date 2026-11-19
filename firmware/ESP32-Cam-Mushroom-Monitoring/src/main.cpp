@@ -21,6 +21,10 @@ const unsigned long COMMAND_POLL_INTERVAL = 5UL * 1000UL;    // check Laravel fo
 unsigned long lastCommandPoll = 0;
 unsigned long retryAt = 0;
 bool pendingCapture = false;
+bool pendingFlash = false;
+
+// Onboard bright white flash LED on AI-Thinker ESP32-CAM
+#define FLASH_LED_PIN 4
 
 // ─── AI-Thinker ESP32-CAM Pinout ────────────────────
 #define PWDN_GPIO_NUM     32
@@ -116,11 +120,16 @@ void connectWiFi() {
 }
 
 // Returns true only if Laravel accepted the upload (HTTP 2xx)
-bool captureAndUpload() {
+bool captureAndUpload(bool useFlash) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("⚠️  WiFi disconnected — attempting reconnect...");
     WiFi.reconnect();
     return false;
+  }
+
+  if (useFlash) {
+    digitalWrite(FLASH_LED_PIN, HIGH);
+    delay(250);
   }
 
   // Discard a few frames so auto-exposure settles after idling
@@ -131,6 +140,8 @@ bool captureAndUpload() {
   }
 
   camera_fb_t* fb = esp_camera_fb_get();
+  digitalWrite(FLASH_LED_PIN, LOW);
+
   if (!fb) {
     Serial.println("❌ Camera capture failed");
     return false;
@@ -161,6 +172,9 @@ bool captureAndUpload() {
 }
 
 void setup() {
+  pinMode(FLASH_LED_PIN, OUTPUT);
+  digitalWrite(FLASH_LED_PIN, LOW);
+
   Serial.begin(115200);
   Serial.println("\n=== MycoSense ESP32-CAM ===");
 
@@ -173,8 +187,8 @@ void setup() {
   connectWiFi();
 }
 
-// Asks Laravel whether someone pressed "Capture Now" on the dashboard
-bool manualCaptureRequested() {
+// Asks Laravel whether a scheduled or manual capture is pending
+bool checkCameraCommand(bool& useFlash) {
   if (WiFi.status() != WL_CONNECTED) {
     return false;
   }
@@ -190,10 +204,12 @@ bool manualCaptureRequested() {
 
   int code = http.GET();
   bool requested = false;
+  useFlash = false;
 
   if (code == 200) {
     String payload = http.getString();
     requested = payload.indexOf("\"capture\":true") >= 0;
+    useFlash  = payload.indexOf("\"flash\":true") >= 0;
   }
 
   http.end();
@@ -206,16 +222,19 @@ void loop() {
   if (now - lastCommandPoll >= COMMAND_POLL_INTERVAL) {
     lastCommandPoll = now;
 
-    if (manualCaptureRequested()) {
-      Serial.println("📸 Capture requested by Laravel");
+    bool useFlash = false;
+    if (checkCameraCommand(useFlash)) {
+      Serial.printf("📸 Capture requested by Laravel (flash: %s)\n", useFlash ? "ON" : "OFF");
       pendingCapture = true;
+      pendingFlash = useFlash;
       retryAt = 0;
     }
   }
 
   if (pendingCapture && now >= retryAt) {
-    if (captureAndUpload()) {
+    if (captureAndUpload(pendingFlash)) {
       pendingCapture = false;
+      pendingFlash = false;
       retryAt = 0;
     } else {
       retryAt = now + RETRY_INTERVAL;

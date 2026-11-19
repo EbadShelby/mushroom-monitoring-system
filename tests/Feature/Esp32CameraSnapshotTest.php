@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CameraSnapshotController;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Models\User;
+use App\Services\FirebaseService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,6 +27,10 @@ function createActiveCycle(): GrowingCycle
 beforeEach(function () {
     config(['services.camera.token' => 'secret-token']);
     Storage::fake('public');
+
+    $firebase = Mockery::mock(FirebaseService::class);
+    $firebase->shouldReceive('getActuators')->andReturn(['led' => 'off'])->byDefault();
+    $this->app->instance(FirebaseService::class, $firebase);
 });
 
 test('esp32 cam can upload a snapshot that attaches to the active cycle', function () {
@@ -162,3 +167,25 @@ test('scheduled capture saves as auto-captured without user attribution', functi
     expect($snapshot->uploaded_by)->toBeNull()
         ->and($snapshot->notes)->toBe('Auto-captured by ESP32-CAM');
 });
+
+test('camera command enables flash when grow led is off and disables it when led is on', function (string $ledState, bool $expectedFlash) {
+    $firebase = Mockery::mock(FirebaseService::class);
+    $firebase->shouldReceive('getActuators')->once()->andReturn(['led' => $ledState]);
+    $this->app->instance(FirebaseService::class, $firebase);
+
+    Cache::put(
+        CameraSnapshotController::CAPTURE_REQUEST_KEY,
+        ['scheduled' => true],
+        now()->addMinutes(5),
+    );
+
+    $this->getJson('/api/camera-command', ['X-Camera-Token' => 'secret-token'])
+        ->assertOk()
+        ->assertJson([
+            'capture' => true,
+            'flash' => $expectedFlash,
+        ]);
+})->with([
+    'led off' => ['off', true],
+    'led on' => ['on', false],
+]);
