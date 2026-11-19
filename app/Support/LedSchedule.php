@@ -32,4 +32,24 @@ class LedSchedule
             ? $currentHour >= $onHour && $currentHour < $offHour
             : $currentHour >= $onHour || $currentHour < $offHour;
     }
+
+    /**
+     * Same as isWithinOnWindow(), but skips the first few minutes after on_hour
+     * so the ESP32 relay has time to physically switch the grow LED on.
+     */
+    public static function isWithinOnWindowAfterGrace(int $graceMinutes = 2): bool
+    {
+        if (! self::isWithinOnWindow()) {
+            return false;
+        }
+
+        ['on_hour' => $onHour] = self::window();
+        $now = now();
+
+        if ((int) $now->format('G') === $onHour && (int) $now->format('i') < $graceMinutes) {
+            return false;
+        }
+
+        return true;
+    }
 }

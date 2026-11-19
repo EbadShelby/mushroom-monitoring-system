@@ -182,3 +182,15 @@ test('high light still triggers alert during LED nighttime schedule', function (
 
     expect(collect($result['alerts'])->pluck('sensor'))->toContain('light');
 });
+
+test('low light is suppressed during the 2-minute LED turn-on grace period at 6am', function () {
+    $this->travelTo(now()->setTime(6, 0, 30));
+
+    $duringGrace = app(ThresholdService::class)->evaluate(['light_level' => 50]);
+    expect(collect($duringGrace['alerts'])->pluck('sensor'))->not->toContain('light');
+
+    $this->travelTo(now()->setTime(6, 3, 0));
+
+    $afterGrace = app(ThresholdService::class)->evaluate(['light_level' => 50]);
+    expect(collect($afterGrace['alerts'])->pluck('sensor'))->toContain('light');
+});

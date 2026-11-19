@@ -236,8 +236,8 @@ class ThresholdService
         if (isset($reading['light_level'])) {
             $light = (float) $reading['light_level'];
 
-            // Only alert on low light during the active LED ON window; darkness is expected at night.
-            if ($light < $t['light_min'] && LedSchedule::isWithinOnWindow()) {
+            // Only alert on low light during the active LED ON window (after a short turn-on grace period).
+            if ($light < $t['light_min'] && LedSchedule::isWithinOnWindowAfterGrace()) {
                 $alerts[] = $this->alert(
                     sensor: 'light',
                     value: $light,
