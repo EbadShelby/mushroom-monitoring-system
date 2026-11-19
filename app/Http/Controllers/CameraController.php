@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\CameraSnapshotController;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Models\UserLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,6 +75,23 @@ class CameraController extends Controller
         UserLog::record('Uploaded camera snapshot', $snapshot->file_name);
 
         return response()->json(['success' => true, 'snapshot' => $snapshot]);
+    }
+
+    public function requestCapture(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $isNewRequest = Cache::add(
+            CameraSnapshotController::CAPTURE_REQUEST_KEY,
+            ['id' => $user?->id, 'name' => $user?->name ?? 'Unknown'],
+            now()->addMinute(),
+        );
+
+        if ($isNewRequest) {
+            UserLog::record('Requested camera capture', $user?->name ?? 'Unknown');
+        }
+
+        return response()->json(['success' => true, 'already_pending' => ! $isNewRequest], 202);
     }
 
     public function destroy(CameraSnapshot $cameraSnapshot): JsonResponse

@@ -9,12 +9,16 @@ const char* password = "wifi_password";
 
 // ─── Server ─────────────────────────────────────────
 const char* snapshotUrl = "http://192.168.254.148:8080/api/camera-snapshot";
+const char* commandUrl  = "http://192.168.254.148:8080/api/camera-command";
 const char* cameraToken = "CHANGE_ME_LONG_RANDOM_TOKEN";   // must match CAMERA_TOKEN in Laravel .env
 
 // ─── Timing ─────────────────────────────────────────
 const unsigned long CAPTURE_INTERVAL = 3UL * 60UL * 60UL * 1000UL;  // 3 hours
 const unsigned long RETRY_INTERVAL   = 30UL * 1000UL;               // retry after a failed upload
 const unsigned long WIFI_TIMEOUT_MS  = 20UL * 1000UL;
+const unsigned long COMMAND_POLL_INTERVAL = 5UL * 1000UL;           // check for manual capture requests
+
+unsigned long lastCommandPoll = 0;
 
 unsigned long lastCapture = 0;
 unsigned long retryAt = 0;
@@ -162,6 +166,30 @@ void setup() {
   connectWiFi();
 }
 
+// Asks Laravel whether someone pressed "Capture Now" on the dashboard
+bool manualCaptureRequested() {
+  if (WiFi.status() != WL_CONNECTED) {
+    return false;
+  }
+
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.begin(commandUrl);
+  http.addHeader("Accept", "application/json");
+  http.addHeader("X-Camera-Token", cameraToken);
+
+  int code = http.GET();
+  bool requested = false;
+
+  if (code == 200) {
+    String payload = http.getString();
+    requested = payload.indexOf("\"capture\":true") >= 0;
+  }
+
+  http.end();
+  return requested;
+}
+
 void loop() {
   unsigned long now = millis();
 
@@ -177,5 +205,14 @@ void loop() {
     }
   }
 
-  delay(1000);
+  if (now - lastCommandPoll >= COMMAND_POLL_INTERVAL) {
+    lastCommandPoll = now;
+
+    if (manualCaptureRequested()) {
+      Serial.println("🖱️  Manual capture requested from dashboard");
+      captureAndUpload();
+    }
+  }
+
+  delay(500);
 }

@@ -48,4 +48,9 @@ return [
         'sender_name' => env('SEMAPHORE_SENDER_NAME', 'CotSU-IoT'),
     ],
 
+    'camera' => [
+        // Shared secret the ESP32-CAM sends in the X-Camera-Token header.
+        'token' => env('CAMERA_TOKEN'),
+    ],
+
 ];

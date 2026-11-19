@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $flush_number
  * @property string $captured_date
  * @property string|null $notes
- * @property int $uploaded_by
+ * @property int|null $uploaded_by
  */
 class CameraSnapshot extends Model
 {

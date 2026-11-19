@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Camera Management
         Route::post('api/camera/upload', [CameraController::class, 'store'])->name('camera.store');
+        Route::post('api/camera/capture', [CameraController::class, 'requestCapture'])->name('camera.capture');
         Route::delete('api/camera/{cameraSnapshot}', [CameraController::class, 'destroy'])->name('camera.destroy');
 
         // Measurement Management

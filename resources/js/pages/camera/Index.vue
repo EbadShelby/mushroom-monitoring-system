@@ -288,6 +288,43 @@ async function submitUpload() {
     }
 }
 
+// ── Manual capture (ESP32-CAM) ────────────────────────────────────────────────
+const capturing = ref(false);
+
+async function captureNow() {
+    capturing.value = true;
+    const countBefore = props.snapshots.length;
+
+    try {
+        await axios.post('/api/camera/capture');
+    } catch (e: any) {
+        toast.error(e.response?.data?.error ?? 'Could not request a capture.');
+        capturing.value = false;
+
+        return;
+    }
+
+    toast.info('Capture requested. Waiting for the camera...');
+
+    // The camera polls every few seconds, so check for the new photo for ~45 s.
+    for (let attempt = 0; attempt < 15; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise<void>((resolve) =>
+            router.reload({ only: ['snapshots'], onFinish: () => resolve() }),
+        );
+
+        if (props.snapshots.length > countBefore) {
+            toast.success('New photo captured!');
+            capturing.value = false;
+
+            return;
+        }
+    }
+
+    toast.error('Camera did not respond. Check that the ESP32-CAM is online.');
+    capturing.value = false;
+}
+
 // ── Delete snapshot ───────────────────────────────────────────────────────────
 async function deleteSnapshot(id: number) {
     if (!confirm('Delete this photo permanently?')) {
@@ -357,15 +394,29 @@ function formatDate(d: string | null) {
                     Daily mushroom documentation timeline
                 </p>
             </div>
-            <button
+            <div
                 v-if="userRole !== 'student'"
-                id="upload-photo-btn"
-                class="flex items-center gap-2 self-start rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 sm:self-auto dark:text-white"
-                @click="showUpload = true"
+                class="flex flex-wrap items-center gap-2 self-start sm:self-auto"
             >
-                <Upload class="h-4 w-4" />
-                Upload Photo
-            </button>
+                <button
+                    id="capture-now-btn"
+                    :disabled="capturing"
+                    class="flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-600 transition hover:bg-emerald-600/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400"
+                    @click="captureNow"
+                >
+                    <Loader2 v-if="capturing" class="h-4 w-4 animate-spin" />
+                    <Camera v-else class="h-4 w-4" />
+                    {{ capturing ? 'Capturing...' : 'Capture Now' }}
+                </button>
+                <button
+                    id="upload-photo-btn"
+                    class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
+                    @click="showUpload = true"
+                >
+                    <Upload class="h-4 w-4" />
+                    Upload Photo
+                </button>
+            </div>
         </div>
 
         <!-- Filter bar -->
