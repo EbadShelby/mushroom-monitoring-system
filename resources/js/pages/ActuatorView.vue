@@ -59,19 +59,32 @@ const logsData = ref<Paginated<ActuatorLog> | null>(props.logs ?? null);
 const logsLoading = ref(false);
 const logsPage = ref(1);
 
-async function fetchLogs(p = 1) {
+watch(
+    () => props.logs,
+    (fresh) => {
+        if (fresh) {
+            logsData.value = fresh;
+        }
+    },
+);
+
+function fetchLogs(p = 1) {
     logsLoading.value = true;
     logsPage.value = p;
 
-    try {
-        const res = await axios.get('/actuators', {
-            params: { page: p },
-            headers: { 'X-Inertia': true },
-        });
-        logsData.value = res.data.props?.logs ?? logsData.value;
-    } finally {
-        logsLoading.value = false;
-    }
+    router.get(
+        '/actuators',
+        { page: p },
+        {
+            only: ['logs'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onFinish: () => {
+                logsLoading.value = false;
+            },
+        },
+    );
 }
 
 // ── Actuator toggle ──────────────────────────────────────────────────────────
