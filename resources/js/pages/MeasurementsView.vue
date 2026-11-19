@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Ruler, Plus, X, ListTodo, Activity } from '@lucide/vue';
+import { Ruler, Plus, X, ListTodo } from '@lucide/vue';
 import axios from 'axios';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
+import PaginationBar from '@/components/PaginationBar.vue';
 import type { Paginated } from '@/types';
 
 defineOptions({
@@ -38,6 +39,14 @@ const userRole = computed(
 
 const isModalOpen = ref(false);
 const isSubmitting = ref(false);
+
+function goToPage(page: number) {
+    router.get(
+        '/measurements',
+        { page },
+        { preserveScroll: true, preserveState: true },
+    );
+}
 
 const form = ref({
     growing_cycle_id: '',
@@ -256,6 +265,13 @@ async function deleteMeasurement(id: number) {
                         </tbody>
                     </table>
                 </div>
+                <PaginationBar
+                    :current-page="measurements.current_page"
+                    :last-page="measurements.last_page"
+                    :total="measurements.total"
+                    unit="measurements"
+                    @change="goToPage"
+                />
             </div>
         </div>
     </div>

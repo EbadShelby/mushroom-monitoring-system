@@ -8,8 +8,6 @@ import {
     ToggleLeft,
     ToggleRight,
     History,
-    ChevronLeft,
-    ChevronRight,
     Settings,
     Lock,
     LockOpen,
@@ -20,6 +18,7 @@ import {
 import axios from 'axios';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import PaginationBar from '@/components/PaginationBar.vue';
 import { useSensorStore } from '@/stores/useSensorStore';
 import type {
     ActuatorLog,
@@ -1022,35 +1021,15 @@ const triggerLabels: Record<string, string> = {
                 </div>
 
                 <!-- Pagination -->
-                <div
-                    v-if="logsData && logsData.last_page > 1"
-                    class="flex flex-col gap-3 border-t border-border/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                    <p class="text-sm text-muted-foreground">
-                        Page {{ logsData.current_page }} of
-                        {{ logsData.last_page }}
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <button
-                            id="btn-logs-prev"
-                            @click="fetchLogs(logsData!.current_page - 1)"
-                            :disabled="logsData.current_page <= 1"
-                            class="flex items-center gap-1 rounded-lg border border-border/50 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            <ChevronLeft class="h-4 w-4" /> Prev
-                        </button>
-                        <button
-                            id="btn-logs-next"
-                            @click="fetchLogs(logsData!.current_page + 1)"
-                            :disabled="
-                                logsData.current_page >= logsData.last_page
-                            "
-                            class="flex items-center gap-1 rounded-lg border border-border/50 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            Next <ChevronRight class="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
+                <PaginationBar
+                    v-if="logsData"
+                    :current-page="logsData.current_page"
+                    :last-page="logsData.last_page"
+                    :total="logsData.total"
+                    unit="events"
+                    :loading="logsLoading"
+                    @change="fetchLogs"
+                />
             </div>
         </div>
     </div>

@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import {
-    Bell,
-    Filter,
-    ChevronLeft,
-    ChevronRight,
-    BarChart2,
-    AlertTriangle,
-} from '@lucide/vue';
+import { Bell, Filter, BarChart2, AlertTriangle } from '@lucide/vue';
 import type { ApexOptions } from 'apexcharts';
 import { ref, computed, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import PaginationBar from '@/components/PaginationBar.vue';
 import {
     Dialog,
     DialogContent,
@@ -395,41 +389,25 @@ const sensorLabel: Record<string, string> = {
                 </div>
 
                 <!-- Pagination -->
-                <div
-                    v-if="logsData && logsData.last_page > 1"
-                    class="flex flex-col gap-3 border-t border-border/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                    <p class="text-sm text-muted-foreground">
-                        Page {{ logsData.current_page }} of
-                        {{ logsData.last_page }}
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <button
-                            id="btn-alert-prev"
-                            @click="fetchLogs(logsData!.current_page - 1)"
-                            :disabled="logsData.current_page <= 1"
-                            class="flex items-center gap-1 rounded-lg border border-border/50 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            <ChevronLeft class="h-4 w-4" /> Prev
-                        </button>
-                        <button
-                            id="btn-alert-next"
-                            @click="fetchLogs(logsData!.current_page + 1)"
-                            :disabled="
-                                logsData.current_page >= logsData.last_page
-                            "
-                            class="flex items-center gap-1 rounded-lg border border-border/50 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            Next <ChevronRight class="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
+                <PaginationBar
+                    v-if="logsData"
+                    :current-page="logsData.current_page"
+                    :last-page="logsData.last_page"
+                    :total="logsData.total"
+                    unit="alerts"
+                    :loading="isLoading"
+                    @change="fetchLogs"
+                />
             </div>
         </div>
 
         <Dialog
             :open="selectedAlert !== null"
-            @update:open="(open) => { if (!open) selectedAlert = null; }"
+            @update:open="
+                (open) => {
+                    if (!open) selectedAlert = null;
+                }
+            "
         >
             <DialogContent v-if="selectedAlert" class="sm:max-w-lg">
                 <DialogHeader>
@@ -467,19 +445,25 @@ const sensorLabel: Record<string, string> = {
                     <div class="grid grid-cols-3 gap-3 text-xs">
                         <div class="rounded-lg border border-border/40 p-2.5">
                             <p class="text-muted-foreground">Value</p>
-                            <p class="mt-0.5 font-mono font-semibold text-foreground">
+                            <p
+                                class="mt-0.5 font-mono font-semibold text-foreground"
+                            >
                                 {{ selectedAlert.value_at_alert }}
                             </p>
                         </div>
                         <div class="rounded-lg border border-border/40 p-2.5">
                             <p class="text-muted-foreground">Threshold</p>
-                            <p class="mt-0.5 font-semibold text-foreground capitalize">
+                            <p
+                                class="mt-0.5 font-semibold text-foreground capitalize"
+                            >
                                 {{ selectedAlert.threshold_exceeded }}
                             </p>
                         </div>
                         <div class="rounded-lg border border-border/40 p-2.5">
                             <p class="text-muted-foreground">Recipient</p>
-                            <p class="mt-0.5 truncate font-mono font-semibold text-foreground">
+                            <p
+                                class="mt-0.5 truncate font-mono font-semibold text-foreground"
+                            >
                                 {{ selectedAlert.recipient_number || '—' }}
                             </p>
                         </div>

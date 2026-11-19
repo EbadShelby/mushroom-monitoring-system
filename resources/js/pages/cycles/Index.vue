@@ -3,8 +3,6 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Sprout,
     Plus,
-    ChevronLeft,
-    ChevronRight,
     Check,
     CheckCircle2,
     XCircle,
@@ -20,6 +18,7 @@ import {
 import axios from 'axios';
 import { ref, computed, nextTick } from 'vue';
 import { toast } from 'vue-sonner';
+import PaginationBar from '@/components/PaginationBar.vue';
 import * as cyclesApi from '@/routes/cycles';
 import type { GrowingCycle, Paginated } from '@/types';
 
@@ -291,12 +290,15 @@ async function cancelCycle(cycle: GrowingCycle) {
 }
 
 // ── Pagination ─────────────────────────────────────────────────────────────────
-function goToPage(url: string | null) {
-    if (!url) {
-        return;
-    }
-
-    router.visit(url, { preserveScroll: true });
+function goToPage(page: number) {
+    router.get(
+        cyclesApi.index.url(),
+        {
+            page,
+            status: statusFilter.value || undefined,
+        },
+        { preserveScroll: true, preserveState: true },
+    );
 }
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
@@ -438,185 +440,158 @@ function formatDate(d: string | null) {
 
             <div v-else class="overflow-x-auto">
                 <table class="w-full min-w-[640px]">
-                <thead>
-                    <tr
-                        class="border-b border-border/50 bg-muted/30 dark:border-slate-700/50 dark:bg-slate-900/50"
-                    >
-                        <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
+                    <thead>
+                        <tr
+                            class="border-b border-border/50 bg-muted/30 dark:border-slate-700/50 dark:bg-slate-900/50"
                         >
-                            Cycle
-                        </th>
-                        <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                        >
-                            Variety
-                        </th>
-                        <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                        >
-                            Start Date
-                        </th>
-                        <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                        >
-                            End Date
-                        </th>
-                        <th
-                            class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                        >
-                            Status
-                        </th>
-                        <th
-                            class="px-5 py-3.5 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                        >
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody
-                    class="divide-y divide-border/50 dark:divide-slate-700/30"
-                >
-                    <tr
-                        v-for="cycle in cycles.data"
-                        :key="cycle.id"
-                        class="group transition hover:bg-muted dark:bg-slate-700/20"
-                    >
-                        <td class="px-5 py-4">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10"
-                                >
-                                    <Sprout class="h-4 w-4 text-emerald-400" />
-                                </div>
-                                <div>
-                                    <p
-                                        class="font-semibold text-foreground dark:text-white"
-                                    >
-                                        {{ cycle.name }}
-                                    </p>
-                                    <p
-                                        v-if="cycle.day_count"
-                                        class="text-xs text-muted-foreground dark:text-slate-400"
-                                    >
-                                        Day {{ cycle.day_count }}
-                                    </p>
-                                </div>
-                            </div>
-                        </td>
-                        <td
-                            class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
-                        >
-                            {{ cycle.mushroom_variety }}
-                        </td>
-                        <td
-                            class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
-                        >
-                            <div class="flex items-center gap-1.5">
-                                <CalendarDays
-                                    class="h-3.5 w-3.5 text-slate-500"
-                                />
-                                {{ formatDate(cycle.start_date) }}
-                            </div>
-                        </td>
-                        <td
-                            class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
-                        >
-                            {{ formatDate(cycle.end_date) }}
-                        </td>
-                        <td class="px-5 py-4">
-                            <span
-                                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset"
-                                :class="statusCfg(cycle.status).class"
+                            <th
+                                class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
-                                <component
-                                    :is="statusCfg(cycle.status).icon"
-                                    class="h-3 w-3"
-                                />
-                                {{ statusCfg(cycle.status).label }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="flex items-center justify-end gap-2">
-                                <Link
-                                    :href="cyclesApi.show(cycle.id)"
-                                    class="flex shrink-0 items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium whitespace-nowrap text-foreground transition hover:bg-muted-foreground/20 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                                Cycle
+                            </th>
+                            <th
+                                class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
+                            >
+                                Variety
+                            </th>
+                            <th
+                                class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
+                            >
+                                Start Date
+                            </th>
+                            <th
+                                class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
+                            >
+                                End Date
+                            </th>
+                            <th
+                                class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
+                            >
+                                Status
+                            </th>
+                            <th
+                                class="px-5 py-3.5 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
+                            >
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody
+                        class="divide-y divide-border/50 dark:divide-slate-700/30"
+                    >
+                        <tr
+                            v-for="cycle in cycles.data"
+                            :key="cycle.id"
+                            class="group transition hover:bg-muted dark:bg-slate-700/20"
+                        >
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10"
+                                    >
+                                        <Sprout
+                                            class="h-4 w-4 text-emerald-400"
+                                        />
+                                    </div>
+                                    <div>
+                                        <p
+                                            class="font-semibold text-foreground dark:text-white"
+                                        >
+                                            {{ cycle.name }}
+                                        </p>
+                                        <p
+                                            v-if="cycle.day_count"
+                                            class="text-xs text-muted-foreground dark:text-slate-400"
+                                        >
+                                            Day {{ cycle.day_count }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td
+                                class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
+                            >
+                                {{ cycle.mushroom_variety }}
+                            </td>
+                            <td
+                                class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
+                            >
+                                <div class="flex items-center gap-1.5">
+                                    <CalendarDays
+                                        class="h-3.5 w-3.5 text-slate-500"
+                                    />
+                                    {{ formatDate(cycle.start_date) }}
+                                </div>
+                            </td>
+                            <td
+                                class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
+                            >
+                                {{ formatDate(cycle.end_date) }}
+                            </td>
+                            <td class="px-5 py-4">
+                                <span
+                                    class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset"
+                                    :class="statusCfg(cycle.status).class"
                                 >
-                                    <Eye class="h-3.5 w-3.5 shrink-0" />
-                                    View
-                                </Link>
-                                <button
-                                    v-if="
-                                        cycle.status === 'active' &&
-                                        userRole !== 'student'
-                                    "
-                                    :disabled="actioning === cycle.id"
-                                    class="flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-blue-700 ring-1 ring-blue-600/20 transition hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-600/20 dark:text-blue-300 dark:ring-blue-500/30 dark:hover:bg-blue-600/30"
-                                    @click="endCycle(cycle)"
+                                    <component
+                                        :is="statusCfg(cycle.status).icon"
+                                        class="h-3 w-3"
+                                    />
+                                    {{ statusCfg(cycle.status).label }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div
+                                    class="flex items-center justify-end gap-2"
                                 >
-                                    <SquareCheck class="h-3.5 w-3.5 shrink-0" />
-                                    End
-                                </button>
-                                <button
-                                    v-if="
-                                        cycle.status === 'active' &&
-                                        userRole !== 'student'
-                                    "
-                                    :disabled="actioning === cycle.id"
-                                    class="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-red-700 ring-1 ring-red-600/20 transition hover:bg-red-200 disabled:opacity-50 dark:bg-red-600/20 dark:text-red-300 dark:ring-red-500/30 dark:hover:bg-red-600/30"
-                                    @click="cancelCycle(cycle)"
-                                >
-                                    <Ban class="h-3.5 w-3.5 shrink-0" />
-                                    Cancel
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
+                                    <Link
+                                        :href="cyclesApi.show(cycle.id)"
+                                        class="flex shrink-0 items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium whitespace-nowrap text-foreground transition hover:bg-muted-foreground/20 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                                    >
+                                        <Eye class="h-3.5 w-3.5 shrink-0" />
+                                        View
+                                    </Link>
+                                    <button
+                                        v-if="
+                                            cycle.status === 'active' &&
+                                            userRole !== 'student'
+                                        "
+                                        :disabled="actioning === cycle.id"
+                                        class="flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-blue-700 ring-1 ring-blue-600/20 transition hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-600/20 dark:text-blue-300 dark:ring-blue-500/30 dark:hover:bg-blue-600/30"
+                                        @click="endCycle(cycle)"
+                                    >
+                                        <SquareCheck
+                                            class="h-3.5 w-3.5 shrink-0"
+                                        />
+                                        End
+                                    </button>
+                                    <button
+                                        v-if="
+                                            cycle.status === 'active' &&
+                                            userRole !== 'student'
+                                        "
+                                        :disabled="actioning === cycle.id"
+                                        class="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-red-700 ring-1 ring-red-600/20 transition hover:bg-red-200 disabled:opacity-50 dark:bg-red-600/20 dark:text-red-300 dark:ring-red-500/30 dark:hover:bg-red-600/30"
+                                        @click="cancelCycle(cycle)"
+                                    >
+                                        <Ban class="h-3.5 w-3.5 shrink-0" />
+                                        Cancel
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
 
             <!-- Pagination -->
-            <div
-                v-if="cycles.last_page > 1"
-                class="flex flex-col gap-3 border-t border-border/50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700/50"
-            >
-                <p class="text-xs text-muted-foreground dark:text-slate-400">
-                    Showing {{ cycles.from }}–{{ cycles.to }} of
-                    {{ cycles.total }} cycles
-                </p>
-                <div class="flex flex-wrap gap-1">
-                    <button
-                        :disabled="cycles.current_page === 1"
-                        class="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted disabled:opacity-40 dark:bg-slate-700 dark:text-slate-400"
-                        @click="goToPage(cycles.links[0]?.url)"
-                    >
-                        <ChevronLeft class="h-4 w-4" />
-                    </button>
-                    <button
-                        v-for="link in cycles.links.slice(1, -1)"
-                        :key="link.label"
-                        :disabled="!link.url"
-                        class="min-w-8 rounded-lg px-2 py-1 text-xs font-medium transition"
-                        :class="
-                            link.active
-                                ? 'bg-emerald-600 text-foreground dark:text-white'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-slate-700 dark:text-slate-400 dark:hover:text-white'
-                        "
-                        @click="goToPage(link.url)"
-                        v-html="link.label"
-                    />
-                    <button
-                        :disabled="cycles.current_page === cycles.last_page"
-                        class="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted disabled:opacity-40 dark:bg-slate-700 dark:text-slate-400"
-                        @click="
-                            goToPage(cycles.links[cycles.links.length - 1]?.url)
-                        "
-                    >
-                        <ChevronRight class="h-4 w-4" />
-                    </button>
-                </div>
-            </div>
+            <PaginationBar
+                :current-page="cycles.current_page"
+                :last-page="cycles.last_page"
+                :total="cycles.total"
+                unit="cycles"
+                @change="goToPage"
+            />
         </div>
     </div>
 
@@ -849,7 +824,9 @@ function formatDate(d: string | null) {
 
                                 <!-- Checklist Mode -->
                                 <div v-else class="space-y-2.5">
-                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <div
+                                        class="grid grid-cols-1 gap-2 sm:grid-cols-2"
+                                    >
                                         <button
                                             v-for="sub in COMMON_SUBSTRATES"
                                             :key="sub.id"

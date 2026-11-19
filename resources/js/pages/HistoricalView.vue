@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import {
-    Activity,
-    Download,
-    Filter,
-    ChevronLeft,
-    ChevronRight,
-    BarChart2,
-} from '@lucide/vue';
+import { Activity, Download, Filter, BarChart2 } from '@lucide/vue';
 import type { ApexOptions } from 'apexcharts';
 import axios from 'axios';
 import { ref, computed, onMounted } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import PaginationBar from '@/components/PaginationBar.vue';
 import type { SensorReading, Paginated } from '@/types';
 
 defineOptions({
@@ -43,6 +37,7 @@ const sensorOptions = [
 const readings = ref<Paginated<SensorReading> | null>(null);
 const isLoading = ref(false);
 const currentPage = ref(1);
+const perPage = ref(50);
 
 async function fetchData() {
     isLoading.value = true;
@@ -50,7 +45,7 @@ async function fetchData() {
     try {
         const params: Record<string, unknown> = {
             page: currentPage.value,
-            per_page: 50,
+            per_page: perPage.value,
             sensors: selectedSensors.value,
         };
 
@@ -409,34 +404,33 @@ onMounted(() => {
 
                 <!-- Pagination -->
                 <div
-                    v-if="readings && readings.last_page > 1"
-                    class="flex flex-col gap-3 border-t border-border/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    v-if="readings"
+                    class="flex items-center justify-between gap-3 border-t border-border/50 px-4 py-3 sm:px-6"
                 >
-                    <p class="text-sm text-muted-foreground">
-                        Page {{ readings.current_page }} of
-                        {{ readings.last_page }} · {{ readings.total }} records
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <button
-                            id="btn-prev-page"
-                            @click="goToPage(readings!.current_page - 1)"
-                            :disabled="readings.current_page <= 1"
-                            class="flex items-center gap-1 rounded-lg border border-border/50 px-3 py-1.5 text-sm text-muted-foreground transition-all hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
+                    <label
+                        class="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                        Rows per page
+                        <select
+                            v-model.number="perPage"
+                            class="h-8 rounded-lg border border-border/50 bg-background px-2 text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                            @change="applyFilters"
                         >
-                            <ChevronLeft class="h-4 w-4" /> Prev
-                        </button>
-                        <button
-                            id="btn-next-page"
-                            @click="goToPage(readings!.current_page + 1)"
-                            :disabled="
-                                readings.current_page >= readings.last_page
-                            "
-                            class="flex items-center gap-1 rounded-lg border border-border/50 px-3 py-1.5 text-sm text-muted-foreground transition-all hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            Next <ChevronRight class="h-4 w-4" />
-                        </button>
-                    </div>
+                            <option :value="25">25</option>
+                            <option :value="50">50</option>
+                            <option :value="100">100</option>
+                            <option :value="200">200</option>
+                        </select>
+                    </label>
                 </div>
+                <PaginationBar
+                    v-if="readings"
+                    :current-page="readings.current_page"
+                    :last-page="readings.last_page"
+                    :total="readings.total"
+                    :loading="isLoading"
+                    @change="goToPage"
+                />
             </div>
         </div>
     </div>
