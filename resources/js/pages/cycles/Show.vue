@@ -188,8 +188,6 @@ const breachCards = computed(() => [
 const showMeasureModal = ref(false);
 const measureForm = ref({
     observed_date: new Date().toISOString().split('T')[0],
-    flush_number: 1,
-    weight_g: '',
     height_cm: '',
     cap_diameter_cm: '',
     fruiting_body_count: '',
@@ -211,8 +209,6 @@ async function saveMeasurement() {
         showMeasureModal.value = false;
         measureForm.value = {
             observed_date: new Date().toISOString().split('T')[0],
-            flush_number: 1,
-            weight_g: '',
             height_cm: '',
             cap_diameter_cm: '',
             fruiting_body_count: '',
@@ -634,17 +630,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <th
                                 class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
-                                Flush
-                            </th>
-                            <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                            >
-                                Weight (g)
-                            </th>
-                            <th
-                                class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                            >
-                                Height (cm)
+                                Avg Height (cm)
                             </th>
                             <th
                                 class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
@@ -679,17 +665,6 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                                 class="py-3 pr-4 text-foreground/80 dark:text-slate-300"
                             >
                                 {{ formatDate(m.observed_date) }}
-                            </td>
-                            <td class="py-3 pr-4">
-                                <span
-                                    class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400"
-                                    >Flush {{ m.flush_number }}</span
-                                >
-                            </td>
-                            <td
-                                class="py-3 pr-4 font-mono font-bold text-emerald-400"
-                            >
-                                {{ m.weight_g ?? '—' }}
                             </td>
                             <td
                                 class="py-3 pr-4 text-foreground/80 dark:text-slate-300"
@@ -871,36 +846,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Flush #
-                                    <span class="text-red-400">*</span></label
-                                >
-                                <input
-                                    v-model.number="measureForm.flush_number"
-                                    type="number"
-                                    min="1"
-                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                />
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div>
-                                <label
-                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Weight (g)</label
-                                >
-                                <input
-                                    v-model="measureForm.weight_g"
-                                    type="number"
-                                    step="0.1"
-                                    min="0"
-                                    placeholder="0.0"
-                                    class="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-emerald-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label
-                                    class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Fruiting Bodies</label
+                                    >Fruiting Body Count</label
                                 >
                                 <input
                                     v-model.number="
@@ -917,7 +863,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Height (cm)</label
+                                    >Avg Height (cm)</label
                                 >
                                 <input
                                     v-model="measureForm.height_cm"

@@ -137,8 +137,7 @@
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Flush #</th>
-                <th>Height (cm)</th>
+                <th>Avg Height (cm)</th>
                 <th>Cap Diam. (cm)</th>
                 <th>Fruiting Bodies</th>
                 <th>Logged By</th>
@@ -149,7 +148,6 @@
             @foreach($measurements as $m)
             <tr>
                 <td>{{ \Carbon\Carbon::parse($m->observed_date)->format('M d, Y') }}</td>
-                <td>Flush {{ $m->flush_number }}</td>
                 <td>{{ $m->height_cm ?? '—' }}</td>
                 <td>{{ $m->cap_diameter_cm ?? '—' }}</td>
                 <td>{{ $m->fruiting_body_count ?? '—' }}</td>

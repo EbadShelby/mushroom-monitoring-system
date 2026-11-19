@@ -76,7 +76,7 @@ interface BagRow {
 const showModal = ref(false);
 const creating = ref(false);
 const bagRows = ref<BagRow[]>([
-    { selectedVariety: MUSHROOM_VARIETIES[0], customVariety: '', count: 10 },
+    { selectedVariety: MUSHROOM_VARIETIES[0], customVariety: '', count: 1 },
 ]);
 const form = ref({
     name: '',
@@ -105,7 +105,7 @@ function removeBagRow(idx: number) {
 
 function resetBagRows() {
     bagRows.value = [
-        { selectedVariety: MUSHROOM_VARIETIES[0], customVariety: '', count: 10 },
+        { selectedVariety: MUSHROOM_VARIETIES[0], customVariety: '', count: 1 },
     ];
 }
 

@@ -51,24 +51,36 @@ const intervalOptions = [
     { value: '24', label: 'Daily (24 Hours)' },
 ];
 
+type SnapshotSource = 'auto' | 'manual' | 'upload';
+
+const SOURCE_BADGES: Record<
+    SnapshotSource,
+    { label: string; classes: string }
+> = {
+    auto: { label: 'Auto', classes: 'bg-emerald-600/85 text-white' },
+    manual: { label: 'Manual', classes: 'bg-sky-600/85 text-white' },
+    upload: { label: 'Uploaded', classes: 'bg-slate-700/85 text-white' },
+};
+
+function getSnapshotSource(snap: CameraSnapshot): SnapshotSource {
+    if (snap.notes === 'Auto-captured by ESP32-CAM') {
+        return 'auto';
+    }
+
+    if (snap.notes?.startsWith('Manual capture')) {
+        return 'manual';
+    }
+
+    return 'upload';
+}
+
 const filteredSnapshots = computed(() => {
     const bySource = props.snapshots.filter((snap) => {
-        if (filterSource.value === 'auto') {
-            return snap.notes === 'Auto-captured by ESP32-CAM';
+        if (!filterSource.value) {
+            return true;
         }
 
-        if (filterSource.value === 'manual') {
-            return snap.notes?.startsWith('Manual capture') ?? false;
-        }
-
-        if (filterSource.value === 'upload') {
-            return (
-                snap.notes !== 'Auto-captured by ESP32-CAM' &&
-                !(snap.notes?.startsWith('Manual capture') ?? false)
-            );
-        }
-
-        return true;
+        return getSnapshotSource(snap) === filterSource.value;
     });
 
     if (!filterInterval.value) {
@@ -653,12 +665,27 @@ function formatTime(iso: string | null | undefined): string {
                             :alt="snap.file_name"
                             class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                         />
-                        <span
-                            v-if="snap.created_at"
-                            class="absolute top-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-xs"
+                        <div
+                            class="absolute top-1.5 left-1.5 flex flex-wrap items-center gap-1"
                         >
-                            {{ formatTime(snap.created_at) }}
-                        </span>
+                            <span
+                                v-if="snap.created_at"
+                                class="rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-xs"
+                            >
+                                {{ formatTime(snap.created_at) }}
+                            </span>
+                            <span
+                                class="rounded-md px-1.5 py-0.5 text-[10px] font-semibold backdrop-blur-xs"
+                                :class="
+                                    SOURCE_BADGES[getSnapshotSource(snap)]
+                                        .classes
+                                "
+                            >
+                                {{
+                                    SOURCE_BADGES[getSnapshotSource(snap)].label
+                                }}
+                            </span>
+                        </div>
                         <!-- Overlay -->
                         <div
                             class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/70 via-transparent to-transparent p-2 opacity-0 transition duration-200 group-hover:opacity-100"
@@ -937,11 +964,26 @@ function formatTime(iso: string | null | undefined): string {
                             </span>
                         </p>
                         <p
-                            v-if="snapshotNumberMap.has(lightboxSnap.id)"
-                            class="text-xs text-muted-foreground dark:text-slate-400"
+                            class="flex items-center justify-center gap-2 text-xs text-muted-foreground dark:text-slate-400"
                         >
-                            Snapshot
-                            {{ snapshotNumberMap.get(lightboxSnap.id) }}
+                            <span v-if="snapshotNumberMap.has(lightboxSnap.id)">
+                                Snapshot
+                                {{ snapshotNumberMap.get(lightboxSnap.id) }}
+                            </span>
+                            <span
+                                class="rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
+                                :class="
+                                    SOURCE_BADGES[
+                                        getSnapshotSource(lightboxSnap)
+                                    ].classes
+                                "
+                            >
+                                {{
+                                    SOURCE_BADGES[
+                                        getSnapshotSource(lightboxSnap)
+                                    ].label
+                                }}
+                            </span>
                         </p>
                         <p
                             v-if="lightboxSnap.notes"

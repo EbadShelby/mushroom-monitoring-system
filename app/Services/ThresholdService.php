@@ -144,7 +144,7 @@ class ThresholdService
                     sensor: 'humidity',
                     value: (float) ($reading['humidity'] ?? 0),
                     threshold: '15m continuous run limit',
-                    message: '⚠️ [CotSU Mushroom] Humidifier ran continuously for 15 mins. Auto-rest for '.self::HUMIDIFIER_REST_MINUTES.'m to protect hardware. Please check water reservoir!',
+                    message: '⚠️ [MushroomIoT] Humidifier ran continuously for 15 mins. Auto-rest for '.self::HUMIDIFIER_REST_MINUTES.'m to protect hardware. Please check water reservoir!',
                 );
             }
         }
@@ -157,7 +157,7 @@ class ThresholdService
                 sensor: 'humidity',
                 value: (float) $reading['humidity'],
                 threshold: self::HUMIDIFIER_STALL_MINUTES.'m on, humidity not rising',
-                message: "⚠️ [CotSU Mushroom] Humidity still LOW ({$reading['humidity']}%) after ".self::HUMIDIFIER_STALL_MINUTES.' mins of misting. Check the water tank, mist maker and humidity sensor.',
+                message: "⚠️ [MushroomIoT] Humidity still LOW ({$reading['humidity']}%) after ".self::HUMIDIFIER_STALL_MINUTES.' mins of misting. Check the water tank, mist maker and humidity sensor.',
             );
         }
 
@@ -187,7 +187,7 @@ class ThresholdService
                             sensor: 'humidity',
                             value: $humidity,
                             threshold: "below {$t['humidity_low']}%",
-                            message: "💧 [CotSU Mushroom] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
+                            message: "💧 [MushroomIoT] Humidity LOW: {$humidity}% (min: {$t['humidity_low']}%). Humidifier activated.",
                         );
                     }
                 }
@@ -205,14 +205,14 @@ class ThresholdService
                     sensor: 'temperature',
                     value: $temp,
                     threshold: "below {$t['temp_min']}°C",
-                    message: "⚠️ [CotSU Mushroom] Temperature LOW: {$temp}°C (min: {$t['temp_min']}°C). Check heating.",
+                    message: "⚠️ [MushroomIoT] Temperature LOW: {$temp}°C (min: {$t['temp_min']}°C). Check heating.",
                 );
             } elseif ($temp > $t['temp_max']) {
                 $alerts[] = $this->alert(
                     sensor: 'temperature',
                     value: $temp,
                     threshold: "above {$t['temp_max']}°C",
-                    message: "🌡️ [CotSU Mushroom] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Please check chamber ventilation and cooling.",
+                    message: "🌡️ [MushroomIoT] Temperature HIGH: {$temp}°C (above {$t['temp_max']}°C). Please check chamber ventilation and cooling.",
                 );
             }
         }
@@ -226,7 +226,7 @@ class ThresholdService
                     sensor: 'co2',
                     value: $co2,
                     threshold: "above {$t['co2_max']} ppm",
-                    message: "💨 [CotSU Mushroom] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Please air out the chamber manually.",
+                    message: "💨 [MushroomIoT] CO₂ HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Please air out the chamber manually.",
                 );
             }
         }
@@ -240,14 +240,14 @@ class ThresholdService
                     sensor: 'light',
                     value: $light,
                     threshold: "below {$t['light_min']} lux",
-                    message: "💡 [CotSU Mushroom] Light too LOW: {$light} lux (min: {$t['light_min']} lux). Indirect light is required.",
+                    message: "💡 [MushroomIoT] Light too LOW: {$light} lux (min: {$t['light_min']} lux). Indirect light is required.",
                 );
             } elseif ($light > $t['light_max']) {
                 $alerts[] = $this->alert(
                     sensor: 'light',
                     value: $light,
                     threshold: "above {$t['light_max']} lux",
-                    message: "💡 [CotSU Mushroom] Light too HIGH: {$light} lux (max: {$t['light_max']} lux). Reduce direct light exposure.",
+                    message: "💡 [MushroomIoT] Light too HIGH: {$light} lux (max: {$t['light_max']} lux). Reduce direct light exposure.",
                 );
             }
         }
@@ -261,14 +261,14 @@ class ThresholdService
                     sensor: 'soil_moisture',
                     value: $soil,
                     threshold: "below {$t['soil_critical']}% (CRITICAL)",
-                    message: "🌱 [CotSU Mushroom] Substrate Moisture CRITICAL: {$soil}%. Immediate watering required!",
+                    message: "🌱 [MushroomIoT] Substrate Moisture CRITICAL: {$soil}%. Immediate watering required!",
                 );
             } elseif ($soil < $t['soil_warning']) {
                 $alerts[] = $this->alert(
                     sensor: 'soil_moisture',
                     value: $soil,
                     threshold: "below {$t['soil_warning']}% (DRY)",
-                    message: "🌱 [CotSU Mushroom] Substrate Moisture LOW: {$soil}%. Please water the substrate soon.",
+                    message: "🌱 [MushroomIoT] Substrate Moisture LOW: {$soil}%. Please water the substrate soon.",
                 );
             }
         }

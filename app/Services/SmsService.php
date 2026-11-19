@@ -20,7 +20,7 @@ class SmsService
     public function __construct()
     {
         $this->apiKey = (string) config('services.semaphore.api_key');
-        $this->senderName = (string) config('services.semaphore.sender_name', 'CotSU-IoT');
+        $this->senderName = (string) config('services.semaphore.sender_name', 'MushroomIoT');
     }
 
     /**

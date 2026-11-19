@@ -17,8 +17,6 @@ interface Measurement {
     growing_cycle_id: number;
     user_id: number;
     observed_date: string;
-    flush_number: number;
-    weight_g: number | null;
     height_cm: number | null;
     cap_diameter_cm: number | null;
     fruiting_body_count: number | null;
@@ -44,8 +42,6 @@ const isSubmitting = ref(false);
 const form = ref({
     growing_cycle_id: '',
     observed_date: new Date().toISOString().split('T')[0],
-    flush_number: 1,
-    weight_g: null as number | null,
     height_cm: null as number | null,
     cap_diameter_cm: null as number | null,
     fruiting_body_count: null as number | null,
@@ -59,8 +55,6 @@ function openModal() {
                 ? String(props.activeCycles[0].id)
                 : '',
         observed_date: new Date().toISOString().split('T')[0],
-        flush_number: 1,
-        weight_g: null,
         height_cm: null,
         cap_diameter_cm: null,
         fruiting_body_count: null,
@@ -180,19 +174,19 @@ async function deleteMeasurement(id: number) {
                                     Cycle
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                                >
-                                    Flush
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                                >
-                                    Weight (g)
-                                </th>
-                                <th
                                     class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                                 >
                                     Count
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Avg Height (cm)
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Cap Diam. (cm)
                                 </th>
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
@@ -235,19 +229,14 @@ async function deleteMeasurement(id: number) {
                                 >
                                     {{ m.growing_cycle?.name }}
                                 </td>
-                                <td class="px-4 py-3 text-center">
-                                    <span
-                                        class="rounded-full bg-muted px-2 py-0.5 text-xs"
-                                        >{{ m.flush_number }}</span
-                                    >
-                                </td>
-                                <td
-                                    class="px-4 py-3 text-right font-mono font-bold text-emerald-500"
-                                >
-                                    {{ m.weight_g ? m.weight_g : '-' }}
+                                <td class="px-4 py-3 text-right font-mono">
+                                    {{ m.fruiting_body_count ?? '-' }}
                                 </td>
                                 <td class="px-4 py-3 text-right font-mono">
-                                    {{ m.fruiting_body_count || '-' }}
+                                    {{ m.height_cm ?? '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-right font-mono">
+                                    {{ m.cap_diameter_cm ?? '-' }}
                                 </td>
                                 <td class="px-4 py-3 text-muted-foreground">
                                     {{ m.user?.name }}
@@ -330,52 +319,15 @@ async function deleteMeasurement(id: number) {
                     <div class="space-y-1">
                         <label
                             class="text-xs font-medium text-muted-foreground uppercase"
-                            >Flush Number</label
+                            >Fruiting Body Count</label
                         >
                         <input
                             type="number"
-                            min="1"
-                            v-model="form.flush_number"
+                            min="0"
+                            placeholder="0"
+                            v-model="form.fruiting_body_count"
                             class="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
                         />
-                    </div>
-                </div>
-
-                <div
-                    class="mt-4 space-y-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4"
-                >
-                    <h4
-                        class="flex items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400"
-                    >
-                        <Activity class="h-4 w-4" /> Harvest Data
-                    </h4>
-
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div class="space-y-1">
-                            <label
-                                class="text-xs font-medium text-muted-foreground uppercase"
-                                >Weight (g)</label
-                            >
-                            <input
-                                type="number"
-                                step="0.1"
-                                placeholder="e.g. 500"
-                                v-model="form.weight_g"
-                                class="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                            />
-                        </div>
-                        <div class="space-y-1">
-                            <label
-                                class="text-xs font-medium text-muted-foreground uppercase"
-                                >Fruiting Body Count</label
-                            >
-                            <input
-                                type="number"
-                                placeholder="Optional"
-                                v-model="form.fruiting_body_count"
-                                class="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                            />
-                        </div>
                     </div>
                 </div>
 
@@ -388,7 +340,8 @@ async function deleteMeasurement(id: number) {
                         <input
                             type="number"
                             step="0.1"
-                            placeholder="Optional"
+                            min="0"
+                            placeholder="0.0"
                             v-model="form.height_cm"
                             class="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
                         />
@@ -401,7 +354,8 @@ async function deleteMeasurement(id: number) {
                         <input
                             type="number"
                             step="0.1"
-                            placeholder="Optional"
+                            min="0"
+                            placeholder="0.0"
                             v-model="form.cap_diameter_cm"
                             class="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
                         />
