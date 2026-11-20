@@ -2,7 +2,9 @@
 
 use App\Models\ActuatorLog;
 use App\Models\GrowingCycle;
+use App\Models\SensorReading;
 use App\Services\FirebaseService;
+use App\Services\SmsService;
 use App\Services\ThresholdService;
 
 /**
@@ -193,4 +195,124 @@ test('low light is suppressed during the 2-minute LED turn-on grace period at 6a
 
     $afterGrace = app(ThresholdService::class)->evaluate(['light_level' => 50]);
     expect(collect($afterGrace['alerts'])->pluck('sensor'))->toContain('light');
+});
+
+test('soil alert is suppressed on transient drops to 0 percent', function () {
+    $now = now();
+
+    SensorReading::create(['soil_moisture' => 55, 'recorded_at' => $now->copy()->subSeconds(20)]);
+    SensorReading::create(['soil_moisture' => 54, 'recorded_at' => $now->copy()->subSeconds(10)]);
+
+    $service = thresholdServiceWithActuators(['humidifier' => 'off']);
+    $result = $service->evaluate(['soil_moisture' => 0]);
+
+    expect(collect($result['alerts'])->pluck('sensor'))->not->toContain('soil_moisture');
+});
+
+test('soil alert is still suppressed after only two consecutive low readings', function () {
+    $now = now();
+
+    SensorReading::create(['soil_moisture' => 55, 'recorded_at' => $now->copy()->subSeconds(20)]);
+    SensorReading::create(['soil_moisture' => 0, 'recorded_at' => $now->copy()->subSeconds(10)]);
+
+    $service = thresholdServiceWithActuators(['humidifier' => 'off']);
+    $result = $service->evaluate(['soil_moisture' => 0]);
+
+    expect(collect($result['alerts'])->pluck('sensor'))->not->toContain('soil_moisture');
+});
+
+test('soil critical alert fires after three consecutive critical readings', function () {
+    $now = now();
+
+    SensorReading::create(['soil_moisture' => 18, 'recorded_at' => $now->copy()->subSeconds(20)]);
+    SensorReading::create(['soil_moisture' => 15, 'recorded_at' => $now->copy()->subSeconds(10)]);
+
+    $service = thresholdServiceWithActuators(['humidifier' => 'off']);
+    $result = $service->evaluate(['soil_moisture' => 12]);
+
+    $soilAlert = collect($result['alerts'])->firstWhere('sensor', 'soil_moisture');
+    expect($soilAlert)->not->toBeNull()
+        ->and($soilAlert['threshold'])->toContain('CRITICAL')
+        ->and($soilAlert['value'])->toBe(12);
+});
+
+test('soil warning alert fires after three consecutive dry readings without false critical escalation', function () {
+    $now = now();
+
+    SensorReading::create(['soil_moisture' => 28, 'recorded_at' => $now->copy()->subSeconds(20)]);
+    SensorReading::create(['soil_moisture' => 25, 'recorded_at' => $now->copy()->subSeconds(10)]);
+
+    $service = thresholdServiceWithActuators(['humidifier' => 'off']);
+    $result = $service->evaluate(['soil_moisture' => 0]);
+
+    $soilAlert = collect($result['alerts'])->firstWhere('sensor', 'soil_moisture');
+    expect($soilAlert)->not->toBeNull()
+        ->and($soilAlert['threshold'])->toContain('DRY')
+        ->and($soilAlert['threshold'])->not->toContain('CRITICAL');
+});
+
+test('stale low soil readings older than five minutes do not trigger a debounced alert', function () {
+    $now = now();
+
+    SensorReading::create(['soil_moisture' => 10, 'recorded_at' => $now->copy()->subMinutes(10)]);
+    SensorReading::create(['soil_moisture' => 10, 'recorded_at' => $now->copy()->subMinutes(6)]);
+
+    $service = thresholdServiceWithActuators(['humidifier' => 'off']);
+    $result = $service->evaluate(['soil_moisture' => 0]);
+
+    expect(collect($result['alerts'])->pluck('sensor'))->not->toContain('soil_moisture');
+});
+
+test('sensor-data endpoint debounces transient soil drops and alerts on third consecutive low reading', function () {
+    config(['services.device.token' => 'secret-device-token']);
+
+    GrowingCycle::create([
+        'name' => 'Soil Debounce Cycle',
+        'mushroom_variety' => 'Gray Oyster',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+    ]);
+
+    $firebase = Mockery::mock(FirebaseService::class);
+    $firebase->shouldReceive('updateSensors')->times(4);
+    $firebase->shouldReceive('getActuators')->times(4)->andReturn(['humidifier' => 'off']);
+    $this->app->instance(FirebaseService::class, $firebase);
+
+    $sms = Mockery::mock(SmsService::class);
+    $sms->shouldReceive('sendAlert')
+        ->once()
+        ->with(Mockery::on(fn (array $payload): bool => $payload['sensor'] === 'soil_moisture' && $payload['value'] === 12));
+    $this->app->instance(SmsService::class, $sms);
+
+    $headers = ['X-Device-Token' => 'secret-device-token'];
+    $basePayload = [
+        'temperature' => 28.0,
+        'humidity' => 85.0,
+        'co2_raw' => 600,
+        'light_level' => 300.0,
+    ];
+
+    // 1st low reading -> no alert
+    $this->postJson('/api/sensor-data', [...$basePayload, 'soil_moisture' => 0, 'soil_status' => 'critical'], $headers)
+        ->assertCreated()
+        ->assertJsonPath('alerts_triggered', 0);
+
+    // Recovers to normal -> resets streak
+    $this->postJson('/api/sensor-data', [...$basePayload, 'soil_moisture' => 55, 'soil_status' => 'moist'], $headers)
+        ->assertCreated()
+        ->assertJsonPath('alerts_triggered', 0);
+
+    // 2nd reading after recovery (only 1st low) -> no alert
+    $this->postJson('/api/sensor-data', [...$basePayload, 'soil_moisture' => 15, 'soil_status' => 'critical'], $headers)
+        ->assertCreated()
+        ->assertJsonPath('alerts_triggered', 0);
+
+    // Seed one more low reading so the next POST is the 3rd consecutive critical reading
+    SensorReading::create(['soil_moisture' => 14, 'recorded_at' => now()]);
+
+    // 3rd consecutive critical reading -> fires 1 SMS alert
+    $this->postJson('/api/sensor-data', [...$basePayload, 'soil_moisture' => 12, 'soil_status' => 'critical'], $headers)
+        ->assertCreated()
+        ->assertJsonPath('alerts_triggered', 1);
 });

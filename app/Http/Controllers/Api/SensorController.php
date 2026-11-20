@@ -71,7 +71,7 @@ class SensorController extends Controller
         ]);
 
         // ── 4. Evaluate thresholds ─────────────────────────────────────────────
-        $result = $this->threshold->evaluate($data, $activeCycle);
+        $result = $this->threshold->evaluate($data, $activeCycle, $reading->id);
 
         // ── 5. Dispatch SMS alerts ─────────────────────────────────────────────
         // Environmental SMS alerts only run during an active growing cycle so

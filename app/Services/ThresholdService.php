@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActuatorLog;
 use App\Models\GrowingCycle;
+use App\Models\SensorReading;
 use App\Models\Setting;
 use App\Support\LedSchedule;
 
@@ -38,6 +39,18 @@ class ThresholdService
      * low threshold is treated as a fault (empty tank, blocked mist or faulty sensor).
      */
     private const HUMIDIFIER_STALL_MINUTES = 5;
+
+    /**
+     * Consecutive recent soil moisture readings required below a threshold before
+     * raising a soil alert, filtering out transient ADC/wiring glitches to 0%.
+     */
+    private const SOIL_ALERT_CONSECUTIVE_READINGS = 3;
+
+    /**
+     * Maximum age (in minutes) of prior readings counted as consecutive for soil
+     * alert debouncing, so stale readings from before an outage are ignored.
+     */
+    private const SOIL_DEBOUNCE_WINDOW_MINUTES = 5;
 
     /** @var array<string, mixed> */
     private array $thresholds;
@@ -111,12 +124,13 @@ class ThresholdService
      *
      * @param  array<string, mixed>  $reading  { temperature, humidity, co2_raw, light_level, soil_moisture }
      * @param  GrowingCycle|null  $cycle  The active growing cycle
+     * @param  int|null  $currentReadingId  ID of the just-persisted reading (excluded when looking up prior readings)
      * @return array{
      *   alerts: list<array{sensor: string, value: float|int, threshold: string, message: string}>,
      *   commands: array{humidifier: string|null}
      * }
      */
-    public function evaluate(array $reading, ?GrowingCycle $cycle = null): array
+    public function evaluate(array $reading, ?GrowingCycle $cycle = null, ?int $currentReadingId = null): array
     {
         $t = $this->thresholds;
 
@@ -257,21 +271,27 @@ class ThresholdService
         // ─── Soil Moisture ────────────────────────────────────────────────────
         if (isset($reading['soil_moisture'])) {
             $soil = (int) $reading['soil_moisture'];
+            $soilWarning = (float) $t['soil_warning'];
+            $soilCritical = (float) $t['soil_critical'];
 
-            if ($soil < $t['soil_critical']) {
-                $alerts[] = $this->alert(
-                    sensor: 'soil_moisture',
-                    value: $soil,
-                    threshold: "below {$t['soil_critical']}% (CRITICAL)",
-                    message: "[MushroomIoT] Substrate Moisture CRITICAL: {$soil}%. Immediate watering required!",
-                );
-            } elseif ($soil < $t['soil_warning']) {
-                $alerts[] = $this->alert(
-                    sensor: 'soil_moisture',
-                    value: $soil,
-                    threshold: "below {$t['soil_warning']}% (DRY)",
-                    message: "[MushroomIoT] Substrate Moisture LOW: {$soil}%. Please water the substrate soon.",
-                );
+            if ($soil < max($soilWarning, $soilCritical)) {
+                $recentSoilReadings = $this->recentSoilReadings($soil, $currentReadingId);
+
+                if ($this->isSustainedSoilBelow($recentSoilReadings, $soilCritical)) {
+                    $alerts[] = $this->alert(
+                        sensor: 'soil_moisture',
+                        value: $soil,
+                        threshold: "below {$t['soil_critical']}% (CRITICAL)",
+                        message: "[MushroomIoT] Substrate Moisture CRITICAL: {$soil}%. Immediate watering required!",
+                    );
+                } elseif ($this->isSustainedSoilBelow($recentSoilReadings, $soilWarning)) {
+                    $alerts[] = $this->alert(
+                        sensor: 'soil_moisture',
+                        value: $soil,
+                        threshold: "below {$t['soil_warning']}% (DRY)",
+                        message: "[MushroomIoT] Substrate Moisture LOW: {$soil}%. Please water the substrate soon.",
+                    );
+                }
             }
         }
 
@@ -309,6 +329,48 @@ class ThresholdService
             'triggered_by' => 'system',
             'triggered_at' => now(),
         ]);
+    }
+
+    /**
+     * Return the current soil moisture value followed by the most recent prior
+     * non-null readings within the debounce window.
+     *
+     * @return list<int>
+     */
+    private function recentSoilReadings(int $currentSoil, ?int $currentReadingId): array
+    {
+        $priorNeeded = self::SOIL_ALERT_CONSECUTIVE_READINGS - 1;
+
+        $prior = SensorReading::query()
+            ->whereNotNull('soil_moisture')
+            ->where('recorded_at', '>=', now()->subMinutes(self::SOIL_DEBOUNCE_WINDOW_MINUTES))
+            ->when($currentReadingId !== null, fn ($query) => $query->where('id', '<', $currentReadingId))
+            ->orderByDesc('recorded_at')
+            ->orderByDesc('id')
+            ->limit($priorNeeded)
+            ->pluck('soil_moisture')
+            ->map(static fn ($value): int => (int) $value)
+            ->all();
+
+        return [$currentSoil, ...array_values($prior)];
+    }
+
+    /**
+     * @param  list<int>  $readings
+     */
+    private function isSustainedSoilBelow(array $readings, float $threshold): bool
+    {
+        if (count($readings) < self::SOIL_ALERT_CONSECUTIVE_READINGS) {
+            return false;
+        }
+
+        foreach ($readings as $value) {
+            if ($value >= $threshold) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
