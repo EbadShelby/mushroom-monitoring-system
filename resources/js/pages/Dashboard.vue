@@ -834,7 +834,7 @@ function formatDuration(totalSeconds: number): string {
                         class="relative z-10 mt-4 flex items-center justify-between text-sm"
                     >
                         <span class="font-medium text-muted-foreground"
-                            >Target: ≥ 30%</span
+                            >Target: ≥ 60%</span
                         >
                         <span
                             v-if="!hasActiveCycle"

@@ -17,8 +17,8 @@ test('admin can access settings page', function () {
         ->where('thresholdDefaults.threshold_co2_max', 1000)
         ->where('thresholdDefaults.threshold_light_min', 200)
         ->where('thresholdDefaults.threshold_light_max', 800)
-        ->where('thresholdDefaults.threshold_soil_warning', 30)
-        ->where('thresholdDefaults.threshold_soil_critical', 20)
+        ->where('thresholdDefaults.threshold_soil_warning', 60)
+        ->where('thresholdDefaults.threshold_soil_critical', 40)
     );
 });
 

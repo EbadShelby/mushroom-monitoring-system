@@ -95,7 +95,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 | 💧 **Humidity**           | **75–95% RH**              | DHT22      | `<= 78%` → Auto-activate humidifier (SMS only if `< 75%`). `>= 94%` → Deactivate humidifier. |
 | 🌬️ **CO₂ Level**          | **< 1,000 ppm**            | MQ-135     | `> 1,000 ppm` → High CO₂ SMS alert (calibrated from clean-air $R_0$ baseline at 400 ppm).    |
 | 💡 **Light Level**        | **200–800 lux** (Indirect) | BH1750     | `< 200 lux` → Alert during daytime LED-ON window only. `> 800 lux` → Alert 24/7.             |
-| 🌱 **Substrate Moisture** | **≥ 30%**                  | Capacitive | `< 30%` → Warning (Dry) SMS alert. `< 20%` → Critical SMS alert.                             |
+| 🌱 **Substrate Moisture** | **≥ 60%**                  | Capacitive | `< 60%` → Warning (Dry) SMS alert. `< 40%` → Critical SMS alert.                             |
 
 ---
 

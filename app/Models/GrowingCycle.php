@@ -126,7 +126,7 @@ class GrowingCycle extends Model
                 fn (SensorReading $r) => $r->co2_raw !== null && $r->co2_raw > 1000
             )->unique($minuteBucket)->count(),
             'soil_moisture' => $readings->filter(
-                fn (SensorReading $r) => $r->soil_moisture !== null && $r->soil_moisture < 30
+                fn (SensorReading $r) => $r->soil_moisture !== null && $r->soil_moisture < 60
             )->unique($minuteBucket)->count(),
             'total_readings' => $readings->count(),
         ];

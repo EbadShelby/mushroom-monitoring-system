@@ -30,8 +30,8 @@ const char* deviceToken = "CHANGE_ME_LONG_RANDOM_TOKEN";   // must match DEVICE_
 // ─── Soil & CO2 Calibration ─────────────────────────
 #define DRY_VALUE           2759
 #define WET_VALUE           1255
-#define SOIL_DRY            30
-#define SOIL_CRITICAL       20
+#define SOIL_DRY            60
+#define SOIL_CRITICAL       40
 #define MQ135_CLEAN_AIR_RAW 835   // Fresh-air ADC baseline (~400 ppm)
 
 int readCo2Ppm(int raw) {

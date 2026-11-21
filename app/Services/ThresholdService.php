@@ -21,8 +21,8 @@ class ThresholdService
         'co2_max' => 1000,       // keep below 1000 ppm
         'light_min' => 200.0,    // need indirect light — alert if < 200 lux
         'light_max' => 800.0,    // alert if > 800 lux
-        'soil_warning' => 30,    // substrate moisture warning (matches firmware SOIL_DRY)
-        'soil_critical' => 20,   // substrate moisture critical (matches firmware SOIL_CRITICAL)
+        'soil_warning' => 60,    // substrate moisture warning (matches firmware SOIL_DRY)
+        'soil_critical' => 40,   // substrate moisture critical (matches firmware SOIL_CRITICAL)
     ];
 
     /**

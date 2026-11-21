@@ -263,27 +263,28 @@ test('breach summary counts at most one breach per minute per sensor', function 
             'humidity' => 65.0,
             'co2_raw' => 600,
             'light_level' => 300,
-            'soil_moisture' => 50,
+            'soil_moisture' => 65,
             'soil_status' => 'moist',
             'recorded_at' => $base->copy()->addSeconds($sec),
         ]);
     }
 
-    // One low-humidity reading in the next minute -> +1 breach
+    // One low-humidity + dry-substrate reading in the next minute -> +1 humidity, +1 soil_moisture breach
     SensorReading::create([
         'growing_cycle_id' => $cycle->id,
         'temperature' => 28.0,
         'humidity' => 65.0,
         'co2_raw' => 600,
         'light_level' => 300,
-        'soil_moisture' => 50,
-        'soil_status' => 'moist',
+        'soil_moisture' => 55,
+        'soil_status' => 'dry',
         'recorded_at' => $base->copy()->addMinute(),
     ]);
 
     $summary = $cycle->breachSummary();
 
     expect($summary['humidity'])->toBe(2)
+        ->and($summary['soil_moisture'])->toBe(1)
         ->and($summary['total_readings'])->toBe(4);
 });
 

@@ -177,7 +177,7 @@ const breachCards = computed(() => [
     {
         label: 'Substrate Moisture',
         value: props.breachSummary?.soil_moisture ?? 0,
-        range: '≥ 30%',
+        range: '≥ 60%',
         icon: Leaf,
         color: 'text-amber-400',
         bg: 'bg-amber-500/10',
