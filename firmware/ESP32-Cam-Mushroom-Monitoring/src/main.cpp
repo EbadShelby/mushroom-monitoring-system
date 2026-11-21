@@ -2,6 +2,8 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include <esp_idf_version.h>
+#include <esp_task_wdt.h>
 #include "esp_camera.h"
 
 // ─── WiFi ───────────────────────────────────────────
@@ -14,12 +16,18 @@ const char* commandUrl  = "https://mycosense.online/api/camera-command";
 const char* cameraToken = "CHANGE_ME_LONG_RANDOM_TOKEN";   // must match CAMERA_TOKEN in Laravel .env
 
 // ─── Timing ─────────────────────────────────────────
-const unsigned long RETRY_INTERVAL        = 30UL * 1000UL;   // retry after a failed upload
-const unsigned long WIFI_TIMEOUT_MS       = 20UL * 1000UL;
-const unsigned long COMMAND_POLL_INTERVAL = 5UL * 1000UL;    // check Laravel for scheduled or manual captures
+const unsigned long RETRY_INTERVAL          = 30UL * 1000UL;   // retry after a failed upload
+const unsigned long WIFI_TIMEOUT_MS         = 20UL * 1000UL;
+const unsigned long WIFI_RECONNECT_LIMIT_MS = 60UL * 1000UL;   // restart if WiFi stays down for 60s
+const unsigned long COMMAND_POLL_INTERVAL   = 5UL * 1000UL;    // check Laravel for scheduled or manual captures
+const int           MAX_POLL_FAILURES       = 12;              // restart after 12 consecutive poll errors (~60s)
+const uint32_t      WDT_TIMEOUT_SEC         = 30;              // hardware watchdog timeout
 
 unsigned long lastCommandPoll = 0;
+unsigned long lastReconnectTry = 0;
+unsigned long wifiLostAt = 0;
 unsigned long retryAt = 0;
+int consecutivePollFailures = 0;
 bool pendingCapture = false;
 bool pendingFlash = false;
 
@@ -171,6 +179,45 @@ bool captureAndUpload(bool useFlash) {
   return code >= 200 && code < 300;
 }
 
+void initWatchdog() {
+#if ESP_IDF_VERSION_MAJOR >= 5
+  esp_task_wdt_config_t wdtConfig = {
+    .timeout_ms = WDT_TIMEOUT_SEC * 1000,
+    .idle_core_mask = 0,
+    .trigger_panic = true,
+  };
+  esp_task_wdt_reconfigure(&wdtConfig);
+#else
+  esp_task_wdt_init(WDT_TIMEOUT_SEC, true);
+#endif
+  esp_task_wdt_add(NULL);
+}
+
+void ensureWiFi() {
+  if (WiFi.status() == WL_CONNECTED) {
+    wifiLostAt = 0;
+    return;
+  }
+
+  unsigned long now = millis();
+  if (wifiLostAt == 0) {
+    wifiLostAt = now;
+    Serial.println("⚠️  WiFi disconnected — attempting reconnect...");
+  }
+
+  if (now - lastReconnectTry >= 10000UL) {
+    lastReconnectTry = now;
+    WiFi.disconnect(false);
+    WiFi.begin(ssid, password);
+  }
+
+  if (now - wifiLostAt >= WIFI_RECONNECT_LIMIT_MS) {
+    Serial.println("❌ WiFi reconnect timeout — restarting...");
+    delay(500);
+    ESP.restart();
+  }
+}
+
 void setup() {
   pinMode(FLASH_LED_PIN, OUTPUT);
   digitalWrite(FLASH_LED_PIN, LOW);
@@ -185,6 +232,7 @@ void setup() {
   }
 
   connectWiFi();
+  initWatchdog();
 }
 
 // Asks Laravel whether a scheduled or manual capture is pending
@@ -207,19 +255,33 @@ bool checkCameraCommand(bool& useFlash) {
   useFlash = false;
 
   if (code == 200) {
+    consecutivePollFailures = 0;
     String payload = http.getString();
     requested = payload.indexOf("\"capture\":true") >= 0;
     useFlash  = payload.indexOf("\"flash\":true") >= 0;
+  } else {
+    consecutivePollFailures++;
+    Serial.printf("⚠️  Poll failed (HTTP %d, streak %d/%d)\n", code, consecutivePollFailures, MAX_POLL_FAILURES);
   }
 
   http.end();
+
+  if (consecutivePollFailures >= MAX_POLL_FAILURES) {
+    Serial.println("❌ Too many poll failures — restarting...");
+    delay(500);
+    ESP.restart();
+  }
+
   return requested;
 }
 
 void loop() {
+  esp_task_wdt_reset();
+  ensureWiFi();
+
   unsigned long now = millis();
 
-  if (now - lastCommandPoll >= COMMAND_POLL_INTERVAL) {
+  if (WiFi.status() == WL_CONNECTED && now - lastCommandPoll >= COMMAND_POLL_INTERVAL) {
     lastCommandPoll = now;
 
     bool useFlash = false;
@@ -229,9 +291,10 @@ void loop() {
       pendingFlash = useFlash;
       retryAt = 0;
     }
+    esp_task_wdt_reset();
   }
 
-  if (pendingCapture && now >= retryAt) {
+  if (pendingCapture && WiFi.status() == WL_CONNECTED && now >= retryAt) {
     if (captureAndUpload(pendingFlash)) {
       pendingCapture = false;
       pendingFlash = false;
@@ -239,6 +302,7 @@ void loop() {
     } else {
       retryAt = now + RETRY_INTERVAL;
     }
+    esp_task_wdt_reset();
   }
 
   delay(500);

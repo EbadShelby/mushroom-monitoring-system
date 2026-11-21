@@ -31,16 +31,18 @@ class CameraSnapshotController extends Controller
         }
 
         /** @var array{id?: int, name?: string, scheduled?: bool}|null $pending */
-        $pending = Cache::pull(self::CAPTURE_REQUEST_KEY);
+        $pending = Cache::get(self::CAPTURE_REQUEST_KEY);
         $flash = false;
 
         if ($pending !== null) {
-            if (! ($pending['scheduled'] ?? false)) {
-                Cache::put(self::MANUAL_CAPTURE_KEY, $pending, now()->addMinutes(5));
-            }
-
             $actuators = $firebase->getActuators();
             $flash = ($actuators['led'] ?? 'off') !== 'on';
+
+            // Consume only after Firebase responds so a slow/failed lookup never drops the request.
+            $pending = Cache::pull(self::CAPTURE_REQUEST_KEY);
+            if ($pending !== null && ! ($pending['scheduled'] ?? false)) {
+                Cache::put(self::MANUAL_CAPTURE_KEY, $pending, now()->addMinutes(5));
+            }
         }
 
         return response()->json([
