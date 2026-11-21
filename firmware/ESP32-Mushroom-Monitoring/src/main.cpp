@@ -47,12 +47,14 @@ int readCo2Ppm(int raw) {
 DHT    dht(DHTPIN, DHTTYPE);
 BH1750 lightMeter;
 
-// ─── Timing ─────────────────────────────────────────
+// ─── Timing & Recovery ──────────────────────────────
 unsigned long lastSend = 0;
-const unsigned long SEND_INTERVAL = 10000; // 10 seconds for testing
-                                           // change to 30000 for production
+const unsigned long SEND_INTERVAL   = 10000; // 10 seconds
+const unsigned long WIFI_TIMEOUT_MS = 20000; // restart if WiFi fails to connect on boot
+const int MAX_CONSECUTIVE_FAILURES  = 10;    // auto-restart after ~2 mins of failures
+int consecutiveFailures = 0;
 
-void sendSensorData(float temp, float hum, int co2,
+bool sendSensorData(float temp, float hum, int co2,
                     float light, int soil, String soilStatus);
 void pollActuatorCommands();
 
@@ -90,7 +92,13 @@ void setup() {
   WiFi.setAutoReconnect(true);
   WiFi.begin(ssid, password);
   Serial.print("📶 Connecting to WiFi");
+  unsigned long wifiStart = millis();
   while (WiFi.status() != WL_CONNECTED) {
+    if (millis() - wifiStart > WIFI_TIMEOUT_MS) {
+      Serial.println("\n❌ WiFi timeout — restarting...");
+      delay(1000);
+      ESP.restart();
+    }
     delay(500);
     Serial.print(".");
   }
@@ -174,26 +182,39 @@ void loop() {
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("⚠️  WiFi disconnected — attempting reconnect...");
       WiFi.reconnect();
+      consecutiveFailures++;
     } else if (!isnan(temperature) && !isnan(humidity)) {
-      sendSensorData(temperature, humidity, co2Raw,
-                     lux, soilMoisture, soilStatus);
+      bool ok = sendSensorData(temperature, humidity, co2Raw,
+                               lux, soilMoisture, soilStatus);
+      if (ok) {
+        consecutiveFailures = 0;
+      } else {
+        consecutiveFailures++;
+      }
       delay(1000);
       pollActuatorCommands();
     } else {
       Serial.println("⚠️  Skipping send — bad DHT22 reading");
+      consecutiveFailures++;
+    }
+
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      Serial.println("🔄 Too many consecutive failures — restarting ESP32...");
+      delay(1000);
+      ESP.restart();
     }
   }
 
   delay(2000); // DHT22 minimum interval
 }
 
-void sendSensorData(float temp, float hum, int co2,
+bool sendSensorData(float temp, float hum, int co2,
                     float light, int soil, String soilStatus) {
   WiFiClientSecure client;
   client.setInsecure();
 
   HTTPClient http;
-  http.setTimeout(5000);
+  http.setTimeout(10000);
   http.begin(client, sensorUrl);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Accept", "application/json");
@@ -217,6 +238,8 @@ void sendSensorData(float temp, float hum, int co2,
     Serial.println("   Body: " + http.getString());
   }
   http.end();
+
+  return code >= 200 && code < 300;
 }
 
 void pollActuatorCommands() {
@@ -224,7 +247,7 @@ void pollActuatorCommands() {
   client.setInsecure();
 
   HTTPClient http;
-  http.setTimeout(5000);
+  http.setTimeout(10000);
   http.begin(client, actuatorUrl);
   http.addHeader("Accept", "application/json");
   http.addHeader("X-Device-Token", deviceToken);
