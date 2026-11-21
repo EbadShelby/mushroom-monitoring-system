@@ -1,12 +1,16 @@
 <?php
 
 use App\Console\Commands\EnforceLedSchedule;
+use App\Console\Commands\RunHumidifierBoost;
 use App\Http\Controllers\Api\CameraSnapshotController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 // Run every minute to enforce the LED on/off schedule
-Schedule::command(EnforceLedSchedule::class)->everyMinute()->withoutOverlapping();
+Schedule::command(EnforceLedSchedule::class)->everyMinute()->withoutOverlapping(2);
+
+// Sensor-capped misting boost twice daily (7:00 AM & 7:00 PM; afternoon mists naturally via closed-loop)
+Schedule::command(RunHumidifierBoost::class)->cron('0 7,19 * * *')->timezone('Asia/Manila')->withoutOverlapping(2);
 
 $scheduleCapture = static function (): void {
     Cache::add(

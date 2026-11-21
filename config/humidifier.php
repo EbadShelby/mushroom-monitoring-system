@@ -67,4 +67,21 @@ return [
 
     'low_tank_alert_cooldown_minutes' => 180,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Scheduled Sensor-Capped Misting Boost (2x/day: Morning & Evening)
+    |--------------------------------------------------------------------------
+    |
+    | Gently refreshes chamber humidity twice daily (7:00 AM & 7:00 PM) when
+    | humidity is below boost_max_start_humidity. Stops automatically after
+    | boost_duration_minutes OR as soon as humidity reaches the OFF threshold.
+    |
+    */
+
+    'boost_enabled' => filter_var(env('HUMIDIFIER_BOOST_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
+    'boost_duration_minutes' => (int) env('HUMIDIFIER_BOOST_DURATION_MINUTES', 5),
+
+    'boost_max_start_humidity' => (float) env('HUMIDIFIER_BOOST_MAX_START_HUMIDITY', 88),
+
 ];

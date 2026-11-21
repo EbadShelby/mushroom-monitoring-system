@@ -7,9 +7,12 @@ use App\Models\GrowingCycle;
 use App\Models\SensorReading;
 use App\Models\Setting;
 use App\Support\LedSchedule;
+use Illuminate\Support\Facades\Cache;
 
 class ThresholdService
 {
+    public const BOOST_UNTIL_KEY = 'humidifier:boost_until';
+
     private const DEFAULTS = [
         'temp_min' => 26.0,      // ideal 26–32°C
         'temp_max' => 32.0,
@@ -208,7 +211,20 @@ class ThresholdService
                 }
             } elseif ($humidity >= $turnOffAt && $humidifierCurrentlyOn) {
                 $desiredHumidifier = 'off';
+                Cache::forget(self::BOOST_UNTIL_KEY);
+            } elseif ($humidifierCurrentlyOn) {
+                /** @var int|null $boostUntil */
+                $boostUntil = Cache::get(self::BOOST_UNTIL_KEY);
+
+                if ($boostUntil !== null && now()->getTimestamp() >= $boostUntil) {
+                    $desiredHumidifier = 'off';
+                    Cache::forget(self::BOOST_UNTIL_KEY);
+                }
             }
+        }
+
+        if ($desiredHumidifier === 'off' || ! $humidifierCurrentlyOn) {
+            Cache::forget(self::BOOST_UNTIL_KEY);
         }
 
         // ─── Temperature ──────────────────────────────────────────────────────
