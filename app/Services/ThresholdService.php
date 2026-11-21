@@ -162,7 +162,7 @@ class ThresholdService
                     sensor: 'humidity',
                     value: (float) ($reading['humidity'] ?? 0),
                     threshold: '15m continuous run limit',
-                    message: '[MushroomIoT] Humidifier ran continuously for 15 mins. Auto-rest for '.self::HUMIDIFIER_REST_MINUTES.'m to protect hardware. Please check water reservoir!',
+                    message: '[MushroomIoT] Humidifier ran for '.self::HUMIDIFIER_MAX_RUN_MINUTES.' mins and paused '.self::HUMIDIFIER_REST_MINUTES.' mins for safety. Please check the water tanks.',
                 );
             }
         }
@@ -175,7 +175,7 @@ class ThresholdService
                 sensor: 'humidity',
                 value: (float) $reading['humidity'],
                 threshold: self::HUMIDIFIER_STALL_MINUTES.'m on, humidity not rising',
-                message: "[MushroomIoT] Humidity still LOW ({$reading['humidity']}%) after ".self::HUMIDIFIER_STALL_MINUTES.' mins of misting. Check the water tank, mist maker and humidity sensor.',
+                message: "[MushroomIoT] Humidity still LOW ({$reading['humidity']}%) after ".self::HUMIDIFIER_STALL_MINUTES.' mins of misting. Check water tanks, mist makers, and sensor.',
             );
         }
 
@@ -236,14 +236,14 @@ class ThresholdService
                     sensor: 'temperature',
                     value: $temp,
                     threshold: "below {$t['temp_min']}°C",
-                    message: "[MushroomIoT] Temperature LOW: {$temp}C (min: {$t['temp_min']}C). Check heating.",
+                    message: "[MushroomIoT] Temperature LOW: {$temp}C (min: {$t['temp_min']}C). Please check chamber enclosure and ambient temperature.",
                 );
             } elseif ($temp > $t['temp_max']) {
                 $alerts[] = $this->alert(
                     sensor: 'temperature',
                     value: $temp,
                     threshold: "above {$t['temp_max']}°C",
-                    message: "[MushroomIoT] Temperature HIGH: {$temp}C (above {$t['temp_max']}C). Please check chamber ventilation and cooling.",
+                    message: "[MushroomIoT] Temperature HIGH: {$temp}C (max: {$t['temp_max']}C). Please check chamber airflow and surrounding environment.",
                 );
             }
         }
@@ -257,7 +257,7 @@ class ThresholdService
                     sensor: 'co2',
                     value: $co2,
                     threshold: "above {$t['co2_max']} ppm",
-                    message: "[MushroomIoT] CO2 HIGH: {$co2} ppm (threshold: {$t['co2_max']} ppm). Please air out the chamber manually.",
+                    message: "[MushroomIoT] CO2 HIGH: {$co2} ppm (max: {$t['co2_max']} ppm). Fresh air exchange recommended.",
                 );
             }
         }
@@ -272,14 +272,14 @@ class ThresholdService
                     sensor: 'light',
                     value: $light,
                     threshold: "below {$t['light_min']} lux",
-                    message: "[MushroomIoT] Light too LOW: {$light} lux (min: {$t['light_min']} lux). Indirect light is required.",
+                    message: "[MushroomIoT] Light LOW: {$light} lux (min: {$t['light_min']} lux). Please check the grow light and light sensor.",
                 );
             } elseif ($light > $t['light_max']) {
                 $alerts[] = $this->alert(
                     sensor: 'light',
                     value: $light,
                     threshold: "above {$t['light_max']} lux",
-                    message: "[MushroomIoT] Light too HIGH: {$light} lux (max: {$t['light_max']} lux). Reduce direct light exposure.",
+                    message: "[MushroomIoT] Light HIGH: {$light} lux (max: {$t['light_max']} lux). Please reduce direct light exposure.",
                 );
             }
         }
@@ -298,14 +298,14 @@ class ThresholdService
                         sensor: 'soil_moisture',
                         value: $soil,
                         threshold: "below {$t['soil_critical']}% (CRITICAL)",
-                        message: "[MushroomIoT] Substrate Moisture CRITICAL: {$soil}%. Immediate watering required!",
+                        message: "[MushroomIoT] Substrate Moisture CRITICAL: {$soil}% (min: {$t['soil_critical']}%). Immediate inspection or hydration needed.",
                     );
                 } elseif ($this->isSustainedSoilBelow($recentSoilReadings, $soilWarning)) {
                     $alerts[] = $this->alert(
                         sensor: 'soil_moisture',
                         value: $soil,
                         threshold: "below {$t['soil_warning']}% (DRY)",
-                        message: "[MushroomIoT] Substrate Moisture LOW: {$soil}%. Please water the substrate soon.",
+                        message: "[MushroomIoT] Substrate Moisture LOW: {$soil}% (min: {$t['soil_warning']}%). Please inspect or hydrate the substrate.",
                     );
                 }
             }

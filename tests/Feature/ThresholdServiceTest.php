@@ -71,7 +71,7 @@ test('humidifier continuous runtime limit shuts off after 15 minutes', function 
     expect($result['commands']['humidifier'])->toBe('off');
 
     $alerts = collect($result['alerts']);
-    expect($alerts->contains(fn ($a) => str_contains($a['message'], 'Humidifier ran continuously for 15 mins')))->toBeTrue();
+    expect($alerts->contains(fn ($a) => str_contains($a['message'], 'Humidifier ran for 15 mins')))->toBeTrue();
 });
 
 test('high temperature and CO2 only raise alerts without actuator commands', function () {

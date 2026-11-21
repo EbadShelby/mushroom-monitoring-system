@@ -56,7 +56,7 @@ class HumidifierMistService
             'sensor' => 'water_tank',
             'value' => $tank['remaining_ml'],
             'threshold' => "<= {$this->lowTankPercent()}%",
-            'message' => "[MushroomIoT] Humidifier water tanks are almost empty (~{$tank['remaining_ml']} mL left per tank, {$tank['percent']}%). Please refill all {$this->unitCount()} tanks and press \"Log refill\" in the app.",
+            'message' => "[MushroomIoT] Humidifier tanks low ({$tank['remaining_ml']} mL/tank, {$tank['percent']}%). Refill all {$this->unitCount()} tanks and tap Log Refill on the website.",
         ];
     }
 
