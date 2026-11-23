@@ -245,7 +245,7 @@ bool checkCameraCommand(bool& useFlash) {
   client.setInsecure();
 
   HTTPClient http;
-  http.setTimeout(5000);
+  http.setTimeout(8000);
   http.begin(client, commandUrl);
   http.addHeader("Accept", "application/json");
   http.addHeader("X-Camera-Token", cameraToken);

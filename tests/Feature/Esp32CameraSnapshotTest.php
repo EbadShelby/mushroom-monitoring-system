@@ -189,3 +189,27 @@ test('camera command enables flash when grow led is off and disables it when led
     'led off' => ['off', true],
     'led on' => ['on', false],
 ]);
+
+test('camera command falls back to LED schedule when firebase returns empty actuator state', function (int $hour, bool $expectedFlash) {
+    $this->travelTo(now()->setTime($hour, 0));
+
+    $firebase = Mockery::mock(FirebaseService::class);
+    $firebase->shouldReceive('getActuators')->once()->with(2)->andReturn([]);
+    $this->app->instance(FirebaseService::class, $firebase);
+
+    Cache::put(
+        CameraSnapshotController::CAPTURE_REQUEST_KEY,
+        ['scheduled' => true],
+        now()->addMinutes(5),
+    );
+
+    $this->getJson('/api/camera-command', ['X-Camera-Token' => 'secret-token'])
+        ->assertOk()
+        ->assertJson([
+            'capture' => true,
+            'flash' => $expectedFlash,
+        ]);
+})->with([
+    'daytime LED window' => [12, false],
+    'nighttime LED window' => [22, true],
+]);

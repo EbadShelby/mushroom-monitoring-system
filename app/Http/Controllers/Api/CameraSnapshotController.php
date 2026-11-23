@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
 use App\Services\FirebaseService;
+use App\Support\LedSchedule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -35,10 +36,15 @@ class CameraSnapshotController extends Controller
         $flash = false;
 
         if ($pending !== null) {
-            $actuators = $firebase->getActuators();
-            $flash = ($actuators['led'] ?? 'off') !== 'on';
+            // Keep the Firebase check well under the ESP32-CAM's HTTP timeout so a
+            // slow/offline Firebase connection never causes the device to time out
+            // and miss the capture command. Fall back to the LED schedule if unreachable.
+            $actuators = $firebase->getActuators(2);
+            $flash = isset($actuators['led'])
+                ? $actuators['led'] !== 'on'
+                : ! LedSchedule::isWithinOnWindow();
 
-            // Consume only after Firebase responds so a slow/failed lookup never drops the request.
+            // Consume only after the flash check finishes so a failed lookup never drops the request.
             $pending = Cache::pull(self::CAPTURE_REQUEST_KEY);
             if ($pending !== null && ! ($pending['scheduled'] ?? false)) {
                 Cache::put(self::MANUAL_CAPTURE_KEY, $pending, now()->addMinutes(5));

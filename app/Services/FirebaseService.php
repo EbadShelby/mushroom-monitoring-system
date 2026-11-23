@@ -43,9 +43,9 @@ class FirebaseService
      *
      * @return array<string, string>
      */
-    public function getActuators(): array
+    public function getActuators(int $timeoutSeconds = 5): array
     {
-        $response = $this->get('/actuators');
+        $response = $this->get('/actuators', $timeoutSeconds);
 
         if ($response === null) {
             return [];
@@ -115,10 +115,21 @@ class FirebaseService
             openssl_sign($signingInput, $signature, $privateKey, OPENSSL_ALGO_SHA256);
             $jwt = "{$signingInput}.".$this->base64url($signature);
 
-            $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
-                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                'assertion' => $jwt,
-            ]);
+            try {
+                $response = Http::asForm()
+                    ->connectTimeout(1)
+                    ->timeout(2)
+                    ->post('https://oauth2.googleapis.com/token', [
+                        'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                        'assertion' => $jwt,
+                    ]);
+            } catch (\Throwable $e) {
+                Log::error('Firebase OAuth token request exception', [
+                    'error' => $e->getMessage(),
+                ]);
+
+                return null;
+            }
 
             if (! $response->successful()) {
                 Log::error('Firebase OAuth token exchange failed', [
@@ -145,10 +156,15 @@ class FirebaseService
         return "{$this->baseUrl}{$path}.json";
     }
 
-    /** @return array<string, string> */
-    private function headers(): array
+    /** @return array<string, string>|null */
+    private function headers(): ?array
     {
+        $requiresAuth = $this->serviceAccountPath && file_exists($this->serviceAccountPath);
         $token = $this->accessToken();
+
+        if ($requiresAuth && $token === null) {
+            return null;
+        }
 
         return array_filter([
             'Content-Type' => 'application/json',
@@ -164,8 +180,15 @@ class FirebaseService
     private function patch(string $path, array $data): void
     {
         try {
-            $response = Http::timeout(5)
-                ->withHeaders($this->headers())
+            $headers = $this->headers();
+
+            if ($headers === null) {
+                return;
+            }
+
+            $response = Http::connectTimeout(2)
+                ->timeout(5)
+                ->withHeaders($headers)
                 ->patch($this->url($path), $data);
 
             if (! $response->successful()) {
@@ -186,8 +209,15 @@ class FirebaseService
     private function put(string $path, mixed $data): void
     {
         try {
-            $response = Http::timeout(5)
-                ->withHeaders($this->headers())
+            $headers = $this->headers();
+
+            if ($headers === null) {
+                return;
+            }
+
+            $response = Http::connectTimeout(2)
+                ->timeout(5)
+                ->withHeaders($headers)
                 ->put($this->url($path), $data);
 
             if (! $response->successful()) {
@@ -205,11 +235,18 @@ class FirebaseService
     /**
      * GET — reads data from Firebase.
      */
-    private function get(string $path): mixed
+    private function get(string $path, int $timeoutSeconds = 5): mixed
     {
         try {
-            $response = Http::timeout(5)
-                ->withHeaders($this->headers())
+            $headers = $this->headers();
+
+            if ($headers === null) {
+                return null;
+            }
+
+            $response = Http::connectTimeout(min(2, $timeoutSeconds))
+                ->timeout($timeoutSeconds)
+                ->withHeaders($headers)
                 ->get($this->url($path));
 
             if ($response->successful()) {

@@ -32,8 +32,8 @@ function seedActiveCycleAndReading(float $humidity): GrowingCycle
     return $cycle;
 }
 
-test('scheduled boost turns humidifier on when cycle is active and humidity is below 88%', function () {
-    seedActiveCycleAndReading(83.0);
+test('scheduled boost turns humidifier on when cycle is active and humidity is below 85%', function () {
+    seedActiveCycleAndReading(82.0);
 
     $firebase = Mockery::mock(FirebaseService::class);
     $firebase->shouldReceive('getActuators')->once()->andReturn(['humidifier' => 'off', 'led' => 'on']);
@@ -51,8 +51,8 @@ test('scheduled boost turns humidifier on when cycle is active and humidity is b
     ]);
 });
 
-test('scheduled boost skips when humidity is already 88% or higher', function () {
-    seedActiveCycleAndReading(89.5);
+test('scheduled boost skips when humidity is already 85% or higher', function () {
+    seedActiveCycleAndReading(85.5);
 
     $firebase = Mockery::mock(FirebaseService::class);
     $firebase->shouldReceive('getActuators')->once()->andReturn(['humidifier' => 'off']);

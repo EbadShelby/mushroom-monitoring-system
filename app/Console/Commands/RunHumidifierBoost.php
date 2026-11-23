@@ -15,7 +15,7 @@ class RunHumidifierBoost extends Command
 {
     protected $signature = 'humidifier:boost';
 
-    protected $description = 'Run a sensor-capped misting boost (up to 5 mins, stops early at 94% RH or skips if already >= 88% RH).';
+    protected $description = 'Run a sensor-capped misting boost (up to 5 mins, stops early at 94% RH or skips if already >= 85% RH).';
 
     public function handle(FirebaseService $firebase): int
     {
@@ -55,7 +55,7 @@ class RunHumidifierBoost extends Command
             return self::SUCCESS;
         }
 
-        $maxStartHumidity = (float) config('humidifier.boost_max_start_humidity', 88);
+        $maxStartHumidity = (float) config('humidifier.boost_max_start_humidity', 85);
         $latestReading = SensorReading::query()
             ->whereNotNull('humidity')
             ->where('recorded_at', '>=', now()->subMinutes(5))
