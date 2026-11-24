@@ -20,7 +20,7 @@ test('actuator page shows configured environmental thresholds', function () {
             ->where('thresholds.humidity_low', 75)
             ->where('thresholds.humidity_high', 95)
             ->where('thresholds.humidifier_on_at', 78)
-            ->where('thresholds.humidifier_off_at', 90)
+            ->where('thresholds.humidifier_off_at', 93)
             ->where('thresholds.light_min', 200)
             ->where('thresholds.light_max', 800)
             ->where('thresholds.soil_warning', 60)

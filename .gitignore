@@ -30,3 +30,4 @@ yarn-error.log
 
 # Firebase service account key — contains private key, NEVER commit
 /storage/app/firebase-service-account.json
+DEBUG_DEV_GUIDE.md

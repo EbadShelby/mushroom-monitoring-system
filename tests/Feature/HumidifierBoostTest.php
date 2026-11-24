@@ -82,7 +82,7 @@ test('scheduled boost skips when manual override is active or no cycle is active
     expect(ActuatorLog::count())->toBe(0);
 });
 
-test('scheduled boost stops after 3 minutes even if humidity has not reached 90%', function () {
+test('scheduled boost stops after 3 minutes even if humidity has not reached 93%', function () {
     $cycle = seedActiveCycleAndReading(83.0);
 
     $firebase = Mockery::mock(FirebaseService::class);
@@ -97,7 +97,7 @@ test('scheduled boost stops after 3 minutes even if humidity has not reached 90%
         'triggered_at' => now()->subMinutes(3),
     ]);
 
-    // Boost window expires now; humidity is 88% (inside 78..90 band)
+    // Boost window expires now; humidity is 88% (inside 78..93 band)
     Cache::put(ThresholdService::BOOST_UNTIL_KEY, now()->subSecond()->getTimestamp(), now()->addMinutes(5));
 
     $result = app(ThresholdService::class)->evaluate(['humidity' => 88.0], $cycle);
@@ -106,7 +106,7 @@ test('scheduled boost stops after 3 minutes even if humidity has not reached 90%
         ->and(Cache::get(ThresholdService::BOOST_UNTIL_KEY))->toBeNull();
 });
 
-test('scheduled boost stops early when humidity reaches 90%', function () {
+test('scheduled boost stops early when humidity reaches 93%', function () {
     $cycle = seedActiveCycleAndReading(83.0);
 
     $firebase = Mockery::mock(FirebaseService::class);
@@ -121,10 +121,10 @@ test('scheduled boost stops early when humidity reaches 90%', function () {
         'triggered_at' => now()->subMinute(),
     ]);
 
-    // 2 minutes still left in boost, but humidity reached 90%
+    // 2 minutes still left in boost, but humidity reached 93%
     Cache::put(ThresholdService::BOOST_UNTIL_KEY, now()->addMinutes(2)->getTimestamp(), now()->addMinutes(5));
 
-    $result = app(ThresholdService::class)->evaluate(['humidity' => 90.0], $cycle);
+    $result = app(ThresholdService::class)->evaluate(['humidity' => 93.0], $cycle);
 
     expect($result['commands']['humidifier'])->toBe('off')
         ->and(Cache::get(ThresholdService::BOOST_UNTIL_KEY))->toBeNull();
