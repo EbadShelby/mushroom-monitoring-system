@@ -183,7 +183,7 @@ const anyWarning = computed(
 );
 
 // Chart Interval Selection
-const chartInterval = ref('1m');
+const chartInterval = ref('5m');
 const chartIntervalLabel = computed(() => {
     const map: Record<string, string> = {
         '1m': 'Last Hour',
@@ -192,7 +192,7 @@ const chartIntervalLabel = computed(() => {
         '1h': 'Last 7 Days',
     };
 
-    return map[chartInterval.value] || 'Last Hour';
+    return map[chartInterval.value] || 'Last 6 Hours';
 });
 function onIntervalChange() {
     router.reload({

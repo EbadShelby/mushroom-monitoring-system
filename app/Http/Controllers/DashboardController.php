@@ -67,12 +67,12 @@ class DashboardController extends Controller
                 ->first(['id', 'sensor', 'value_at_alert', 'threshold_exceeded', 'message', 'status', 'sent_at'])),
 
             'chartData' => Inertia::defer(function () use ($request) {
-                $interval = $request->query('chart_interval', '1m');
+                $interval = $request->query('chart_interval', '5m');
                 $timeWindow = match ($interval) {
-                    '5m' => now()->subHours(6),
+                    '1m' => now()->subHour(),
                     '15m' => now()->subHours(24),
                     '1h' => now()->subDays(7),
-                    default => now()->subHour(),
+                    default => now()->subHours(6),
                 };
 
                 $readings = SensorReading::where('recorded_at', '>=', $timeWindow)
@@ -88,10 +88,9 @@ class DashboardController extends Controller
                 }
 
                 $intervalSeconds = match ($interval) {
-                    '5m' => 5 * 60,
                     '15m' => 15 * 60,
                     '1h' => 60 * 60,
-                    default => 60,
+                    default => 5 * 60,
                 };
 
                 /** @var array<int, array{temp: list<float|null>, hum: list<float|null>}> $grouped */

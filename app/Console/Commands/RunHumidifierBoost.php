@@ -15,7 +15,7 @@ class RunHumidifierBoost extends Command
 {
     protected $signature = 'humidifier:boost';
 
-    protected $description = 'Run a sensor-capped misting boost (up to 5 mins, stops early at 94% RH or skips if already >= 85% RH).';
+    protected $description = 'Run a sensor-capped misting boost (up to 3 mins, stops early at 90% RH or skips if already >= 85% RH).';
 
     public function handle(FirebaseService $firebase): int
     {
@@ -74,7 +74,7 @@ class RunHumidifierBoost extends Command
             return self::SUCCESS;
         }
 
-        $durationMinutes = max(1, (int) config('humidifier.boost_duration_minutes', 5));
+        $durationMinutes = max(1, (int) config('humidifier.boost_duration_minutes', 3));
 
         Cache::put(
             ThresholdService::BOOST_UNTIL_KEY,

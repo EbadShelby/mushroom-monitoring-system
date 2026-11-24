@@ -125,14 +125,21 @@ export interface LedSchedule {
 }
 
 export interface Thresholds {
+    temp_min: number;
     temp_max: number;
     humidity_low: number;
     humidity_high: number;
     humidifier_on_at: number;
     humidifier_off_at: number;
     co2_max: number;
+    light_min: number;
+    light_max: number;
     soil_warning: number;
     soil_critical: number;
+    boost_enabled: boolean;
+    boost_times: string[];
+    boost_max_start_humidity: number;
+    boost_duration_minutes: number;
 }
 
 export interface ActuatorOverrides {

@@ -32,14 +32,14 @@ return [
     |
     | The humidifier switches ON at (humidity_low + on margin) and OFF at
     | (humidity_high - off margin), so humidity is corrected before it leaves
-    | the target range. Example (75-95%) with margins 3 and 1:
-    | ON at 78% or below, OFF at 94% or above.
+    | the target range. Example (75-95%) with margins 3 and 5:
+    | ON at 78% or below, OFF at 90% or above.
     |
     */
 
     'humidity_on_margin' => (float) env('HUMIDIFIER_HUMIDITY_ON_MARGIN', 3),
 
-    'humidity_off_margin' => (float) env('HUMIDIFIER_HUMIDITY_OFF_MARGIN', 1),
+    'humidity_off_margin' => (float) env('HUMIDIFIER_HUMIDITY_OFF_MARGIN', 5),
 
     /*
     |--------------------------------------------------------------------------
@@ -69,10 +69,10 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Scheduled Sensor-Capped Misting Boost (3x/day: Morning, Midday & Evening)
+    | Scheduled Sensor-Capped Misting Boost (2x/day: Morning & Evening)
     |--------------------------------------------------------------------------
     |
-    | Gently refreshes chamber humidity three times daily (7:00 AM, 1:00 PM & 7:00 PM)
+    | Gently refreshes chamber humidity twice daily (7:00 AM & 7:00 PM)
     | when humidity is below boost_max_start_humidity. Stops automatically after
     | boost_duration_minutes OR as soon as humidity reaches the OFF threshold.
     |
@@ -80,7 +80,7 @@ return [
 
     'boost_enabled' => filter_var(env('HUMIDIFIER_BOOST_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
-    'boost_duration_minutes' => (int) env('HUMIDIFIER_BOOST_DURATION_MINUTES', 5),
+    'boost_duration_minutes' => (int) env('HUMIDIFIER_BOOST_DURATION_MINUTES', 3),
 
     'boost_max_start_humidity' => (float) env('HUMIDIFIER_BOOST_MAX_START_HUMIDITY', 85),
 

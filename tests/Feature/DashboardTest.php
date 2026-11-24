@@ -2,6 +2,7 @@
 
 use App\Models\CameraSnapshot;
 use App\Models\GrowingCycle;
+use App\Models\SensorReading;
 use App\Models\User;
 
 test('guests are redirected to the login page', function () {
@@ -71,4 +72,39 @@ test('dashboard loads successfully with active cycle and latest camera snapshot'
 
     $deferredResponse->assertOk()
         ->assertJsonPath('props.latestSnapshot.snapshot_number', 2);
+});
+
+test('dashboard chart defaults to 5-minute buckets over the last 6 hours', function () {
+    $user = User::factory()->create();
+    $bucketStart = now()->subHours(3)->startOfHour();
+
+    SensorReading::create([
+        'temperature' => 28.0,
+        'humidity' => 84.0,
+        'recorded_at' => $bucketStart->copy()->addMinute(),
+    ]);
+
+    SensorReading::create([
+        'temperature' => 30.0,
+        'humidity' => 86.0,
+        'recorded_at' => $bucketStart->copy()->addMinutes(3),
+    ]);
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+    $page = $response->viewData('page');
+    $version = is_array($page) ? ($page['version'] ?? null) : null;
+
+    $deferredResponse = $this->actingAs($user)
+        ->withHeaders(array_filter([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $version,
+            'X-Inertia-Partial-Component' => 'Dashboard',
+            'X-Inertia-Partial-Data' => 'chartData',
+        ]))
+        ->get(route('dashboard'));
+
+    $deferredResponse->assertOk()
+        ->assertJsonCount(1, 'props.chartData')
+        ->assertJsonPath('props.chartData.0.temperature', 29)
+        ->assertJsonPath('props.chartData.0.humidity', 85);
 });

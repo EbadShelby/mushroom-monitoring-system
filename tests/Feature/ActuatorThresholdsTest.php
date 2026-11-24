@@ -15,10 +15,20 @@ test('actuator page shows configured environmental thresholds', function () {
     $this->actingAs(User::factory()->create(['role' => 'admin']))
         ->get('/actuators')
         ->assertInertia(fn ($page) => $page
+            ->where('thresholds.temp_min', 26)
+            ->where('thresholds.temp_max', 32)
             ->where('thresholds.humidity_low', 75)
             ->where('thresholds.humidity_high', 95)
             ->where('thresholds.humidifier_on_at', 78)
-            ->where('thresholds.humidifier_off_at', 94)
+            ->where('thresholds.humidifier_off_at', 90)
+            ->where('thresholds.light_min', 200)
+            ->where('thresholds.light_max', 800)
+            ->where('thresholds.soil_warning', 60)
+            ->where('thresholds.soil_critical', 40)
+            ->where('thresholds.boost_enabled', true)
+            ->where('thresholds.boost_times', ['7:00 AM', '7:00 PM'])
+            ->where('thresholds.boost_max_start_humidity', 85)
+            ->where('thresholds.boost_duration_minutes', 3)
             ->missing('overrides.fan'));
 });
 
