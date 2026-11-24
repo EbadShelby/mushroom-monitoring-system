@@ -158,6 +158,15 @@ export interface SensorReading {
     soil_status: string | null;
 }
 
+export interface HistoricalChartPoint {
+    time: string;
+    temperature?: number | null;
+    humidity?: number | null;
+    co2_raw?: number | null;
+    light_level?: number | null;
+    soil_moisture?: number | null;
+}
+
 export interface MushroomMeasurement {
     id: number;
     growing_cycle_id: number;

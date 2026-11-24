@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Historical
     Route::get('historical', [HistoricalController::class, 'index'])->name('historical');
     Route::get('api/historical', [HistoricalController::class, 'data'])->name('historical.data');
+    Route::get('api/historical/chart', [HistoricalController::class, 'chart'])->name('historical.chart');
     Route::get('api/historical/export', [HistoricalController::class, 'export'])->name('historical.export');
 
     // Admin + Faculty Routes
