@@ -244,9 +244,9 @@ test('authorized user can create growing cycle with multiple fruiting bag types 
     expect($cycle->fruiting_bags)->toHaveCount(2);
 });
 
-test('breach summary counts at most one breach per minute per sensor', function () {
+test('breach summary counts at most one breach per rolling 15-minute cooldown per sensor', function () {
     $cycle = GrowingCycle::create([
-        'name' => 'Breach Minute Test',
+        'name' => 'Breach Cooldown Test',
         'mushroom_variety' => 'Gray Oyster Mushroom',
         'substrate_type' => 'Sawdust',
         'start_date' => now()->toDateString(),
@@ -255,8 +255,8 @@ test('breach summary counts at most one breach per minute per sensor', function 
 
     $base = now()->startOfMinute();
 
-    // Three low-humidity readings in the same minute -> 1 breach
-    foreach ([0, 10, 20] as $sec) {
+    // Breach #1 at 00:00, still out of range at 00:05 and 00:14 -> stays 1 breach
+    foreach ([0, 5, 14] as $min) {
         SensorReading::create([
             'growing_cycle_id' => $cycle->id,
             'temperature' => 28.0,
@@ -265,26 +265,27 @@ test('breach summary counts at most one breach per minute per sensor', function 
             'light_level' => 300,
             'soil_moisture' => 65,
             'soil_status' => 'moist',
-            'recorded_at' => $base->copy()->addSeconds($sec),
+            'recorded_at' => $base->copy()->addMinutes($min),
         ]);
     }
 
-    // One low-humidity + dry-substrate reading in the next minute -> +1 humidity, +1 soil_moisture breach
+    // Still out of range at 00:15 (15 mins after 00:00) -> counts as breach #2 (+1 soil breach)
     SensorReading::create([
         'growing_cycle_id' => $cycle->id,
         'temperature' => 28.0,
-        'humidity' => 65.0,
+        'humidity' => 68.0,
         'co2_raw' => 600,
         'light_level' => 300,
         'soil_moisture' => 55,
         'soil_status' => 'dry',
-        'recorded_at' => $base->copy()->addMinute(),
+        'recorded_at' => $base->copy()->addMinutes(15),
     ]);
 
     $summary = $cycle->breachSummary();
 
     expect($summary['humidity'])->toBe(2)
         ->and($summary['soil_moisture'])->toBe(1)
+        ->and($summary['temperature'])->toBe(0)
         ->and($summary['total_readings'])->toBe(4);
 });
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * @property int $id
@@ -73,15 +74,18 @@ class GrowingCycle extends Model
     }
 
     /**
-     * Count out-of-range threshold breaches, deduplicated to at most 1 per minute per sensor.
-     * High-humidity spikes (> 95%) within 3 minutes after the humidifier shuts off are ignored
-     * while residual mist settles.
+     * Count out-of-range threshold breaches per sensor using a rolling 15-minute
+     * cooldown (matching the SMS alert cooldown). High-humidity spikes (> 95%)
+     * within 3 minutes after the humidifier shuts off are ignored while mist settles.
      *
      * @return array{temperature: int, humidity: int, co2: int, soil_moisture: int, total_readings: int}
      */
     public function breachSummary(): array
     {
-        $readings = $this->sensorReadings()->get(['temperature', 'humidity', 'co2_raw', 'soil_moisture', 'recorded_at']);
+        $readings = $this->sensorReadings()
+            ->orderBy('recorded_at')
+            ->orderBy('id')
+            ->get(['temperature', 'humidity', 'co2_raw', 'soil_moisture', 'recorded_at']);
 
         $offTimestamps = ActuatorLog::query()
             ->where('actuator', 'humidifier')
@@ -105,30 +109,54 @@ class GrowingCycle extends Model
             return false;
         };
 
-        $minuteBucket = static fn (SensorReading $r): string => Carbon::parse($r->recorded_at)->format('Y-m-d H:i');
-
         return [
-            'temperature' => $readings->filter(
-                fn (SensorReading $r) => $r->temperature !== null && ($r->temperature < 26 || $r->temperature > 32)
-            )->unique($minuteBucket)->count(),
-            'humidity' => $readings->filter(function (SensorReading $r) use ($isPostOffSettling): bool {
-                if ($r->humidity === null) {
-                    return false;
-                }
-
-                if ($r->humidity < 75) {
-                    return true;
-                }
-
-                return $r->humidity > 95 && ! $isPostOffSettling($r);
-            })->unique($minuteBucket)->count(),
-            'co2' => $readings->filter(
-                fn (SensorReading $r) => $r->co2_raw !== null && $r->co2_raw > 1000
-            )->unique($minuteBucket)->count(),
-            'soil_moisture' => $readings->filter(
-                fn (SensorReading $r) => $r->soil_moisture !== null && $r->soil_moisture < 60
-            )->unique($minuteBucket)->count(),
+            'temperature' => $this->countBreachesWithCooldown(
+                $readings,
+                static fn (SensorReading $r): bool => $r->temperature !== null && ($r->temperature < 26 || $r->temperature > 32),
+            ),
+            'humidity' => $this->countBreachesWithCooldown(
+                $readings,
+                static fn (SensorReading $r): bool => $r->humidity !== null && ($r->humidity < 75 || ($r->humidity > 95 && ! $isPostOffSettling($r))),
+            ),
+            'co2' => $this->countBreachesWithCooldown(
+                $readings,
+                static fn (SensorReading $r): bool => $r->co2_raw !== null && $r->co2_raw > 1000,
+            ),
+            'soil_moisture' => $this->countBreachesWithCooldown(
+                $readings,
+                static fn (SensorReading $r): bool => $r->soil_moisture !== null && $r->soil_moisture < 60,
+            ),
             'total_readings' => $readings->count(),
         ];
+    }
+
+    /**
+     * Count chronologically ordered breaches with a rolling cooldown window.
+     *
+     * @param  Collection<int, SensorReading>  $readings
+     * @param  callable(SensorReading): bool  $isBreach
+     */
+    private function countBreachesWithCooldown(
+        Collection $readings,
+        callable $isBreach,
+        int $cooldownSeconds = 900,
+    ): int {
+        $count = 0;
+        $lastCountedTs = null;
+
+        foreach ($readings as $reading) {
+            if (! $isBreach($reading)) {
+                continue;
+            }
+
+            $ts = Carbon::parse($reading->recorded_at)->getTimestamp();
+
+            if ($lastCountedTs === null || ($ts - $lastCountedTs) >= $cooldownSeconds) {
+                $count++;
+                $lastCountedTs = $ts;
+            }
+        }
+
+        return $count;
     }
 }

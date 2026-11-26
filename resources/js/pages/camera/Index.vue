@@ -11,7 +11,6 @@ import {
     ImageIcon,
     CalendarDays,
     Loader2,
-    Columns2,
 } from '@lucide/vue';
 import axios from 'axios';
 import { ref, computed } from 'vue';
@@ -430,115 +429,6 @@ async function confirmDelete() {
     }
 }
 
-// ── Compare snapshots ─────────────────────────────────────────────────────────
-const compareMode = ref(false);
-const compareIds = ref<number[]>([]);
-const showCompareModal = ref(false);
-const compareView = ref<'side' | 'slider'>('side');
-const sliderPosition = ref(50);
-
-const compareBefore = computed(
-    () =>
-        props.snapshots.find((s) => s.id === compareIds.value[0]) ?? null,
-);
-const compareAfter = computed(
-    () =>
-        props.snapshots.find((s) => s.id === compareIds.value[1]) ?? null,
-);
-
-function snapshotTimestamp(snap: CameraSnapshot): number {
-    if (snap.created_at) {
-        return Date.parse(snap.created_at);
-    }
-
-    if (snap.captured_date) {
-        return Date.parse(snap.captured_date);
-    }
-
-    return snap.id;
-}
-
-const compareTimeDiff = computed(() => {
-    if (!compareBefore.value || !compareAfter.value) {
-        return '';
-    }
-
-    const diffMs = Math.abs(
-        snapshotTimestamp(compareAfter.value) -
-            snapshotTimestamp(compareBefore.value),
-    );
-    const totalMinutes = Math.round(diffMs / 60_000);
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const mins = totalMinutes % 60;
-
-    const parts: string[] = [];
-
-    if (days > 0) {
-        parts.push(`${days} day${days !== 1 ? 's' : ''}`);
-    }
-
-    if (hours > 0) {
-        parts.push(`${hours} hr${hours !== 1 ? 's' : ''}`);
-    }
-
-    if (days === 0 && mins > 0) {
-        parts.push(`${mins} min${mins !== 1 ? 's' : ''}`);
-    }
-
-    return parts.length > 0 ? `${parts.join(', ')} apart` : 'Same time';
-});
-
-function toggleCompareMode() {
-    compareMode.value = !compareMode.value;
-    compareIds.value = [];
-    showCompareModal.value = false;
-}
-
-function handleCardClick(snap: CameraSnapshot) {
-    if (!compareMode.value) {
-        openLightbox(snap);
-
-        return;
-    }
-
-    const existingIdx = compareIds.value.indexOf(snap.id);
-
-    if (existingIdx >= 0) {
-        compareIds.value.splice(existingIdx, 1);
-
-        return;
-    }
-
-    if (compareIds.value.length >= 2) {
-        compareIds.value = [compareIds.value[1], snap.id];
-    } else {
-        compareIds.value.push(snap.id);
-    }
-
-    if (compareIds.value.length === 2) {
-        const first = props.snapshots.find(
-            (s) => s.id === compareIds.value[0],
-        );
-        const second = props.snapshots.find(
-            (s) => s.id === compareIds.value[1],
-        );
-
-        if (first && second && snapshotTimestamp(first) > snapshotTimestamp(second)) {
-            compareIds.value = [second.id, first.id];
-        }
-
-        sliderPosition.value = 50;
-        showCompareModal.value = true;
-    }
-}
-
-function closeCompareModal() {
-    showCompareModal.value = false;
-    compareMode.value = false;
-    compareIds.value = [];
-}
-
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 const lightboxSnap = ref<CameraSnapshot | null>(null);
 const lightboxIdx = ref(0);
@@ -608,64 +498,31 @@ function formatTime(iso: string | null | undefined): string {
                 </p>
             </div>
             <div
+                v-if="userRole !== 'student'"
                 class="flex flex-wrap items-center gap-2 self-start sm:self-auto"
             >
                 <button
-                    v-if="filteredSnapshots.length >= 2"
-                    id="compare-photos-btn"
-                    class="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition active:scale-95"
-                    :class="
-                        compareMode
-                            ? 'border-sky-500 bg-sky-500/15 text-sky-600 dark:text-sky-400'
-                            : 'border-border text-foreground hover:bg-muted dark:border-slate-700 dark:text-white'
-                    "
-                    @click="toggleCompareMode"
+                    id="capture-now-btn"
+                    :disabled="capturing"
+                    class="flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-600 transition hover:bg-emerald-600/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400"
+                    @click="captureNow"
                 >
-                    <Columns2 class="h-4 w-4" />
-                    {{ compareMode ? 'Cancel Compare' : 'Compare' }}
+                    <Loader2
+                        v-if="capturing"
+                        class="h-4 w-4 animate-spin"
+                    />
+                    <Camera v-else class="h-4 w-4" />
+                    {{ capturing ? 'Capturing...' : 'Capture Now' }}
                 </button>
-                <template v-if="userRole !== 'student'">
-                    <button
-                        id="capture-now-btn"
-                        :disabled="capturing"
-                        class="flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-600 transition hover:bg-emerald-600/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400"
-                        @click="captureNow"
-                    >
-                        <Loader2
-                            v-if="capturing"
-                            class="h-4 w-4 animate-spin"
-                        />
-                        <Camera v-else class="h-4 w-4" />
-                        {{ capturing ? 'Capturing...' : 'Capture Now' }}
-                    </button>
-                    <button
-                        id="upload-photo-btn"
-                        class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
-                        @click="showUpload = true"
-                    >
-                        <Upload class="h-4 w-4" />
-                        Upload Photo
-                    </button>
-                </template>
+                <button
+                    id="upload-photo-btn"
+                    class="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 active:scale-95 dark:text-white"
+                    @click="showUpload = true"
+                >
+                    <Upload class="h-4 w-4" />
+                    Upload Photo
+                </button>
             </div>
-        </div>
-
-        <!-- Compare selection banner -->
-        <div
-            v-if="compareMode"
-            class="flex items-center justify-between rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-sm text-sky-700 dark:text-sky-300"
-        >
-            <span>
-                Select <strong>2 photos</strong> to compare side-by-side ({{
-                    compareIds.length
-                }}/2 selected)
-            </span>
-            <button
-                class="text-xs font-semibold underline hover:opacity-80"
-                @click="toggleCompareMode"
-            >
-                Cancel
-            </button>
         </div>
 
         <!-- Filter bar -->
@@ -816,12 +673,7 @@ function formatTime(iso: string | null | undefined): string {
                         v-for="snap in group.items"
                         :key="snap.id"
                         class="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-muted/30 shadow-lg transition dark:bg-slate-900"
-                        :class="
-                            compareIds.includes(snap.id)
-                                ? 'ring-3 ring-sky-500 ring-offset-2 ring-offset-background'
-                                : ''
-                        "
-                        @click="handleCardClick(snap)"
+                        @click="openLightbox(snap)"
                     >
                         <img
                             :src="`/storage/${snap.file_path}`"
@@ -1211,246 +1063,6 @@ function formatTime(iso: string | null | undefined): string {
                         />
                         {{ deleting ? 'Deleting...' : 'Delete' }}
                     </button>
-                </div>
-            </div>
-        </div>
-    </Teleport>
-
-    <!-- Compare Snapshots Modal -->
-    <Teleport to="body">
-        <div
-            v-if="showCompareModal && compareBefore && compareAfter"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-            @click.self="closeCompareModal"
-        >
-            <div
-                class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl dark:border-slate-700 dark:bg-slate-900"
-            >
-                <!-- Header -->
-                <div
-                    class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5 dark:border-slate-800"
-                >
-                    <div class="flex items-center gap-3">
-                        <h3
-                            class="text-base font-bold text-foreground dark:text-white"
-                        >
-                            Snapshot Comparison
-                        </h3>
-                        <span
-                            class="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
-                        >
-                            {{ compareTimeDiff }}
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="flex rounded-lg border border-border p-0.5 text-xs dark:border-slate-700"
-                        >
-                            <button
-                                type="button"
-                                class="rounded-md px-2.5 py-1 font-medium transition"
-                                :class="
-                                    compareView === 'side'
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                "
-                                @click="compareView = 'side'"
-                            >
-                                Side-by-Side
-                            </button>
-                            <button
-                                type="button"
-                                class="rounded-md px-2.5 py-1 font-medium transition"
-                                :class="
-                                    compareView === 'slider'
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                "
-                                @click="compareView = 'slider'"
-                            >
-                                Overlay Slider
-                            </button>
-                        </div>
-                        <button
-                            type="button"
-                            class="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                            @click="closeCompareModal"
-                        >
-                            <X class="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Body -->
-                <div class="overflow-y-auto p-5">
-                    <!-- Selectors -->
-                    <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div>
-                            <label
-                                class="mb-1 block text-xs font-semibold text-muted-foreground uppercase"
-                                >Before (A)</label
-                            >
-                            <select
-                                v-model.number="compareIds[0]"
-                                class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                            >
-                                <option
-                                    v-for="s in filteredSnapshots"
-                                    :key="s.id"
-                                    :value="s.id"
-                                >
-                                    Snapshot #{{
-                                        snapshotNumberMap.get(s.id) ?? s.id
-                                    }}
-                                    — {{ formatDate(s.captured_date ?? null) }}
-                                    {{ formatTime(s.created_at) }}
-                                </option>
-                            </select>
-                        </div>
-                        <div>
-                            <label
-                                class="mb-1 block text-xs font-semibold text-muted-foreground uppercase"
-                                >After (B)</label
-                            >
-                            <select
-                                v-model.number="compareIds[1]"
-                                class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                            >
-                                <option
-                                    v-for="s in filteredSnapshots"
-                                    :key="s.id"
-                                    :value="s.id"
-                                >
-                                    Snapshot #{{
-                                        snapshotNumberMap.get(s.id) ?? s.id
-                                    }}
-                                    — {{ formatDate(s.captured_date ?? null) }}
-                                    {{ formatTime(s.created_at) }}
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Side-by-Side View -->
-                    <div
-                        v-if="compareView === 'side'"
-                        class="grid grid-cols-1 gap-4 sm:grid-cols-2"
-                    >
-                        <div
-                            v-for="(item, i) in [
-                                { label: 'Before', snap: compareBefore },
-                                { label: 'After', snap: compareAfter },
-                            ]"
-                            :key="i"
-                            class="overflow-hidden rounded-xl border border-border bg-muted/20 dark:border-slate-700 dark:bg-slate-800/50"
-                        >
-                            <div
-                                class="aspect-video w-full overflow-hidden bg-black/40"
-                            >
-                                <img
-                                    :src="`/storage/${item.snap.file_path}`"
-                                    :alt="item.snap.file_name"
-                                    class="h-full w-full object-contain"
-                                />
-                            </div>
-                            <div class="space-y-1 p-3 text-xs">
-                                <div class="flex items-center justify-between">
-                                    <span
-                                        class="font-bold text-foreground dark:text-white"
-                                    >
-                                        {{ item.label }} · Snapshot
-                                        {{
-                                            snapshotNumberMap.get(
-                                                item.snap.id,
-                                            ) ?? item.snap.id
-                                        }}
-                                    </span>
-                                    <span
-                                        class="rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
-                                        :class="
-                                            SOURCE_BADGES[
-                                                getSnapshotSource(item.snap)
-                                            ].classes
-                                        "
-                                    >
-                                        {{
-                                            SOURCE_BADGES[
-                                                getSnapshotSource(item.snap)
-                                            ].label
-                                        }}
-                                    </span>
-                                </div>
-                                <p class="text-muted-foreground">
-                                    {{
-                                        formatDate(
-                                            item.snap.captured_date ?? null,
-                                        )
-                                    }}
-                                    <span v-if="item.snap.created_at">
-                                        · {{ formatTime(item.snap.created_at) }}
-                                    </span>
-                                </p>
-                                <p
-                                    v-if="item.snap.notes"
-                                    class="text-foreground/80 dark:text-slate-300"
-                                >
-                                    {{ item.snap.notes }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Overlay Slider View -->
-                    <div v-else class="space-y-3">
-                        <div
-                            class="relative mx-auto aspect-video max-h-[60vh] w-full overflow-hidden rounded-xl border border-border bg-black dark:border-slate-700"
-                        >
-                            <img
-                                :src="`/storage/${compareAfter.file_path}`"
-                                :alt="compareAfter.file_name"
-                                class="absolute inset-0 h-full w-full object-contain"
-                            />
-                            <img
-                                :src="`/storage/${compareBefore.file_path}`"
-                                :alt="compareBefore.file_name"
-                                class="absolute inset-0 h-full w-full object-contain"
-                                :style="{
-                                    clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
-                                }"
-                            />
-                            <div
-                                class="pointer-events-none absolute inset-y-0 w-0.5 bg-white shadow"
-                                :style="{ left: `${sliderPosition}%` }"
-                            />
-                            <span
-                                class="absolute top-2 left-2 rounded bg-black/70 px-2 py-0.5 text-xs font-semibold text-white"
-                            >
-                                Before:
-                                {{
-                                    formatDate(
-                                        compareBefore.captured_date ?? null,
-                                    )
-                                }}
-                            </span>
-                            <span
-                                class="absolute top-2 right-2 rounded bg-black/70 px-2 py-0.5 text-xs font-semibold text-white"
-                            >
-                                After:
-                                {{
-                                    formatDate(
-                                        compareAfter.captured_date ?? null,
-                                    )
-                                }}
-                            </span>
-                        </div>
-                        <input
-                            v-model.number="sliderPosition"
-                            type="range"
-                            min="0"
-                            max="100"
-                            class="w-full accent-emerald-500"
-                        />
-                    </div>
                 </div>
             </div>
         </div>

@@ -437,12 +437,17 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
         <div
             class="rounded-2xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm dark:border-border dark:border-slate-700/50 dark:bg-card dark:bg-slate-800/50"
         >
-            <h2
-                class="mb-4 flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
-            >
-                <AlertTriangle class="h-4 w-4 text-amber-400" />
-                Threshold Breach Summary
-            </h2>
+            <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                <h2
+                    class="flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
+                >
+                    <AlertTriangle class="h-4 w-4 text-amber-400" />
+                    Threshold Breach Summary
+                </h2>
+                <span class="text-xs text-muted-foreground">
+                    Counted at most once every 15 mins per sensor
+                </span>
+            </div>
             <div
                 v-if="!breachSummary"
                 class="grid grid-cols-2 gap-4 sm:grid-cols-4"
@@ -484,7 +489,8 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     <p
                         class="mt-1 text-xs text-muted-foreground/80 dark:text-slate-500"
                     >
-                        breaches &bull; target {{ card.range }}
+                        {{ card.value === 1 ? 'breach' : 'breaches' }} &bull;
+                        target {{ card.range }}
                     </p>
                 </div>
             </div>

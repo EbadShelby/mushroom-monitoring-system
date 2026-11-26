@@ -79,7 +79,7 @@
 
 <!-- Threshold Breaches -->
 <div class="section">
-    <div class="section-title">Threshold Breach Summary ({{ number_format($breachSummary['total_readings']) }} total readings)</div>
+    <div class="section-title">Threshold Breach Summary ({{ number_format($breachSummary['total_readings']) }} total readings · 15-min cooldown)</div>
     <div class="breach-grid">
         <div class="breach-card {{ $breachSummary['temperature'] === 0 ? 'ok' : '' }}">
             <div class="breach-num">{{ number_format($breachSummary['temperature']) }}</div>
