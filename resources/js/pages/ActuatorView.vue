@@ -363,7 +363,7 @@ const triggerLabels: Record<string, string> = {
 
 const triggeredByLabels: Record<string, string> = {
     system: 'Auto System',
-    scheduled_boost: 'Scheduled Boost',
+    scheduled_boost: 'Scheduled Misting',
     schedule: 'Daily Schedule',
     led_schedule: 'LED Schedule',
 };
@@ -885,7 +885,7 @@ function formatTriggeredBy(value: string | null | undefined): string {
                                 <div class="flex flex-col">
                                     <span
                                         class="text-xs font-medium text-foreground"
-                                        >Scheduled Boost</span
+                                        >Scheduled Misting</span
                                     >
                                     <span
                                         class="text-[11px] text-muted-foreground"
@@ -893,13 +893,21 @@ function formatTriggeredBy(value: string | null | undefined): string {
                                         <template
                                             v-if="thresholds.boost_enabled"
                                         >
-                                            Runs if &lt;
+                                            If below
                                             {{
                                                 thresholds.boost_max_start_humidity
-                                            }}% RH · max
-                                            {{
-                                                thresholds.boost_duration_minutes
-                                            }}m
+                                            }}% humidity<template
+                                                v-if="
+                                                    thresholds.boost_min_idle_hours >
+                                                    0
+                                                "
+                                            >
+                                                &amp; off for
+                                                {{
+                                                    thresholds.boost_min_idle_hours
+                                                }}
+                                                hrs</template
+                                            >
                                         </template>
                                         <template v-else> Disabled </template>
                                     </span>

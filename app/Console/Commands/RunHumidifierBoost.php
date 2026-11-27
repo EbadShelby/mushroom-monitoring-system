@@ -15,7 +15,7 @@ class RunHumidifierBoost extends Command
 {
     protected $signature = 'humidifier:boost';
 
-    protected $description = 'Run a sensor-capped misting boost (up to 3 mins, stops early at 93% RH or skips if already >= 85% RH).';
+    protected $description = 'Run a sensor-capped misting boost (up to 3 mins, skips if active recently or already >= 85% RH).';
 
     public function handle(FirebaseService $firebase): int
     {
@@ -48,6 +48,14 @@ class RunHumidifierBoost extends Command
             ->where('actuator', 'humidifier')
             ->latest('triggered_at')
             ->first();
+
+        $minIdleHours = max(0, (int) config('humidifier.boost_min_idle_hours', 4));
+
+        if ($minIdleHours > 0 && $lastLog !== null && $lastLog->triggered_at->gt(now()->subHours($minIdleHours))) {
+            $this->line("Humidifier already ran within the last {$minIdleHours} hours — skipping boost.");
+
+            return self::SUCCESS;
+        }
 
         if ($lastLog !== null && $lastLog->action === 'off' && $lastLog->triggered_at->gt(now()->subMinutes(3))) {
             $this->line('Humidifier in resting cooldown — skipping boost.');

@@ -129,3 +129,47 @@ test('scheduled boost stops early when humidity reaches 93%', function () {
     expect($result['commands']['humidifier'])->toBe('off')
         ->and(Cache::get(ThresholdService::BOOST_UNTIL_KEY))->toBeNull();
 });
+
+test('scheduled boost skips when humidifier already ran within the quiet window', function () {
+    seedActiveCycleAndReading(82.0);
+
+    ActuatorLog::create([
+        'actuator' => 'humidifier',
+        'action' => 'off',
+        'trigger' => 'automatic',
+        'triggered_by' => 'auto_threshold',
+        'triggered_at' => now()->subHours(2),
+    ]);
+
+    $firebase = Mockery::mock(FirebaseService::class);
+    $firebase->shouldReceive('getActuators')->once()->andReturn(['humidifier' => 'off']);
+    $firebase->shouldNotReceive('setActuator');
+    $this->app->instance(FirebaseService::class, $firebase);
+
+    $this->artisan('humidifier:boost')->assertSuccessful();
+
+    expect(Cache::get(ThresholdService::BOOST_UNTIL_KEY))->toBeNull()
+        ->and(ActuatorLog::where('triggered_by', 'scheduled_boost')->count())->toBe(0);
+});
+
+test('scheduled boost runs when humidifier has been idle longer than the quiet window', function () {
+    seedActiveCycleAndReading(82.0);
+
+    ActuatorLog::create([
+        'actuator' => 'humidifier',
+        'action' => 'off',
+        'trigger' => 'automatic',
+        'triggered_by' => 'scheduled_boost',
+        'triggered_at' => now()->subHours(5),
+    ]);
+
+    $firebase = Mockery::mock(FirebaseService::class);
+    $firebase->shouldReceive('getActuators')->once()->andReturn(['humidifier' => 'off']);
+    $firebase->shouldReceive('setActuator')->once()->with('humidifier', 'on');
+    $this->app->instance(FirebaseService::class, $firebase);
+
+    $this->artisan('humidifier:boost')->assertSuccessful();
+
+    expect(Cache::get(ThresholdService::BOOST_UNTIL_KEY))->not->toBeNull()
+        ->and(ActuatorLog::where('action', 'on')->where('triggered_by', 'scheduled_boost')->count())->toBe(1);
+});

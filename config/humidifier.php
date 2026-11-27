@@ -69,11 +69,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Scheduled Sensor-Capped Misting Boost (2x/day: Morning & Evening)
+    | Scheduled Sensor-Capped Misting Boost (3x/day: Morning, Midday & Evening)
     |--------------------------------------------------------------------------
     |
-    | Gently refreshes chamber humidity twice daily (7:00 AM & 7:00 PM)
-    | when humidity is below boost_max_start_humidity. Stops automatically after
+    | Gently refreshes chamber humidity at 7:00 AM, 1:00 PM, and 7:00 PM when
+    | humidity is below boost_max_start_humidity AND the humidifier has been
+    | idle for at least boost_min_idle_hours. Stops automatically after
     | boost_duration_minutes OR as soon as humidity reaches the OFF threshold.
     |
     */
@@ -83,5 +84,7 @@ return [
     'boost_duration_minutes' => (int) env('HUMIDIFIER_BOOST_DURATION_MINUTES', 3),
 
     'boost_max_start_humidity' => (float) env('HUMIDIFIER_BOOST_MAX_START_HUMIDITY', 85),
+
+    'boost_min_idle_hours' => (int) env('HUMIDIFIER_BOOST_MIN_IDLE_HOURS', 4),
 
 ];

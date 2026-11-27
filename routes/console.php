@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Schedule;
 // Run every minute to enforce the LED on/off schedule
 Schedule::command(EnforceLedSchedule::class)->everyMinute()->withoutOverlapping(2);
 
-// Sensor-capped misting boost twice daily (7:00 AM & 7:00 PM)
-Schedule::command(RunHumidifierBoost::class)->cron('0 7,19 * * *')->timezone('Asia/Manila')->withoutOverlapping(2);
+// Sensor-capped misting boost three times daily (7:00 AM, 1:00 PM & 7:00 PM; skips if active recently or RH >= 85%)
+Schedule::command(RunHumidifierBoost::class)->cron('0 7,13,19 * * *')->timezone('Asia/Manila')->withoutOverlapping(2);
 
 $scheduleCapture = static function (): void {
     Cache::add(

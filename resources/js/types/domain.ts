@@ -143,6 +143,7 @@ export interface Thresholds {
     boost_times: string[];
     boost_max_start_humidity: number;
     boost_duration_minutes: number;
+    boost_min_idle_hours: number;
 }
 
 export interface ActuatorOverrides {

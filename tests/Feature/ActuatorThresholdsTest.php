@@ -26,9 +26,10 @@ test('actuator page shows configured environmental thresholds', function () {
             ->where('thresholds.soil_warning', 60)
             ->where('thresholds.soil_critical', 40)
             ->where('thresholds.boost_enabled', true)
-            ->where('thresholds.boost_times', ['7:00 AM', '7:00 PM'])
+            ->where('thresholds.boost_times', ['7:00 AM', '1:00 PM', '7:00 PM'])
             ->where('thresholds.boost_max_start_humidity', 85)
             ->where('thresholds.boost_duration_minutes', 3)
+            ->where('thresholds.boost_min_idle_hours', 4)
             ->missing('overrides.fan'));
 });
 

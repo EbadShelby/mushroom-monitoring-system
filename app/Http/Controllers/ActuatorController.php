@@ -47,9 +47,10 @@ class ActuatorController extends Controller
                 'soil_warning' => (int) $thresholds['soil_warning'],
                 'soil_critical' => (int) $thresholds['soil_critical'],
                 'boost_enabled' => (bool) config('humidifier.boost_enabled', true),
-                'boost_times' => ['7:00 AM', '7:00 PM'],
+                'boost_times' => ['7:00 AM', '1:00 PM', '7:00 PM'],
                 'boost_max_start_humidity' => (float) config('humidifier.boost_max_start_humidity', 85),
                 'boost_duration_minutes' => (int) config('humidifier.boost_duration_minutes', 3),
+                'boost_min_idle_hours' => (int) config('humidifier.boost_min_idle_hours', 4),
             ],
             'overrides' => [
                 'humidifier' => Setting::get('override_humidifier') === '1',
