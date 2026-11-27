@@ -17,6 +17,7 @@ import {
     Pencil,
     Ruler,
     BarChart3,
+    MoreHorizontal,
 } from '@lucide/vue';
 import type { ApexOptions } from 'apexcharts';
 import axios from 'axios';
@@ -25,6 +26,13 @@ import { toast } from 'vue-sonner';
 import VueApexCharts from 'vue3-apexcharts';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import PaginationBar from '@/components/PaginationBar.vue';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import * as cyclesApi from '@/routes/cycles';
 import type { GrowingCycle, Paginated } from '@/types';
 
@@ -1215,12 +1223,7 @@ function formatDate(d: string | null) {
                             <th
                                 class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
-                                Start Date
-                            </th>
-                            <th
-                                class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
-                            >
-                                End Date
+                                Dates
                             </th>
                             <th
                                 class="px-5 py-3.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
@@ -1258,41 +1261,10 @@ function formatDate(d: string | null) {
                                             {{ cycle.name }}
                                         </p>
                                         <p
-                                            v-if="
-                                                cycle.day_count ||
-                                                (cycle.measurements_count ?? 0) >
-                                                    0
-                                            "
+                                            v-if="cycle.day_count"
                                             class="text-xs text-muted-foreground dark:text-slate-400"
                                         >
-                                            <template v-if="cycle.day_count">
-                                                Day {{ cycle.day_count }}
-                                            </template>
-                                            <template
-                                                v-if="
-                                                    cycle.day_count &&
-                                                    (cycle.measurements_count ??
-                                                        0) > 0
-                                                "
-                                            >
-                                                ·
-                                            </template>
-                                            <span
-                                                v-if="
-                                                    (cycle.measurements_count ??
-                                                        0) > 0
-                                                "
-                                                class="text-emerald-600 dark:text-emerald-400"
-                                            >
-                                                {{ cycle.measurements_count }}
-                                                harvest
-                                                {{
-                                                    cycle.measurements_count ===
-                                                    1
-                                                        ? 'log'
-                                                        : 'logs'
-                                                }}
-                                            </span>
+                                            Day {{ cycle.day_count }}
                                         </p>
                                     </div>
                                 </div>
@@ -1303,19 +1275,26 @@ function formatDate(d: string | null) {
                                 {{ cycle.mushroom_variety }}
                             </td>
                             <td
-                                class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
+                                class="px-5 py-4 text-sm whitespace-nowrap text-foreground/80 dark:text-slate-300"
                             >
                                 <div class="flex items-center gap-1.5">
                                     <CalendarDays
-                                        class="h-3.5 w-3.5 text-slate-500"
+                                        class="h-3.5 w-3.5 shrink-0 text-slate-500"
                                     />
-                                    {{ formatDate(cycle.start_date) }}
+                                    <span>
+                                        {{ formatDate(cycle.start_date) }}
+                                        <span class="text-muted-foreground">
+                                            –
+                                        </span>
+                                        {{
+                                            cycle.end_date
+                                                ? formatDate(cycle.end_date)
+                                                : cycle.status === 'active'
+                                                  ? 'Present'
+                                                  : '—'
+                                        }}
+                                    </span>
                                 </div>
-                            </td>
-                            <td
-                                class="px-5 py-4 text-sm text-foreground/80 dark:text-slate-300"
-                            >
-                                {{ formatDate(cycle.end_date) }}
                             </td>
                             <td class="px-5 py-4">
                                 <span
@@ -1342,25 +1321,6 @@ function formatDate(d: string | null) {
                                     </Link>
                                     <button
                                         v-if="
-                                            userRole !== 'student' &&
-                                            cycle.status !== 'cancelled'
-                                        "
-                                        class="flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-emerald-700 ring-1 ring-emerald-600/20 transition hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/30"
-                                        @click="openMeasurementModal(cycle)"
-                                    >
-                                        <Ruler class="h-3.5 w-3.5 shrink-0" />
-                                        Harvest
-                                    </button>
-                                    <button
-                                        v-if="userRole !== 'student'"
-                                        class="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-amber-700 ring-1 ring-amber-600/20 transition hover:bg-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:ring-amber-500/30 dark:hover:bg-amber-500/30"
-                                        @click="openEditModal(cycle)"
-                                    >
-                                        <Pencil class="h-3.5 w-3.5 shrink-0" />
-                                        Edit
-                                    </button>
-                                    <button
-                                        v-if="
                                             cycle.status === 'active' &&
                                             userRole !== 'student'
                                         "
@@ -1371,20 +1331,73 @@ function formatDate(d: string | null) {
                                         <SquareCheck
                                             class="h-3.5 w-3.5 shrink-0"
                                         />
-                                        End
+                                        Complete
                                     </button>
                                     <button
-                                        v-if="
-                                            cycle.status === 'active' &&
+                                        v-else-if="
+                                            cycle.status === 'completed' &&
                                             userRole !== 'student'
                                         "
-                                        :disabled="actioning === cycle.id"
-                                        class="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-red-700 ring-1 ring-red-600/20 transition hover:bg-red-200 disabled:opacity-50 dark:bg-red-600/20 dark:text-red-300 dark:ring-red-500/30 dark:hover:bg-red-600/30"
-                                        @click="cancelCycle(cycle)"
+                                        class="flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-emerald-700 ring-1 ring-emerald-600/20 transition hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/30"
+                                        @click="openMeasurementModal(cycle)"
                                     >
-                                        <Ban class="h-3.5 w-3.5 shrink-0" />
-                                        Cancel
+                                        <Ruler class="h-3.5 w-3.5 shrink-0" />
+                                        Log Harvest
                                     </button>
+                                    <DropdownMenu v-if="userRole !== 'student'">
+                                        <DropdownMenuTrigger as-child>
+                                            <button
+                                                type="button"
+                                                aria-label="More actions"
+                                                class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/60 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                            >
+                                                <MoreHorizontal
+                                                    class="h-4 w-4"
+                                                />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            class="w-44"
+                                        >
+                                            <DropdownMenuItem
+                                                v-if="cycle.status === 'active'"
+                                                class="cursor-pointer gap-2"
+                                                @select="
+                                                    openMeasurementModal(cycle)
+                                                "
+                                            >
+                                                <Ruler
+                                                    class="h-4 w-4 text-emerald-500"
+                                                />
+                                                Log Harvest
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                class="cursor-pointer gap-2"
+                                                @select="openEditModal(cycle)"
+                                            >
+                                                <Pencil
+                                                    class="h-4 w-4 text-amber-500"
+                                                />
+                                                Edit Cycle
+                                            </DropdownMenuItem>
+                                            <template
+                                                v-if="cycle.status === 'active'"
+                                            >
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    :disabled="
+                                                        actioning === cycle.id
+                                                    "
+                                                    class="cursor-pointer gap-2 text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                                                    @select="cancelCycle(cycle)"
+                                                >
+                                                    <Ban class="h-4 w-4" />
+                                                    Cancel Cycle
+                                                </DropdownMenuItem>
+                                            </template>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </td>
                         </tr>
@@ -2151,7 +2164,7 @@ function formatDate(d: string | null) {
                                 Compare Growing Cycles
                             </h3>
                             <p class="text-xs text-muted-foreground">
-                                Compare harvest results and average chamber
+                                Compare harvest results and average growing
                                 conditions across cycles.
                             </p>
                         </div>
@@ -2216,7 +2229,9 @@ function formatDate(d: string | null) {
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div
+                            class="flex max-h-24 flex-wrap items-center gap-2 overflow-y-auto pr-1"
+                        >
                             <button
                                 v-for="cycle in comparableCycles"
                                 :key="cycle.id"
@@ -2256,7 +2271,7 @@ function formatDate(d: string | null) {
                         </p>
                         <p class="mt-1 text-xs text-muted-foreground">
                             Click cycle names above, or press Compare All to see
-                            harvest results and climate averages side-by-side.
+                            harvest results and growing conditions side-by-side.
                         </p>
                     </div>
 
@@ -2275,42 +2290,54 @@ function formatDate(d: string | null) {
 
                     <!-- Comparison Content -->
                     <template v-else-if="comparedCycles.length >= 2">
-                        <!-- Full-Width Bar Chart with Harvest / Climate Tabs + Checkboxes -->
+                        <!-- View Tabs (controls both chart and table) -->
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div
+                                class="inline-flex rounded-xl border border-border/60 bg-muted/30 p-1 text-xs"
+                            >
+                                <button
+                                    type="button"
+                                    class="rounded-lg px-3.5 py-1.5 font-semibold transition"
+                                    :class="
+                                        compareTab === 'harvest'
+                                            ? 'bg-emerald-600 text-white shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    "
+                                    @click="compareTab = 'harvest'"
+                                >
+                                    Harvest Results
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded-lg px-3.5 py-1.5 font-semibold transition"
+                                    :class="
+                                        compareTab === 'climate'
+                                            ? 'bg-emerald-600 text-white shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    "
+                                    @click="compareTab = 'climate'"
+                                >
+                                    Growing Conditions
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Full-Width Bar Chart with Checkboxes -->
                         <div
                             class="rounded-xl border border-border/40 bg-muted/20 p-4"
                         >
                             <div
                                 class="mb-3 flex flex-wrap items-center justify-between gap-3"
                             >
-                                <!-- Tab Switcher -->
-                                <div
-                                    class="inline-flex rounded-lg border border-border/60 bg-card/70 p-0.5 text-xs"
+                                <p
+                                    class="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                                 >
-                                    <button
-                                        type="button"
-                                        class="rounded-md px-3 py-1 font-medium transition"
-                                        :class="
-                                            compareTab === 'harvest'
-                                                ? 'bg-emerald-600 text-white shadow-xs'
-                                                : 'text-muted-foreground hover:text-foreground'
-                                        "
-                                        @click="compareTab = 'harvest'"
-                                    >
-                                        Harvest Results
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="rounded-md px-3 py-1 font-medium transition"
-                                        :class="
-                                            compareTab === 'climate'
-                                                ? 'bg-emerald-600 text-white shadow-xs'
-                                                : 'text-muted-foreground hover:text-foreground'
-                                        "
-                                        @click="compareTab = 'climate'"
-                                    >
-                                        Climate Averages
-                                    </button>
-                                </div>
+                                    {{
+                                        compareTab === 'harvest'
+                                            ? 'Harvest Comparison'
+                                            : 'Average Growing Conditions'
+                                    }}
+                                </p>
 
                                 <!-- Metric Checkboxes -->
                                 <div
@@ -2389,7 +2416,7 @@ function formatDate(d: string | null) {
                                 class="flex items-center justify-center rounded-lg border border-dashed border-border/50 py-10 text-center text-xs text-muted-foreground"
                             >
                                 No harvest measurements logged for these cycles
-                                yet. Switch to Climate Averages to compare
+                                yet. Switch to Growing Conditions to compare
                                 sensor readings.
                             </div>
                             <div
@@ -2422,8 +2449,9 @@ function formatDate(d: string | null) {
                             </div>
                         </div>
 
-                        <!-- Side-by-Side Cycle Scorecard -->
+                        <!-- Harvest Results Table -->
                         <div
+                            v-if="compareTab === 'harvest'"
                             class="overflow-x-auto rounded-xl border border-border/40"
                         >
                             <table class="w-full text-sm">
@@ -2432,44 +2460,29 @@ function formatDate(d: string | null) {
                                         class="border-b border-border/50 bg-muted/30"
                                     >
                                         <th
-                                            class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                            class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                         >
                                             Cycle
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                         >
                                             Days
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                         >
-                                            Avg Temp
+                                            Fruiting Bodies
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                         >
-                                            Avg RH
+                                            Avg Height
                                         </th>
                                         <th
-                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
                                         >
-                                            Avg CO2
-                                        </th>
-                                        <th
-                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                                        >
-                                            Avg Moisture
-                                        </th>
-                                        <th
-                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                                        >
-                                            Breaches
-                                        </th>
-                                        <th
-                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                                        >
-                                            Harvest
+                                            Avg Cap Size
                                         </th>
                                     </tr>
                                 </thead>
@@ -2483,7 +2496,7 @@ function formatDate(d: string | null) {
                                             <div class="flex items-center gap-2">
                                                 <Link
                                                     :href="cyclesApi.show.url(row.id)"
-                                                    class="font-medium text-foreground hover:text-emerald-500 hover:underline"
+                                                    class="font-medium whitespace-nowrap text-foreground hover:text-emerald-500 hover:underline"
                                                     @click="closeCompareModal"
                                                 >
                                                     {{ row.name }}
@@ -2507,12 +2520,143 @@ function formatDate(d: string | null) {
                                             </p>
                                         </td>
                                         <td
-                                            class="px-4 py-3 text-right font-mono text-muted-foreground"
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap text-muted-foreground"
                                         >
                                             {{ row.day_count }}d
                                         </td>
                                         <td
-                                            class="px-4 py-3 text-right font-mono"
+                                            class="px-4 py-3 text-right font-mono font-semibold whitespace-nowrap"
+                                            :class="
+                                                highestHarvestValue !== null &&
+                                                row.harvest
+                                                    .total_fruiting_bodies ===
+                                                    highestHarvestValue
+                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                    : 'text-foreground'
+                                            "
+                                        >
+                                            {{
+                                                row.harvest
+                                                    .total_fruiting_bodies !==
+                                                null
+                                                    ? row.harvest
+                                                          .total_fruiting_bodies
+                                                    : '—'
+                                            }}
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap"
+                                        >
+                                            {{
+                                                row.harvest.avg_height_cm !==
+                                                null
+                                                    ? `${row.harvest.avg_height_cm} cm`
+                                                    : '—'
+                                            }}
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap"
+                                        >
+                                            {{
+                                                row.harvest
+                                                    .avg_cap_diameter_cm !==
+                                                null
+                                                    ? `${row.harvest.avg_cap_diameter_cm} cm`
+                                                    : '—'
+                                            }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Growing Conditions Table -->
+                        <div
+                            v-else
+                            class="overflow-x-auto rounded-xl border border-border/40"
+                        >
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr
+                                        class="border-b border-border/50 bg-muted/30"
+                                    >
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
+                                        >
+                                            Cycle
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
+                                        >
+                                            Days
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
+                                        >
+                                            Avg Temp
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
+                                        >
+                                            Avg Humidity
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
+                                        >
+                                            Avg CO2
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
+                                        >
+                                            Avg Moisture
+                                        </th>
+                                        <th
+                                            class="px-4 py-3 text-right text-xs font-semibold tracking-wider whitespace-nowrap text-muted-foreground uppercase"
+                                        >
+                                            Out of Range
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="row in comparedCycles"
+                                        :key="row.id"
+                                        class="border-b border-border/30 transition-colors hover:bg-muted/20"
+                                    >
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-2">
+                                                <Link
+                                                    :href="cyclesApi.show.url(row.id)"
+                                                    class="font-medium whitespace-nowrap text-foreground hover:text-emerald-500 hover:underline"
+                                                    @click="closeCompareModal"
+                                                >
+                                                    {{ row.name }}
+                                                </Link>
+                                                <span
+                                                    class="rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize"
+                                                    :class="
+                                                        row.status === 'active'
+                                                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                                            : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                                                    "
+                                                >
+                                                    {{ row.status }}
+                                                </span>
+                                            </div>
+                                            <p
+                                                class="mt-0.5 text-xs text-muted-foreground"
+                                            >
+                                                {{ row.mushroom_variety }} ·
+                                                {{ row.substrate_type }}
+                                            </p>
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap text-muted-foreground"
+                                        >
+                                            {{ row.day_count }}d
+                                        </td>
+                                        <td
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap"
                                         >
                                             {{
                                                 row.averages.temperature !==
@@ -2522,7 +2666,7 @@ function formatDate(d: string | null) {
                                             }}
                                         </td>
                                         <td
-                                            class="px-4 py-3 text-right font-mono"
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap"
                                         >
                                             {{
                                                 row.averages.humidity !== null
@@ -2531,7 +2675,7 @@ function formatDate(d: string | null) {
                                             }}
                                         </td>
                                         <td
-                                            class="px-4 py-3 text-right font-mono"
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap"
                                         >
                                             {{
                                                 row.averages.co2 !== null
@@ -2540,7 +2684,7 @@ function formatDate(d: string | null) {
                                             }}
                                         </td>
                                         <td
-                                            class="px-4 py-3 text-right font-mono"
+                                            class="px-4 py-3 text-right font-mono whitespace-nowrap"
                                         >
                                             {{
                                                 row.averages.soil_moisture !==
@@ -2549,7 +2693,9 @@ function formatDate(d: string | null) {
                                                     : '—'
                                             }}
                                         </td>
-                                        <td class="px-4 py-3 text-right">
+                                        <td
+                                            class="px-4 py-3 text-right whitespace-nowrap"
+                                        >
                                             <template
                                                 v-if="row.readings_count > 0"
                                             >
@@ -2593,60 +2739,6 @@ function formatDate(d: string | null) {
                                                 class="text-xs text-muted-foreground"
                                             >
                                                 No data
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-3 text-right">
-                                            <template
-                                                v-if="
-                                                    row.harvest.records_count >
-                                                    0
-                                                "
-                                            >
-                                                <span
-                                                    class="font-mono font-semibold"
-                                                    :class="
-                                                        highestHarvestValue !==
-                                                            null &&
-                                                        row.harvest
-                                                            .total_fruiting_bodies ===
-                                                            highestHarvestValue
-                                                            ? 'text-emerald-600 dark:text-emerald-400'
-                                                            : 'text-foreground'
-                                                    "
-                                                >
-                                                    {{
-                                                        row.harvest
-                                                            .total_fruiting_bodies !==
-                                                        null
-                                                            ? `${row.harvest.total_fruiting_bodies} bodies`
-                                                            : '—'
-                                                    }}
-                                                </span>
-                                                <p
-                                                    class="mt-0.5 font-mono text-[11px] text-muted-foreground"
-                                                >
-                                                    {{
-                                                        row.harvest
-                                                            .avg_height_cm !==
-                                                        null
-                                                            ? `H ${row.harvest.avg_height_cm}cm`
-                                                            : 'H —'
-                                                    }}
-                                                    ·
-                                                    {{
-                                                        row.harvest
-                                                            .avg_cap_diameter_cm !==
-                                                        null
-                                                            ? `Cap ${row.harvest.avg_cap_diameter_cm}cm`
-                                                            : 'Cap —'
-                                                    }}
-                                                </p>
-                                            </template>
-                                            <span
-                                                v-else
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                Not logged
                                             </span>
                                         </td>
                                     </tr>
