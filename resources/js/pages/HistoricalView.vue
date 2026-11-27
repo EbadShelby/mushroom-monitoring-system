@@ -491,7 +491,7 @@ onMounted(() => {
                     <div class="flex items-center gap-2">
                         <Activity class="h-4 w-4 text-muted-foreground" />
                         <h2 class="font-semibold text-muted-foreground">
-                            Raw Data
+                            Sensor Readings
                             <span
                                 v-if="readings"
                                 class="ml-2 text-xs text-muted-foreground/60"

@@ -50,9 +50,9 @@ test('actuator page exposes mist summary and tank state', function () {
             ->where('mist.unit_count', 4)
             ->where('mist.running', false)
             ->where('mist.tank.tracking', true)
-            ->where('mist.tank.capacity_ml', 300)
-            ->where('mist.tank.used_ml', 23.4)
-            ->where('mist.tank.remaining_ml', 276.6)
+            ->where('mist.tank.capacity_ml', 1200)
+            ->where('mist.tank.used_ml', 93.6)
+            ->where('mist.tank.remaining_ml', 1106.4)
             ->has('mist.week', 7));
 });
 
@@ -81,7 +81,7 @@ test('refill resets tank tracking', function () {
         ->assertJson(['success' => true]);
 
     expect(app(HumidifierMistService::class)->summary()['tank'])
-        ->toMatchArray(['tracking' => true, 'used_ml' => 0.0, 'remaining_ml' => 300.0, 'percent' => 100]);
+        ->toMatchArray(['tracking' => true, 'used_ml' => 0.0, 'remaining_ml' => 1200.0, 'percent' => 100]);
 });
 
 test('students cannot log a refill', function () {

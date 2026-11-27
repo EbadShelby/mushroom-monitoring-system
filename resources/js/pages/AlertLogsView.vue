@@ -12,7 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import type { AlertLog, Paginated } from '@/types';
+import type { AlertLog, GrowingCycle, Paginated } from '@/types';
 
 defineOptions({
     layout: {
@@ -23,7 +23,13 @@ defineOptions({
 const props = defineProps<{
     logs?: Paginated<AlertLog>;
     chartData?: { sensor: string; count: number }[];
-    filters?: { sensor?: string; from?: string; to?: string };
+    cycles?: Pick<GrowingCycle, 'id' | 'name' | 'status'>[];
+    filters?: {
+        cycle_id?: string;
+        sensor?: string;
+        from?: string;
+        to?: string;
+    };
 }>();
 
 const logsData = ref<Paginated<AlertLog> | null>(props.logs ?? null);
@@ -52,6 +58,7 @@ watch(
 );
 
 // Filters
+const cycleFilter = ref(props.filters?.cycle_id ?? 'all');
 const sensorFilter = ref(props.filters?.sensor ?? '');
 const fromDate = ref(props.filters?.from ?? '');
 const toDate = ref(props.filters?.to ?? '');
@@ -61,8 +68,8 @@ const sensorOptions = [
     { value: '', label: 'All Sensors' },
     { value: 'temperature', label: 'Temperature' },
     { value: 'humidity', label: 'Humidity' },
-    { value: 'co2_raw', label: 'CO₂' },
-    { value: 'light_level', label: 'Light' },
+    { value: 'co2', label: 'CO₂' },
+    { value: 'light', label: 'Light' },
     { value: 'soil_moisture', label: 'Substrate Moisture' },
     { value: 'water_tank', label: 'Water Tank' },
 ];
@@ -75,6 +82,7 @@ function fetchLogs(page = 1) {
         '/alerts',
         {
             page,
+            cycle_id: cycleFilter.value || 'all',
             ...(sensorFilter.value ? { sensor: sensorFilter.value } : {}),
             ...(fromDate.value ? { from: fromDate.value } : {}),
             ...(toDate.value ? { to: toDate.value } : {}),
@@ -105,7 +113,7 @@ const chartOptions = computed<ApexOptions>(() => ({
     plotOptions: { bar: { borderRadius: 6, distributed: true } },
     dataLabels: { enabled: false },
     xaxis: {
-        categories: chartData.value.map((d) => d.sensor),
+        categories: chartData.value.map((d) => sensorLabel[d.sensor] ?? d.sensor),
         labels: { style: { colors: '#94a3b8', fontSize: '11px' } },
         axisBorder: { show: false },
     },
@@ -128,11 +136,37 @@ function statusClass(status: string) {
 const sensorLabel: Record<string, string> = {
     temperature: 'Temperature',
     humidity: 'Humidity',
+    co2: 'CO₂',
     co2_raw: 'CO₂',
+    light: 'Light',
     light_level: 'Light',
     soil_moisture: 'Substrate',
     water_tank: 'Water Tank',
 };
+
+function formatAlertValue(sensor: string, value: number | string | null): string {
+    if (value === null || value === undefined || value === '') {
+        return '—';
+    }
+
+    switch (sensor) {
+        case 'temperature':
+            return `${value}°C`;
+        case 'humidity':
+        case 'soil_moisture':
+            return `${value}%`;
+        case 'co2':
+        case 'co2_raw':
+            return `${value} ppm`;
+        case 'light':
+        case 'light_level':
+            return `${value} lux`;
+        case 'water_tank':
+            return `${value} mL`;
+        default:
+            return String(value);
+    }
+}
 </script>
 
 <template>
@@ -160,15 +194,22 @@ const sensorLabel: Record<string, string> = {
             <div
                 class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
             >
-                <div class="mb-4 flex items-center gap-2">
-                    <div
-                        class="rounded-lg bg-destructive/10 p-2 text-destructive shadow-inner"
-                    >
-                        <BarChart2 class="h-4 w-4" />
+                <div
+                    class="mb-4 flex flex-wrap items-baseline justify-between gap-2"
+                >
+                    <div class="flex items-center gap-2">
+                        <div
+                            class="rounded-lg bg-destructive/10 p-2 text-destructive shadow-inner"
+                        >
+                            <BarChart2 class="h-4 w-4" />
+                        </div>
+                        <h2 class="font-semibold text-muted-foreground">
+                            ALERT FREQUENCY BY SENSOR
+                        </h2>
                     </div>
-                    <h2 class="font-semibold text-muted-foreground">
-                        ALERT FREQUENCY BY SENSOR
-                    </h2>
+                    <span class="text-xs text-muted-foreground">
+                        Counted at most once every 15 mins per sensor
+                    </span>
                 </div>
                 <div
                     v-if="!chartData.length"
@@ -200,7 +241,29 @@ const sensorLabel: Record<string, string> = {
                     </div>
                     <h2 class="font-semibold text-muted-foreground">Filters</h2>
                 </div>
-                <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="space-y-1">
+                        <label
+                            for="alert-cycle-filter"
+                            class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                            >Growing Cycle</label
+                        >
+                        <select
+                            id="alert-cycle-filter"
+                            v-model="cycleFilter"
+                            class="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                        >
+                            <option value="all">All Cycles</option>
+                            <option
+                                v-for="c in cycles"
+                                :key="c.id"
+                                :value="String(c.id)"
+                            >
+                                {{ c.name
+                                }}{{ c.status === 'active' ? ' (Active)' : '' }}
+                            </option>
+                        </select>
+                    </div>
                     <div class="space-y-1">
                         <label
                             for="alert-sensor-filter"
@@ -355,7 +418,12 @@ const sensorLabel: Record<string, string> = {
                                 <td
                                     class="px-4 py-3 text-right font-mono text-foreground"
                                 >
-                                    {{ log.value_at_alert }}
+                                    {{
+                                        formatAlertValue(
+                                            log.sensor,
+                                            log.value_at_alert,
+                                        )
+                                    }}
                                 </td>
                                 <td
                                     class="px-4 py-3 text-muted-foreground capitalize"
@@ -369,7 +437,7 @@ const sensorLabel: Record<string, string> = {
                                 </td>
                                 <td class="px-4 py-3">
                                     <span
-                                        class="rounded-full px-2 py-0.5 text-xs font-bold"
+                                        class="rounded-full px-2 py-0.5 text-xs font-bold capitalize"
                                         :class="statusClass(log.status)"
                                     >
                                         {{ log.status }}
@@ -420,7 +488,7 @@ const sensorLabel: Record<string, string> = {
                             Alert
                         </DialogTitle>
                         <span
-                            class="rounded-full px-2 py-0.5 text-xs font-bold"
+                            class="rounded-full px-2 py-0.5 text-xs font-bold capitalize"
                             :class="statusClass(selectedAlert.status)"
                         >
                             {{ selectedAlert.status }}
@@ -432,6 +500,9 @@ const sensorLabel: Record<string, string> = {
                                 'en-PH',
                             )
                         }}
+                        <span v-if="selectedAlert.growing_cycle">
+                            · {{ selectedAlert.growing_cycle.name }}
+                        </span>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -448,7 +519,12 @@ const sensorLabel: Record<string, string> = {
                             <p
                                 class="mt-0.5 font-mono font-semibold text-foreground"
                             >
-                                {{ selectedAlert.value_at_alert }}
+                                {{
+                                    formatAlertValue(
+                                        selectedAlert.sensor,
+                                        selectedAlert.value_at_alert,
+                                    )
+                                }}
                             </p>
                         </div>
                         <div class="rounded-lg border border-border/40 p-2.5">

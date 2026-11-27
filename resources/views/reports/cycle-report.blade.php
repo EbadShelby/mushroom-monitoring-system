@@ -132,15 +132,15 @@
 <!-- Measurements -->
 @if($measurements->count())
 <div class="section">
-    <div class="section-title">Mushroom Measurements ({{ $measurements->count() }} records)</div>
+    <div class="section-title">Harvest Measurements ({{ $measurements->count() }} records)</div>
     <table>
         <thead>
             <tr>
-                <th>Date</th>
+                <th>Harvest Date</th>
                 <th>Avg Height (cm)</th>
                 <th>Cap Diam. (cm)</th>
                 <th>Fruiting Bodies</th>
-                <th>Logged By</th>
+                <th>Recorded By</th>
                 <th>Notes</th>
             </tr>
         </thead>
@@ -162,7 +162,7 @@
 
 <div class="footer">
     <span>Cotabato State University — IoT Mushroom Monitoring System</span>
-    <span>Gray Oyster Mushroom (Pleurotus ostreatus)</span>
+    <span>{{ $cycle->mushroom_variety ?: 'Oyster Mushroom (Pleurotus ostreatus)' }}</span>
     <span>Printed: {{ now()->format('Y-m-d H:i') }}</span>
 </div>
 

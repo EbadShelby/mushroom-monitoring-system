@@ -59,13 +59,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Growing Cycles
     Route::get('cycles', [GrowingCycleController::class, 'index'])->name('cycles.index');
+    Route::get('api/cycles/compare', [GrowingCycleController::class, 'compare'])->name('cycles.compare');
     Route::get('cycles/{cycle}', [GrowingCycleController::class, 'show'])->name('cycles.show');
 
     // Camera / Snapshots
     Route::get('camera', [CameraController::class, 'index'])->name('camera.index');
 
-    // Measurements
-    Route::get('measurements', [MeasurementController::class, 'index'])->name('measurements.index');
+    // Measurements merged into Growing Cycles
+    Route::redirect('measurements', '/cycles')->name('measurements.index');
 
     Route::middleware('role:admin,faculty')->group(function () {
         // Cycle Management

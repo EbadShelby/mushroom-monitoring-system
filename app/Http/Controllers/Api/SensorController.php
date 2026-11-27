@@ -81,6 +81,7 @@ class SensorController extends Controller
         if ($activeCycle !== null) {
             foreach ($result['alerts'] as $alert) {
                 $this->sms->sendAlert([
+                    'growing_cycle_id' => $activeCycle->id,
                     'sensor' => $alert['sensor'],
                     'value' => $alert['value'],
                     'threshold' => $alert['threshold'],
@@ -92,7 +93,10 @@ class SensorController extends Controller
 
         // Low water tank warning (only while misting, long cooldown to avoid SMS flooding)
         if ($this->mist->isRunning() && ($tankAlert = $this->mist->lowTankAlert()) !== null) {
-            $this->sms->sendAlert($tankAlert, (int) config('humidifier.low_tank_alert_cooldown_minutes'));
+            $this->sms->sendAlert([
+                ...$tankAlert,
+                'growing_cycle_id' => $activeCycle?->id,
+            ], (int) config('humidifier.low_tank_alert_cooldown_minutes'));
             $alertsTriggered++;
         }
 

@@ -14,6 +14,8 @@ defineOptions({
 
 const props = defineProps<{
     logs?: Paginated<UserLog>;
+    users?: { id: number; name: string; role: string }[];
+    filters?: { user_id?: string; from?: string; to?: string };
 }>();
 
 const page = usePage();
@@ -42,9 +44,9 @@ watch(
 );
 
 // Filters
-const userIdFilter = ref('');
-const fromDate = ref('');
-const toDate = ref('');
+const userIdFilter = ref(props.filters?.user_id ?? '');
+const fromDate = ref(props.filters?.from ?? '');
+const toDate = ref(props.filters?.to ?? '');
 
 function applyFilters() {
     router.get(
@@ -137,15 +139,22 @@ function goToPage(p: number) {
                             <label
                                 for="user-id-filter"
                                 class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >User ID</label
+                                >User</label
                             >
-                            <input
+                            <select
                                 id="user-id-filter"
                                 v-model="userIdFilter"
-                                type="number"
-                                placeholder="e.g. 2"
                                 class="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                            />
+                            >
+                                <option value="">All Users</option>
+                                <option
+                                    v-for="u in users"
+                                    :key="u.id"
+                                    :value="String(u.id)"
+                                >
+                                    {{ u.name }} ({{ u.role }})
+                                </option>
+                            </select>
                         </div>
                         <div class="space-y-1">
                             <label

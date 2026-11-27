@@ -8,7 +8,6 @@ import {
     Cpu,
     FileText,
     LayoutDashboard,
-    Ruler,
     ScrollText,
     Settings,
     Users,
@@ -73,11 +72,6 @@ const growingNav: NavGroup = {
             title: 'Growing Cycles',
             href: '/cycles',
             icon: ClipboardList,
-        },
-        {
-            title: 'Measurements',
-            href: '/measurements',
-            icon: Ruler,
         },
         {
             title: 'Growth Camera',

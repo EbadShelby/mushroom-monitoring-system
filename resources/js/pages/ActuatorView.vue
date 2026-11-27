@@ -108,10 +108,12 @@ async function toggleActuator(
 
     try {
         await axios.post('/api/actuators/toggle', { actuator, action });
-        toast.success(`${actuator} turned ${action}`);
+        toast.success(
+            `${formatActuatorName(actuator)} turned ${action.toUpperCase()}`,
+        );
         reloadMist(actuator === 'humidifier');
     } catch {
-        toast.error('Failed to toggle actuator.');
+        toast.error('Failed to update device.');
     } finally {
         toggling.value[actuator] = false;
     }
@@ -163,12 +165,12 @@ const todaySeconds = computed(
     () => props.mist.today.seconds + liveSeconds.value,
 );
 // Only drain the tank live once a refill has been logged; otherwise the
-// server keeps reporting a full tank and the tick would flicker back to 300.
+// server keeps reporting a full tank and the tick would flicker back to full.
 const tankRemainingMl = computed(() =>
     props.mist.tank.tracking
         ? Math.max(
               0,
-              props.mist.tank.remaining_ml - liveSeconds.value * unitRate.value,
+              props.mist.tank.remaining_ml - liveSeconds.value * rate.value,
           )
         : props.mist.tank.remaining_ml,
 );
@@ -176,7 +178,7 @@ const tankPercent = computed(() =>
     Math.round((tankRemainingMl.value / props.mist.tank.capacity_ml) * 100),
 );
 const runtimeLeftSeconds = computed(() =>
-    Math.round(tankRemainingMl.value / unitRate.value),
+    Math.round(tankRemainingMl.value / rate.value),
 );
 const tankLow = computed(
     () => tankPercent.value <= props.mist.tank.low_percent,
@@ -261,8 +263,8 @@ async function toggleOverride(actuator: 'humidifier' | 'led') {
 
         toast.success(
             newActive
-                ? `🔒 Override ON — automation paused for ${actuator}.`
-                : `🔓 Override OFF — automation resumed for ${actuator}.`,
+                ? `Auto mode paused for ${formatActuatorName(actuator)}.`
+                : `Auto mode resumed for ${formatActuatorName(actuator)}.`,
         );
     } catch {
         toast.error('Failed to update override.');
@@ -306,14 +308,14 @@ const actuators = [
     {
         key: 'humidifier' as const,
         label: 'Humidifier',
-        relay: 'Relay 1',
+        subtitle: 'Humidity Control',
         icon: Droplets,
         color: 'blue',
     },
     {
         key: 'led' as const,
         label: 'Grow Lights',
-        relay: 'Relay 2',
+        subtitle: 'Lighting Control',
         icon: Sun,
         color: 'yellow',
     },
@@ -340,12 +342,44 @@ function getActuatorState(key: 'humidifier' | 'led') {
     return store.actuators[key];
 }
 
+function formatActuatorName(key: string): string {
+    if (key === 'led') {
+        return 'Grow Lights';
+    }
+
+    if (key === 'humidifier') {
+        return 'Humidifier';
+    }
+
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const triggerLabels: Record<string, string> = {
     auto: 'Auto',
     manual: 'Manual',
     schedule: 'Schedule',
     automatic: 'Auto',
 };
+
+const triggeredByLabels: Record<string, string> = {
+    system: 'Auto System',
+    scheduled_boost: 'Scheduled Boost',
+    schedule: 'Daily Schedule',
+    led_schedule: 'LED Schedule',
+};
+
+function formatTriggeredBy(value: string | null | undefined): string {
+    if (!value) {
+        return '—';
+    }
+
+    return (
+        triggeredByLabels[value] ??
+        value
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+    );
+}
 </script>
 
 <template>
@@ -365,7 +399,7 @@ const triggerLabels: Record<string, string> = {
                     Actuator Control
                 </h1>
                 <p class="mt-1 text-muted-foreground">
-                    Monitor and control relays manually.
+                    Monitor and control chamber devices.
                 </p>
                 <div
                     v-if="!canControl"
@@ -394,8 +428,8 @@ const triggerLabels: Record<string, string> = {
                     >
                         Automation is paused for:
                         <strong>{{ activeOverrideNames }}</strong
-                        >. The system will not automatically adjust these relays
-                        until the override is removed.
+                        >. The system will not automatically adjust these
+                        devices until auto mode is resumed.
                     </p>
                 </div>
             </div>
@@ -462,7 +496,7 @@ const triggerLabels: Record<string, string> = {
                                 {{ act.label }}
                             </h3>
                             <p class="text-xs text-muted-foreground">
-                                {{ act.relay }}
+                                {{ act.subtitle }}
                             </p>
                         </div>
                     </div>
@@ -529,8 +563,8 @@ const triggerLabels: Record<string, string> = {
                             <LockOpen v-else class="h-3.5 w-3.5" />
                             {{
                                 overrideState[act.key]
-                                    ? 'Override Active — Click to Resume Auto'
-                                    : 'Lock to Manual'
+                                    ? 'Auto Paused — Click to Resume Auto'
+                                    : 'Pause Auto (Manual Mode)'
                             }}
                         </button>
                     </div>
@@ -559,7 +593,7 @@ const triggerLabels: Record<string, string> = {
                             <span>{{ tankRemainingMl.toFixed(1) }}</span>
                             <span
                                 class="text-base font-normal text-muted-foreground"
-                                >/ {{ mist.tank.capacity_ml }} mL each</span
+                                >/ {{ mist.tank.capacity_ml }} mL</span
                             >
                         </p>
                         <p class="text-sm text-muted-foreground">
@@ -631,8 +665,8 @@ const triggerLabels: Record<string, string> = {
                         >
                     </p>
                     <p class="text-sm text-muted-foreground">
-                        {{ formatDuration(todaySeconds) }} on ·
-                        {{ mist.unit_count }} × {{ unitRate }} mL/s
+                        {{ formatDuration(todaySeconds) }} active ·
+                        {{ mist.unit_count }} mist units
                     </p>
                     <!-- 7-Day History Header -->
                     <div
@@ -701,9 +735,8 @@ const triggerLabels: Record<string, string> = {
                         </div>
                     </div>
                     <p class="mt-3 text-[11px] text-muted-foreground">
-                        Estimated from relay on-time ×
-                        {{ mist.unit_count }} units × {{ unitRate }} mL/s, not
-                        measured.
+                        Estimated from humidifier run time ({{ mist.unit_count }}
+                        units, not physically measured).
                     </p>
                 </div>
             </div>
@@ -1065,9 +1098,9 @@ const triggerLabels: Record<string, string> = {
                                     }}
                                 </td>
                                 <td
-                                    class="px-4 py-3 font-medium text-foreground capitalize"
+                                    class="px-4 py-3 font-medium text-foreground"
                                 >
-                                    {{ log.actuator }}
+                                    {{ formatActuatorName(log.actuator) }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <span
@@ -1092,7 +1125,7 @@ const triggerLabels: Record<string, string> = {
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-muted-foreground">
-                                    {{ log.triggered_by ?? '—' }}
+                                    {{ formatTriggeredBy(log.triggered_by) }}
                                 </td>
                                 <td class="px-4 py-3 text-muted-foreground">
                                     <span v-if="log.duration_seconds != null"

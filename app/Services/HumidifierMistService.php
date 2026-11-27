@@ -34,6 +34,14 @@ class HumidifierMistService
         return (float) config('humidifier.tank_capacity_ml');
     }
 
+    /**
+     * Combined usable water capacity across all units in millilitres.
+     */
+    public function totalCapacity(): float
+    {
+        return $this->capacity() * $this->unitCount();
+    }
+
     public function lowTankPercent(): int
     {
         return (int) config('humidifier.low_tank_percent');
@@ -56,7 +64,7 @@ class HumidifierMistService
             'sensor' => 'water_tank',
             'value' => $tank['remaining_ml'],
             'threshold' => "<= {$this->lowTankPercent()}%",
-            'message' => "[MushroomIoT] Humidifier tanks low ({$tank['remaining_ml']} mL/tank, {$tank['percent']}%). Refill all {$this->unitCount()} tanks and tap Log Refill on the website.",
+            'message' => "[MushroomIoT] Humidifier tanks low ({$tank['remaining_ml']} mL left, {$tank['percent']}%). Refill all {$this->unitCount()} tanks and tap Log Refill on the website.",
         ];
     }
 
@@ -198,7 +206,7 @@ class HumidifierMistService
     public function tank(CarbonInterface $now): array
     {
         $refilledAt = Setting::get(self::REFILLED_AT_KEY);
-        $capacity = $this->capacity();
+        $capacity = $this->totalCapacity();
 
         if ($refilledAt === null) {
             return [
@@ -208,13 +216,13 @@ class HumidifierMistService
                 'remaining_ml' => $capacity,
                 'percent' => 100,
                 'low_percent' => $this->lowTankPercent(),
-                'runtime_left_seconds' => (int) round($capacity / $this->rate()),
+                'runtime_left_seconds' => (int) round($capacity / $this->totalRate()),
                 'refilled_at' => null,
             ];
         }
 
         $since = Carbon::parse($refilledAt);
-        $usedMl = min($capacity, $this->tankMlFor($this->runtimeSeconds($since, $now)));
+        $usedMl = min($capacity, $this->mlFor($this->runtimeSeconds($since, $now)));
         $remaining = max(0.0, round($capacity - $usedMl, 1));
 
         return [
@@ -224,7 +232,7 @@ class HumidifierMistService
             'remaining_ml' => $remaining,
             'percent' => (int) round($remaining / $capacity * 100),
             'low_percent' => $this->lowTankPercent(),
-            'runtime_left_seconds' => (int) round($remaining / $this->rate()),
+            'runtime_left_seconds' => (int) round($remaining / $this->totalRate()),
             'refilled_at' => $since->toIso8601String(),
         ];
     }

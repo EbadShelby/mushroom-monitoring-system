@@ -2,6 +2,7 @@
 
 use App\Models\ActuatorLog;
 use App\Models\GrowingCycle;
+use App\Models\MushroomMeasurement;
 use App\Models\SensorReading;
 use App\Models\User;
 
@@ -244,6 +245,37 @@ test('authorized user can create growing cycle with multiple fruiting bag types 
     expect($cycle->fruiting_bags)->toHaveCount(2);
 });
 
+test('authorized user can rename a growing cycle and update fruiting bags', function () {
+    $user = User::factory()->create(['role' => 'faculty']);
+
+    $cycle = GrowingCycle::create([
+        'name' => 'Gray Oyster Batch 1',
+        'mushroom_variety' => '10× Gray Oyster Mushroom',
+        'fruiting_bags' => [['variety' => 'Gray Oyster Mushroom', 'count' => 10]],
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($user)->putJson("/api/cycles/{$cycle->id}", [
+        'name' => 'White Oyster Batch 1',
+        'fruiting_bags' => [
+            ['variety' => 'White Oyster Mushroom', 'count' => 10],
+        ],
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->toDateString(),
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonPath('cycle.name', 'White Oyster Batch 1')
+        ->assertJsonPath('cycle.mushroom_variety', '10× White Oyster Mushroom');
+
+    $cycle->refresh();
+    expect($cycle->name)->toBe('White Oyster Batch 1')
+        ->and($cycle->mushroom_variety)->toBe('10× White Oyster Mushroom')
+        ->and($cycle->fruiting_bags)->toBe([['variety' => 'White Oyster Mushroom', 'count' => 10]]);
+});
+
 test('breach summary counts at most one breach per rolling 15-minute cooldown per sensor', function () {
     $cycle = GrowingCycle::create([
         'name' => 'Breach Cooldown Test',
@@ -336,4 +368,137 @@ test('breach summary ignores high humidity within 3 minutes after humidifier shu
 
     expect($summary['humidity'])->toBe(1)
         ->and($summary['total_readings'])->toBe(2);
+});
+
+test('completing a growing cycle can optionally record harvest measurements in one step', function () {
+    $user = User::factory()->create(['role' => 'faculty']);
+
+    $cycle = GrowingCycle::create([
+        'name' => 'Harvest Finish Batch',
+        'mushroom_variety' => 'White Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->subDays(12)->toDateString(),
+        'status' => 'active',
+    ]);
+
+    $this->actingAs($user)
+        ->postJson("/api/cycles/{$cycle->id}/end", [
+            'fruiting_body_count' => 135,
+            'height_cm' => 8.4,
+            'cap_diameter_cm' => 6.1,
+            'harvest_notes' => 'Clean first harvest',
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('cycle.status', 'completed');
+
+    $measurement = MushroomMeasurement::where('growing_cycle_id', $cycle->id)->first();
+    expect($measurement)->not->toBeNull()
+        ->and($measurement->fruiting_body_count)->toBe(135)
+        ->and((float) $measurement->height_cm)->toBe(8.4)
+        ->and((float) $measurement->cap_diameter_cm)->toBe(6.1)
+        ->and($measurement->notes)->toBe('Clean first harvest');
+});
+
+test('completing a growing cycle without harvest fields still completes cleanly', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+
+    $cycle = GrowingCycle::create([
+        'name' => 'No Harvest Yet',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => now()->subDays(10)->toDateString(),
+        'status' => 'active',
+    ]);
+
+    $this->actingAs($user)
+        ->postJson("/api/cycles/{$cycle->id}/end")
+        ->assertSuccessful()
+        ->assertJsonPath('cycle.status', 'completed');
+
+    expect(MushroomMeasurement::where('growing_cycle_id', $cycle->id)->count())->toBe(0);
+});
+
+test('authenticated user can compare growing cycles by averages, breaches, and harvest results', function () {
+    $student = User::factory()->create(['role' => 'student']);
+
+    $cycleA = GrowingCycle::create([
+        'name' => 'Batch Alpha',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => '2026-10-01',
+        'end_date' => '2026-10-05',
+        'status' => 'completed',
+    ]);
+
+    $cycleB = GrowingCycle::create([
+        'name' => 'Batch Beta',
+        'mushroom_variety' => 'White Oyster Mushroom',
+        'substrate_type' => 'Rice Straw',
+        'start_date' => '2026-10-10',
+        'end_date' => '2026-10-14',
+        'status' => 'completed',
+    ]);
+
+    SensorReading::create([
+        'growing_cycle_id' => $cycleA->id,
+        'temperature' => 28.0,
+        'humidity' => 84.0,
+        'co2_raw' => 650,
+        'light_level' => 300,
+        'soil_moisture' => 68,
+        'soil_status' => 'moist',
+        'recorded_at' => '2026-10-02 10:00:00',
+    ]);
+
+    SensorReading::create([
+        'growing_cycle_id' => $cycleB->id,
+        'temperature' => 34.0,
+        'humidity' => 70.0,
+        'co2_raw' => 800,
+        'light_level' => 280,
+        'soil_moisture' => 62,
+        'soil_status' => 'moist',
+        'recorded_at' => '2026-10-11 10:00:00',
+    ]);
+
+    MushroomMeasurement::create([
+        'growing_cycle_id' => $cycleA->id,
+        'user_id' => $student->id,
+        'observed_date' => '2026-10-05',
+        'height_cm' => 9.5,
+        'cap_diameter_cm' => 7.2,
+        'fruiting_body_count' => 140,
+    ]);
+
+    $this->actingAs($student)
+        ->getJson('/api/cycles/compare?ids[]='.$cycleA->id.'&ids[]='.$cycleB->id)
+        ->assertSuccessful()
+        ->assertJsonCount(2, 'cycles')
+        ->assertJsonPath('cycles.0.name', 'Batch Alpha')
+        ->assertJsonPath('cycles.0.averages.temperature', 28)
+        ->assertJsonPath('cycles.0.averages.humidity', 84)
+        ->assertJsonPath('cycles.0.breaches.total', 0)
+        ->assertJsonPath('cycles.0.harvest.total_fruiting_bodies', 140)
+        ->assertJsonPath('cycles.1.name', 'Batch Beta')
+        ->assertJsonPath('cycles.1.breaches.temperature', 1)
+        ->assertJsonPath('cycles.1.breaches.humidity', 1)
+        ->assertJsonPath('cycles.1.breaches.total', 2)
+        ->assertJsonPath('cycles.1.harvest.records_count', 0);
+});
+
+test('cycle compare requires at least two distinct valid cycle ids', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+
+    $cycle = GrowingCycle::create([
+        'name' => 'Single Cycle',
+        'mushroom_variety' => 'Gray Oyster Mushroom',
+        'substrate_type' => 'Sawdust',
+        'start_date' => '2026-10-01',
+        'status' => 'active',
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/cycles/compare?ids[]='.$cycle->id)
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('ids');
 });

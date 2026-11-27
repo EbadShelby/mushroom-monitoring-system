@@ -216,7 +216,7 @@ function formatHour(hour: number | string | undefined | null): string {
                                 <label
                                     for="threshold-hum-low"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Humidity Low — Humidifier ON (%)</label
+                                    >Target Humidity Min (%)</label
                                 >
                                 <input
                                     id="threshold-hum-low"
@@ -232,12 +232,16 @@ function formatHour(hour: number | string | undefined | null): string {
                                         )
                                     "
                                 />
+                                <p class="text-[11px] text-muted-foreground">
+                                    SMS alert below this; humidifier starts 3%
+                                    early.
+                                </p>
                             </div>
                             <div class="space-y-1">
                                 <label
                                     for="threshold-hum-high"
                                     class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                    >Humidity High — Humidifier OFF (%)</label
+                                    >Target Humidity Max (%)</label
                                 >
                                 <input
                                     id="threshold-hum-high"
@@ -253,6 +257,10 @@ function formatHour(hour: number | string | undefined | null): string {
                                         )
                                     "
                                 />
+                                <p class="text-[11px] text-muted-foreground">
+                                    Humidifier stops 5% early to prevent excess
+                                    mist.
+                                </p>
                             </div>
                             <div class="space-y-1">
                                 <label
@@ -397,8 +405,8 @@ function formatHour(hour: number | string | undefined | null): string {
                         ></textarea>
                         <p class="text-xs text-muted-foreground">
                             Enter numbers like 09123456789, separated by commas
-                            (+63 format is also accepted and converted). Uses
-                            Semaphore API.
+                            (+63 format is also accepted). Alert SMS messages
+                            will be sent to these numbers.
                         </p>
                     </div>
                     <button
@@ -427,8 +435,8 @@ function formatHour(hour: number | string | undefined | null): string {
                                 LED GROW LIGHT SCHEDULE
                             </h2>
                             <p class="text-xs text-muted-foreground">
-                                Daily automated schedule for the LED grow light
-                                relay.
+                                Daily automated schedule for the LED grow
+                                lights.
                             </p>
                         </div>
                     </div>

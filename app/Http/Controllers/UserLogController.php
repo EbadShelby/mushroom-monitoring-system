@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\UserLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,6 +18,14 @@ class UserLogController extends Controller
         }
 
         return Inertia::render('UserLogsView', [
+            'users' => User::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'role']),
+            'filters' => [
+                'user_id' => $request->query('user_id', ''),
+                'from' => $request->query('from', ''),
+                'to' => $request->query('to', ''),
+            ],
             'logs' => Inertia::defer(fn () => UserLog::query()
                 ->with('user:id,name,email,role')
                 ->when($request->filled('user_id'), fn ($q) => $q->where('user_id', $request->integer('user_id')))

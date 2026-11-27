@@ -62,6 +62,12 @@ class GrowingCycle extends Model
         return $this->hasMany(CameraSnapshot::class);
     }
 
+    /** @return HasMany<AlertLog, $this> */
+    public function alertLogs(): HasMany
+    {
+        return $this->hasMany(AlertLog::class);
+    }
+
     /**
      * Number of days elapsed in this cycle (1-indexed, minimum 1).
      */

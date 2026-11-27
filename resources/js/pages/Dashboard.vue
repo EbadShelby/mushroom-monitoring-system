@@ -409,7 +409,7 @@ function formatDuration(totalSeconds: number): string {
                         </span>
                     </div>
                     <p class="mt-1 text-muted-foreground">
-                        Live environmental metrics and actuator control.
+                        Live chamber monitoring and device control.
                     </p>
                 </div>
 
@@ -461,7 +461,7 @@ function formatDuration(totalSeconds: number): string {
                 <AlertTriangle class="h-4 w-4 shrink-0" />
                 <span class="font-medium"
                     >One or more sensor readings are outside the optimal
-                    environmental range. Check actuator status.</span
+                    environmental range. Check device status.</span
                 >
             </div>
 
@@ -611,7 +611,7 @@ function formatDuration(totalSeconds: number): string {
                         <span
                             v-else-if="isHumiditySettling"
                             class="text-xs font-medium text-muted-foreground"
-                            >Settling (mist dissipating)</span
+                            >Mist settling</span
                         >
                         <div
                             v-else
@@ -807,11 +807,6 @@ function formatDuration(totalSeconds: number): string {
                                 SUBSTRATE MOISTURE
                             </p>
                         </div>
-                        <span
-                            class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-emerald-600 uppercase dark:text-emerald-400"
-                        >
-                            {{ store.sensors.soil_status ?? 'Unknown' }}
-                        </span>
                     </div>
 
                     <div class="relative z-10 mt-6 flex items-baseline gap-2">
@@ -1097,8 +1092,8 @@ function formatDuration(totalSeconds: number): string {
                                 </span>
                             </p>
                             <p class="mt-0.5 text-xs text-muted-foreground">
-                                {{ formatDuration(todayMistSeconds) }} on ·
-                                {{ mistUnitCount }} × {{ mistUnitRate }} mL/s
+                                {{ formatDuration(todayMistSeconds) }} active ·
+                                {{ mistUnitCount }} mist units
                             </p>
 
                             <div class="mt-4 flex h-16 items-end gap-1.5">
@@ -1201,7 +1196,7 @@ function formatDuration(totalSeconds: number): string {
                                         <p
                                             class="text-[11px] text-muted-foreground"
                                         >
-                                            Relay 1
+                                            Humidity Control
                                         </p>
                                     </div>
                                 </div>
@@ -1251,7 +1246,7 @@ function formatDuration(totalSeconds: number): string {
                                         <p
                                             class="text-[11px] text-muted-foreground"
                                         >
-                                            Relay 2
+                                            Lighting Control
                                         </p>
                                     </div>
                                 </div>
@@ -1286,7 +1281,7 @@ function formatDuration(totalSeconds: number): string {
                         v-if="userRole !== 'student'"
                         class="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-xs text-muted-foreground"
                     >
-                        <span>Relay controls</span>
+                        <span>Device controls</span>
                         <Link
                             href="/actuators"
                             class="transition-colors hover:text-foreground"

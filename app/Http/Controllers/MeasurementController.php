@@ -2,33 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GrowingCycle;
 use App\Models\MushroomMeasurement;
 use App\Models\UserLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class MeasurementController extends Controller
 {
-    public function index(Request $request): Response
-    {
-        $measurements = MushroomMeasurement::with(['growingCycle', 'user:id,name'])
-            ->orderByDesc('observed_date')
-            ->orderByDesc('id')
-            ->paginate(15);
-
-        $cycles = $request->user()?->role !== 'student'
-            ? GrowingCycle::where('status', 'active')->get(['id', 'name'])
-            : [];
-
-        return Inertia::render('MeasurementsView', [
-            'measurements' => $measurements,
-            'activeCycles' => $cycles,
-        ]);
-    }
-
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

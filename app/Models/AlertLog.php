@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
+ * @property int|null $growing_cycle_id
  * @property string $sensor
  * @property float $value_at_alert
  * @property string $threshold_exceeded
@@ -20,6 +22,7 @@ class AlertLog extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'growing_cycle_id',
         'sensor',
         'value_at_alert',
         'threshold_exceeded',
@@ -35,4 +38,9 @@ class AlertLog extends Model
     protected $casts = [
         'sent_at' => 'datetime',
     ];
+
+    public function growingCycle(): BelongsTo
+    {
+        return $this->belongsTo(GrowingCycle::class);
+    }
 }

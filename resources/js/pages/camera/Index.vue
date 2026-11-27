@@ -398,7 +398,9 @@ async function captureNow() {
         }
     }
 
-    toast.error('Camera did not respond. Check that the ESP32-CAM is online.');
+    toast.error(
+        'Camera did not respond. Check that the chamber camera is powered on and connected to Wi-Fi.',
+    );
     capturing.value = false;
 }
 

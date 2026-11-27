@@ -13,6 +13,8 @@ test('admin can view user logs page with recorded entries', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('UserLogsView')
+            ->has('users', 1)
+            ->where('users.0.name', $admin->name)
             ->loadDeferredProps(fn ($reload) => $reload
                 ->has('logs.data', 1)
                 ->where('logs.data.0.action', 'Updated system settings')

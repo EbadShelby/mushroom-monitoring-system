@@ -14,6 +14,7 @@ import {
 import axios from 'axios';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import * as usersApi from '@/routes/users';
 import type { AppUser } from '@/types';
 
@@ -120,10 +121,21 @@ async function saveUser(user: AppUser) {
     }
 }
 
-async function deactivateUser(user: AppUser) {
-    if (!confirm(`Deactivate ${user.name}?`)) {
+const confirmDeactivateUser = ref<AppUser | null>(null);
+const deactivating = ref(false);
+
+function deactivateUser(user: AppUser) {
+    confirmDeactivateUser.value = user;
+}
+
+async function confirmDeactivate() {
+    const user = confirmDeactivateUser.value;
+
+    if (!user) {
         return;
     }
+
+    deactivating.value = true;
 
     try {
         await axios.delete(`/api/users/${user.id}`);
@@ -134,8 +146,11 @@ async function deactivateUser(user: AppUser) {
         }
 
         toast.success(`${user.name} deactivated.`);
+        confirmDeactivateUser.value = null;
     } catch (e: any) {
         toast.error(e.response?.data?.error ?? 'Failed to deactivate.');
+    } finally {
+        deactivating.value = false;
     }
 }
 
@@ -464,5 +479,19 @@ function inputClass() {
                 </div>
             </template>
         </div>
+
+        <ConfirmDialog
+            :open="confirmDeactivateUser !== null"
+            title="Deactivate User?"
+            :description="
+                confirmDeactivateUser
+                    ? `Deactivate ${confirmDeactivateUser.name}? They will no longer be able to sign in until reactivated.`
+                    : ''
+            "
+            confirm-label="Deactivate"
+            :loading="deactivating"
+            @confirm="confirmDeactivate"
+            @cancel="confirmDeactivateUser = null"
+        />
     </div>
 </template>

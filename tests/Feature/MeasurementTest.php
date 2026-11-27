@@ -31,3 +31,11 @@ test('faculty or admin can log a measurement without weight or flush number', fu
         ->and((float) $measurement->height_cm)->toBe(6.5)
         ->and((float) $measurement->cap_diameter_cm)->toBe(5.2);
 });
+
+test('legacy measurements url redirects to growing cycles', function () {
+    $user = User::factory()->create(['role' => 'faculty']);
+
+    $this->actingAs($user)
+        ->get('/measurements')
+        ->assertRedirect('/cycles');
+});

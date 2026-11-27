@@ -25,6 +25,7 @@ import axios from 'axios';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import VueApexCharts from 'vue3-apexcharts';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import * as cycles from '@/routes/cycles';
 import type {
     GrowingCycle,
@@ -226,17 +227,49 @@ async function saveMeasurement() {
     }
 }
 
-async function deleteMeasurement(id: number) {
-    if (!confirm('Delete this measurement?')) {
+const pendingDelete = ref<{
+    type: 'measurement' | 'snapshot';
+    id: number;
+} | null>(null);
+const deletingItem = ref(false);
+
+function deleteMeasurement(id: number) {
+    pendingDelete.value = { type: 'measurement', id };
+}
+
+function deleteSnapshot(id: number) {
+    pendingDelete.value = { type: 'snapshot', id };
+}
+
+async function confirmDeleteItem() {
+    const pending = pendingDelete.value;
+
+    if (!pending) {
         return;
     }
 
+    deletingItem.value = true;
+
     try {
-        await axios.delete(`/api/measurements/${id}`);
-        toast.success('Measurement deleted');
-        router.reload({ only: ['measurements'] });
+        if (pending.type === 'measurement') {
+            await axios.delete(`/api/measurements/${pending.id}`);
+            toast.success('Measurement deleted');
+            router.reload({ only: ['measurements'] });
+        } else {
+            await axios.delete(`/api/camera/${pending.id}`);
+            toast.success('Photo deleted');
+            router.reload({ only: ['snapshots'] });
+        }
+
+        pendingDelete.value = null;
     } catch {
-        toast.error('Failed to delete');
+        toast.error(
+            pending.type === 'measurement'
+                ? 'Failed to delete measurement'
+                : 'Failed to delete photo',
+        );
+    } finally {
+        deletingItem.value = false;
     }
 }
 
@@ -286,20 +319,6 @@ const snapshotNumberMap = computed(() => {
 
     return map;
 });
-
-async function deleteSnapshot(id: number) {
-    if (!confirm('Delete this photo?')) {
-        return;
-    }
-
-    try {
-        await axios.delete(`/api/camera/${id}`);
-        toast.success('Photo deleted');
-        router.reload({ only: ['snapshots'] });
-    } catch {
-        toast.error('Failed to delete photo');
-    }
-}
 
 const reportUrl = computed(() => `/reports/${props.cycle.id}`);
 </script>
@@ -599,14 +618,14 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                     class="flex items-center gap-2 text-base font-semibold text-foreground dark:text-white"
                 >
                     <FlaskConical class="h-4 w-4 text-emerald-400" />
-                    Measurement History
+                    Harvest Measurements
                 </h2>
                 <button
                     v-if="userRole !== 'student'"
                     class="flex items-center gap-1.5 rounded-xl bg-emerald-600/20 px-3 py-1.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-500/30 transition hover:bg-emerald-600/30"
                     @click="showMeasureModal = true"
                 >
-                    <Plus class="h-3.5 w-3.5" /> Add Measurement
+                    <Plus class="h-3.5 w-3.5" /> Log Measurement
                 </button>
             </div>
             <div v-if="!measurements" class="space-y-2">
@@ -620,7 +639,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                 v-else-if="measurements.length === 0"
                 class="py-8 text-center text-sm text-muted-foreground/80 dark:text-slate-500"
             >
-                No measurements recorded yet. Add the first one!
+                No harvest measurements recorded yet.
             </div>
             <div v-else class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -631,7 +650,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <th
                                 class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
-                                Date
+                                Harvest Date
                             </th>
                             <th
                                 class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
@@ -651,7 +670,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <th
                                 class="pr-4 pb-2.5 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase dark:text-slate-400"
                             >
-                                Logged By
+                                Recorded By
                             </th>
                             <th
                                 v-if="userRole !== 'student'"
@@ -822,7 +841,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                         <h2
                             class="text-lg font-semibold text-foreground dark:text-white"
                         >
-                            Add Measurement
+                            Log Harvest Measurement
                         </h2>
                         <button
                             class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted dark:bg-slate-700 dark:text-slate-400"
@@ -839,7 +858,7 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
                             <div>
                                 <label
                                     class="mb-1.5 block text-sm font-medium text-foreground/80 dark:text-slate-300"
-                                    >Date
+                                    >Harvest Date
                                     <span class="text-red-400">*</span></label
                                 >
                                 <input
@@ -960,4 +979,22 @@ const reportUrl = computed(() => `/reports/${props.cycle.id}`);
             </div>
         </Transition>
     </Teleport>
+
+    <ConfirmDialog
+        :open="pendingDelete !== null"
+        :title="
+            pendingDelete?.type === 'measurement'
+                ? 'Delete Measurement?'
+                : 'Delete Photo?'
+        "
+        :description="
+            pendingDelete?.type === 'measurement'
+                ? 'This measurement will be permanently deleted and cannot be undone.'
+                : 'This photo will be permanently deleted and cannot be undone.'
+        "
+        confirm-label="Delete"
+        :loading="deletingItem"
+        @confirm="confirmDeleteItem"
+        @cancel="pendingDelete = null"
+    />
 </template>

@@ -14,6 +14,7 @@ export interface GrowingCycle {
     status: 'active' | 'completed' | 'cancelled';
     notes: string | null;
     day_count?: number;
+    measurements_count?: number;
     created_at?: string;
     updated_at?: string;
 }
@@ -34,6 +35,8 @@ export interface CameraSnapshot {
 
 export interface AlertLog {
     id: number;
+    growing_cycle_id?: number | null;
+    growing_cycle?: { id: number; name: string } | null;
     sensor: string;
     value_at_alert: number;
     threshold_exceeded: string;

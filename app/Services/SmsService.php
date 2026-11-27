@@ -62,6 +62,7 @@ class SmsService
         $value = $payload['value'];
         $threshold = $payload['threshold'];
         $message = $payload['message'];
+        $growingCycleId = $payload['growing_cycle_id'] ?? null;
 
         if (! $this->apiKey) {
             Log::warning('Semaphore API key not configured — SMS skipped', compact('sensor'));
@@ -69,9 +70,8 @@ class SmsService
             return;
         }
 
-        // ── Cooldown check: skip if a recent alert for this sensor exists ──
+        // ── Cooldown check: skip if a recent alert attempt for this sensor exists ──
         $recentAlert = AlertLog::where('sensor', $sensor)
-            ->where('status', 'sent')
             ->where('sent_at', '>=', now()->subMinutes($cooldownMinutes))
             ->exists();
 
@@ -116,6 +116,7 @@ class SmsService
             }
 
             AlertLog::create([
+                'growing_cycle_id' => $growingCycleId,
                 'sensor' => $sensor,
                 'value_at_alert' => $value,
                 'threshold_exceeded' => $threshold,
