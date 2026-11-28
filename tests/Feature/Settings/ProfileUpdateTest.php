@@ -20,6 +20,7 @@ test('profile information can be updated', function () {
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'contact_number' => '09171234567',
         ]);
 
     $response
@@ -30,6 +31,7 @@ test('profile information can be updated', function () {
 
     expect($user->name)->toBe('Test User');
     expect($user->email)->toBe('test@example.com');
+    expect($user->contact_number)->toBe('09171234567');
     expect($user->email_verified_at)->toBeNull();
 });
 

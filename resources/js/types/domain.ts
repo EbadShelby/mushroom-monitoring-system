@@ -115,6 +115,9 @@ export interface SystemSettings {
     threshold_light_max?: string;
     threshold_soil_warning?: string;
     threshold_soil_critical?: string;
+    // Humidifier automation
+    humidifier_on_at?: string;
+    humidifier_off_at?: string;
     // Other
     led_on_hour?: string;
     led_off_hour?: string;

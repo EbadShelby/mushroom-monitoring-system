@@ -2,7 +2,6 @@
 import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/DeleteUser.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,7 @@ defineOptions({
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
+const canReceiveSms = computed(() => (user.value.role ?? 'student') !== 'student');
 </script>
 
 <template>
@@ -34,7 +34,11 @@ const user = computed(() => page.props.auth.user);
         <Heading
             variant="small"
             title="Profile"
-            description="Update your name and email address"
+            :description="
+                canReceiveSms
+                    ? 'Update your name, email address, and SMS alert contact number'
+                    : 'Update your name and email address'
+            "
         />
 
         <div
@@ -74,6 +78,20 @@ const user = computed(() => page.props.auth.user);
                     <InputError class="mt-2" :message="errors.email" />
                 </div>
 
+                <div v-if="canReceiveSms" class="grid gap-2">
+                    <Label for="contact_number">Contact number (SMS alerts)</Label>
+                    <Input
+                        id="contact_number"
+                        type="tel"
+                        class="mt-1 block w-full bg-background/50"
+                        name="contact_number"
+                        :default-value="user.contact_number ?? ''"
+                        autocomplete="tel"
+                        placeholder="e.g. 09171234567"
+                    />
+                    <InputError class="mt-2" :message="errors.contact_number" />
+                </div>
+
                 <div class="flex items-center gap-4 pt-2">
                     <Button
                         :disabled="processing"
@@ -82,14 +100,6 @@ const user = computed(() => page.props.auth.user);
                     >
                 </div>
             </Form>
-        </div>
-    </div>
-
-    <div class="mt-12">
-        <div
-            class="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md sm:p-8"
-        >
-            <DeleteUser />
         </div>
     </div>
 </template>

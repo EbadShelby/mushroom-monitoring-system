@@ -86,8 +86,8 @@ defineProps<{
                 </h2>
                 <p class="max-w-xs text-sm leading-relaxed text-emerald-200/70">
                     Monitor temperature, humidity, CO₂, light, and substrate
-                    moisture conditions for
-                    <em>Pleurotus ostreatus</em> cultivation in real-time.
+                    moisture conditions for oyster mushroom cultivation in
+                    real-time.
                 </p>
 
                 <!-- Sensor stat pills -->
@@ -155,7 +155,7 @@ defineProps<{
             >
                 <div class="mb-8 text-center lg:text-left">
                     <h1 class="text-2xl font-bold tracking-tight">
-                        Sign in to your account
+                        {{ title || 'Sign in to your account' }}
                     </h1>
                     <p class="mt-2 text-sm text-muted-foreground">
                         {{

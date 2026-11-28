@@ -6,6 +6,7 @@ import {
     Sun,
     Monitor,
     ShieldX,
+    Droplets,
 } from '@lucide/vue';
 import axios from 'axios';
 import { ref, computed } from 'vue';
@@ -30,13 +31,12 @@ const userRole = computed(
 const isAdmin = computed(() => userRole.value === 'admin');
 
 // Tabs
-type Tab = 'thresholds' | 'sms' | 'schedule' | 'system';
+type Tab = 'thresholds' | 'sms' | 'system';
 const activeTab = ref<Tab>('thresholds');
 
 const tabs: { id: Tab; label: string; icon: unknown }[] = [
-    { id: 'thresholds', label: 'Sensor Thresholds', icon: Sliders },
+    { id: 'thresholds', label: 'Thresholds & Automation', icon: Sliders },
     { id: 'sms', label: 'SMS Recipients', icon: MessageSquare },
-    { id: 'schedule', label: 'LED Schedule', icon: Sun },
     { id: 'system', label: 'System', icon: Monitor },
 ];
 
@@ -69,8 +69,8 @@ async function saveSettings() {
         }
 
         toast.success('Settings saved.');
-    } catch {
-        toast.error('Failed to save settings.');
+    } catch (e: any) {
+        toast.error(e.response?.data?.message || 'Failed to save settings.');
     } finally {
         savingSettings.value = false;
     }
@@ -126,7 +126,8 @@ function formatHour(hour: number | string | undefined | null): string {
                         System Settings
                     </h1>
                     <p class="mt-1 text-muted-foreground">
-                        Manage users, thresholds, and system configuration.
+                        Manage thresholds, automation, SMS alerts, and system
+                        configuration.
                     </p>
                 </div>
 
@@ -233,8 +234,7 @@ function formatHour(hour: number | string | undefined | null): string {
                                     "
                                 />
                                 <p class="text-[11px] text-muted-foreground">
-                                    SMS alert below this; humidifier starts 3%
-                                    early.
+                                    SMS alert triggers below this.
                                 </p>
                             </div>
                             <div class="space-y-1">
@@ -258,8 +258,7 @@ function formatHour(hour: number | string | undefined | null): string {
                                     "
                                 />
                                 <p class="text-[11px] text-muted-foreground">
-                                    Humidifier stops 5% early to prevent excess
-                                    mist.
+                                    Upper target humidity bound.
                                 </p>
                             </div>
                             <div class="space-y-1">
@@ -362,6 +361,154 @@ function formatHour(hour: number | string | undefined | null): string {
                                 />
                             </div>
                         </div>
+
+                        <!-- Humidifier Auto ON / OFF -->
+                        <div class="mt-6 border-t border-border/40 pt-6">
+                            <div class="mb-4 flex items-center gap-3">
+                                <div
+                                    class="rounded-lg bg-cyan-500/10 p-2 text-cyan-500 shadow-inner"
+                                >
+                                    <Droplets class="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <h3
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        HUMIDIFIER AUTOMATION
+                                    </h3>
+                                    <p class="text-xs text-muted-foreground">
+                                        Humidity levels where the humidifier
+                                        automatically switches ON and OFF
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div class="space-y-1">
+                                    <label
+                                        for="humidifier-on-at"
+                                        class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                        >Humidifier Auto ON (%)</label
+                                    >
+                                    <input
+                                        id="humidifier-on-at"
+                                        v-model="settingsForm.humidifier_on_at"
+                                        type="number"
+                                        min="40"
+                                        max="97"
+                                        step="1"
+                                        :class="inputClass()"
+                                        :placeholder="
+                                            thresholdPlaceholder(
+                                                'humidifier_on_at',
+                                            )
+                                        "
+                                    />
+                                    <p
+                                        class="text-[11px] text-muted-foreground"
+                                    >
+                                        Turns ON at or below this humidity.
+                                    </p>
+                                </div>
+                                <div class="space-y-1">
+                                    <label
+                                        for="humidifier-off-at"
+                                        class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                        >Humidifier Auto OFF (%)</label
+                                    >
+                                    <input
+                                        id="humidifier-off-at"
+                                        v-model="settingsForm.humidifier_off_at"
+                                        type="number"
+                                        min="42"
+                                        max="99"
+                                        step="1"
+                                        :class="inputClass()"
+                                        :placeholder="
+                                            thresholdPlaceholder(
+                                                'humidifier_off_at',
+                                            )
+                                        "
+                                    />
+                                    <p
+                                        class="text-[11px] text-muted-foreground"
+                                    >
+                                        Turns OFF at or above this humidity (at
+                                        least 2% above Auto ON).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grow Light Schedule -->
+                        <div class="mt-6 border-t border-border/40 pt-6">
+                            <div class="mb-4 flex items-center gap-3">
+                                <div
+                                    class="rounded-lg bg-yellow-500/10 p-2 text-yellow-500 shadow-inner"
+                                >
+                                    <Sun class="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <h3
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        GROW LIGHT SCHEDULE
+                                    </h3>
+                                    <p class="text-xs text-muted-foreground">
+                                        Daily automated ON and OFF schedule for
+                                        the grow lights
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div class="space-y-1">
+                                    <label
+                                        for="sched-on"
+                                        class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                        >ON Time</label
+                                    >
+                                    <select
+                                        id="sched-on"
+                                        v-model="settingsForm.led_on_hour"
+                                        :class="inputClass()"
+                                    >
+                                        <option
+                                            v-for="h in 24"
+                                            :key="h - 1"
+                                            :value="String(h - 1)"
+                                        >
+                                            {{ formatHour(h - 1) }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label
+                                        for="sched-off"
+                                        class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                        >OFF Time</label
+                                    >
+                                    <select
+                                        id="sched-off"
+                                        v-model="settingsForm.led_off_hour"
+                                        :class="inputClass()"
+                                    >
+                                        <option
+                                            v-for="h in 24"
+                                            :key="h - 1"
+                                            :value="String(h - 1)"
+                                        >
+                                            {{ formatHour(h - 1) }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-xs text-muted-foreground">
+                                Lights ON at
+                                {{ formatHour(settingsForm.led_on_hour ?? 6) }}
+                                and OFF at
+                                {{ formatHour(settingsForm.led_off_hour ?? 18) }}
+                                daily.
+                            </p>
+                        </div>
                     </div>
 
                     <button
@@ -370,7 +517,7 @@ function formatHour(hour: number | string | undefined | null): string {
                         :disabled="savingSettings"
                         class="rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
                     >
-                        {{ savingSettings ? 'Saving...' : 'Save Thresholds' }}
+                        {{ savingSettings ? 'Saving...' : 'Save Settings' }}
                     </button>
                 </div>
 
@@ -416,85 +563,6 @@ function formatHour(hour: number | string | undefined | null): string {
                         class="mt-6 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
                     >
                         {{ savingSettings ? 'Saving...' : 'Save Recipients' }}
-                    </button>
-                </div>
-
-                <!-- ======= LED SCHEDULE TAB ======= -->
-                <div
-                    v-if="activeTab === 'schedule'"
-                    class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
-                >
-                    <div class="mb-6 flex items-center gap-2">
-                        <div
-                            class="rounded-lg bg-yellow-500/10 p-2 text-yellow-500 shadow-inner"
-                        >
-                            <Sun class="h-4 w-4" />
-                        </div>
-                        <div>
-                            <h2 class="font-semibold text-muted-foreground">
-                                LED GROW LIGHT SCHEDULE
-                            </h2>
-                            <p class="text-xs text-muted-foreground">
-                                Daily automated schedule for the LED grow
-                                lights.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="grid max-w-md gap-4 sm:grid-cols-2">
-                        <div class="space-y-1">
-                            <label
-                                for="sched-on"
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >ON Time</label
-                            >
-                            <select
-                                id="sched-on"
-                                v-model="settingsForm.led_on_hour"
-                                :class="inputClass()"
-                            >
-                                <option
-                                    v-for="h in 24"
-                                    :key="h - 1"
-                                    :value="String(h - 1)"
-                                >
-                                    {{ formatHour(h - 1) }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="space-y-1">
-                            <label
-                                for="sched-off"
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >OFF Time</label
-                            >
-                            <select
-                                id="sched-off"
-                                v-model="settingsForm.led_off_hour"
-                                :class="inputClass()"
-                            >
-                                <option
-                                    v-for="h in 24"
-                                    :key="h - 1"
-                                    :value="String(h - 1)"
-                                >
-                                    {{ formatHour(h - 1) }}
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                    <p class="mt-2 text-sm text-muted-foreground">
-                        Lights ON at
-                        {{ formatHour(settingsForm.led_on_hour ?? 6) }} and OFF
-                        at
-                        {{ formatHour(settingsForm.led_off_hour ?? 18) }} daily.
-                    </p>
-                    <button
-                        id="btn-save-schedule-settings"
-                        @click="saveSettings"
-                        :disabled="savingSettings"
-                        class="mt-6 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
-                    >
-                        {{ savingSettings ? 'Saving...' : 'Save Schedule' }}
                     </button>
                 </div>
 

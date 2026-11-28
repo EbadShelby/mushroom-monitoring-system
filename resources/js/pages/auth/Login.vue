@@ -11,7 +11,7 @@ import { store } from '@/routes/login';
 
 defineOptions({
     layout: {
-        title: 'Sign in',
+        title: 'Sign in to your account',
         description: 'Enter your credentials to access the dashboard',
     },
 });

@@ -76,6 +76,9 @@ class ThresholdService
             $defaults["threshold_{$key}"] = $value;
         }
 
+        $defaults['humidifier_on_at'] = self::DEFAULTS['humidity_low'] + (float) config('humidifier.humidity_on_margin', 3);
+        $defaults['humidifier_off_at'] = self::DEFAULTS['humidity_high'] - (float) config('humidifier.humidity_off_margin', 2);
+
         return $defaults;
     }
 
@@ -89,14 +92,24 @@ class ThresholdService
      */
     private function loadThresholds(): array
     {
-        $dbKeys = array_map(fn ($k) => "threshold_{$k}", array_keys(self::DEFAULTS));
+        $dbKeys = [
+            ...array_map(fn ($k) => "threshold_{$k}", array_keys(self::DEFAULTS)),
+            'humidifier_on_at',
+            'humidifier_off_at',
+        ];
 
         $settings = Setting::whereIn('key', $dbKeys)->pluck('value', 'key');
 
         $thresholds = [];
         foreach (self::DEFAULTS as $key => $default) {
             $dbKey = "threshold_{$key}";
-            $thresholds[$key] = $settings->has($dbKey) ? (float) $settings[$dbKey] : $default;
+            $thresholds[$key] = $settings->has($dbKey) && $settings[$dbKey] !== '' ? (float) $settings[$dbKey] : $default;
+        }
+
+        foreach (['humidifier_on_at', 'humidifier_off_at'] as $controlKey) {
+            if ($settings->has($controlKey) && $settings[$controlKey] !== '') {
+                $thresholds[$controlKey] = (float) $settings[$controlKey];
+            }
         }
 
         return $thresholds;
@@ -327,8 +340,15 @@ class ThresholdService
      */
     public function humidityControlBand(array $thresholds): array
     {
-        $offAt = (float) $thresholds['humidity_high'] - (float) config('humidifier.humidity_off_margin');
-        $onAt = min((float) $thresholds['humidity_low'] + (float) config('humidifier.humidity_on_margin'), $offAt - 1);
+        $offAt = isset($thresholds['humidifier_off_at'])
+            ? (float) $thresholds['humidifier_off_at']
+            : (float) $thresholds['humidity_high'] - (float) config('humidifier.humidity_off_margin');
+
+        $rawOnAt = isset($thresholds['humidifier_on_at'])
+            ? (float) $thresholds['humidifier_on_at']
+            : (float) $thresholds['humidity_low'] + (float) config('humidifier.humidity_on_margin');
+
+        $onAt = min($rawOnAt, $offAt - 1);
 
         return ['on_at' => $onAt, 'off_at' => $offAt];
     }

@@ -1025,7 +1025,11 @@ function formatDuration(totalSeconds: number): string {
                                     misting left
                                 </template>
                                 <template v-else>
-                                    Not tracking yet. Refill and log to start.
+                                    {{
+                                        userRole === 'student'
+                                            ? 'Not tracking yet.'
+                                            : 'Not tracking yet. Refill and log to start.'
+                                    }}
                                 </template>
                             </p>
                         </div>

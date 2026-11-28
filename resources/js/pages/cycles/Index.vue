@@ -1193,10 +1193,15 @@ function formatDate(d: string | null) {
                     <p
                         class="mt-1 text-sm text-muted-foreground dark:text-slate-400"
                     >
-                        Start your first growing cycle to get started.
+                        {{
+                            userRole === 'student'
+                                ? 'No growing cycles have been created yet.'
+                                : 'Start your first growing cycle to get started.'
+                        }}
                     </p>
                 </div>
                 <button
+                    v-if="userRole !== 'student'"
                     class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-foreground hover:bg-emerald-500 dark:text-white"
                     @click="openModal"
                 >

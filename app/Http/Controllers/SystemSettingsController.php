@@ -47,6 +47,9 @@ class SystemSettingsController extends Controller
             'threshold_light_max' => ['nullable', 'numeric'],
             'threshold_soil_warning' => ['nullable', 'integer'],
             'threshold_soil_critical' => ['nullable', 'integer'],
+            // ── Humidifier automation ─────────────────────────────────────────
+            'humidifier_on_at' => ['nullable', 'numeric', 'min:40', 'max:97'],
+            'humidifier_off_at' => ['nullable', 'numeric', 'min:42', 'max:99'],
             // ── Other ─────────────────────────────────────────────────────────
             'led_on_hour' => ['nullable', 'integer', 'min:0', 'max:23'],
             'led_off_hour' => ['nullable', 'integer', 'min:0', 'max:23'],
@@ -61,6 +64,24 @@ class SystemSettingsController extends Controller
             }],
             'system_name' => ['nullable', 'string', 'max:100'],
         ]);
+
+        $defaults = ThresholdService::defaultThresholdSettings();
+        $hasHumidifierInput = array_key_exists('humidifier_on_at', $data) && $data['humidifier_on_at'] !== null
+            || array_key_exists('humidifier_off_at', $data) && $data['humidifier_off_at'] !== null;
+
+        if ($hasHumidifierInput) {
+            $effectiveOn = (float) ($data['humidifier_on_at'] ?? Setting::get('humidifier_on_at') ?? $defaults['humidifier_on_at']);
+            $effectiveOff = (float) ($data['humidifier_off_at'] ?? Setting::get('humidifier_off_at') ?? $defaults['humidifier_off_at']);
+
+            if ($effectiveOff < $effectiveOn + 2) {
+                return response()->json([
+                    'message' => 'Humidifier Auto OFF must be at least 2% higher than Auto ON.',
+                    'errors' => [
+                        'humidifier_off_at' => ['Humidifier Auto OFF must be at least 2% higher than Auto ON.'],
+                    ],
+                ], 422);
+            }
+        }
 
         $updatedKeys = [];
         foreach ($data as $key => $value) {

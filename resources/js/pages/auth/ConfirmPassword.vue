@@ -1,84 +1,68 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import { Loader2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import InputError from '@/components/InputError.vue';
+import PasswordInput from '@/components/PasswordInput.vue';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import { edit as editProfile } from '@/routes/profile';
+
+defineOptions({
+    layout: {
+        title: 'Confirm your password',
+        description:
+            'Please confirm your current password before opening Security settings.',
+    },
+});
 
 const form = useForm({
     password: '',
 });
 
-const passwordInput = ref<HTMLInputElement | null>(null);
-
 const submit = () => {
     form.post('/user/confirm-password', {
         onFinish: () => {
             form.reset();
-            passwordInput.value?.focus();
         },
     });
 };
 </script>
 
 <template>
-    <Head title="Secure Area" />
+    <Head title="Confirm Password" />
 
-    <div
-        class="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900/20 p-4"
-    >
-        <div
-            class="w-full max-w-md overflow-hidden rounded-3xl border border-slate-700/50 bg-slate-800/80 p-8 shadow-2xl backdrop-blur-xl"
-        >
-            <div class="mb-8 text-center">
-                <div
-                    class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 shadow-inner"
-                >
-                    <span class="text-2xl font-bold text-emerald-400">🔒</span>
-                </div>
-                <h1 class="text-2xl font-bold text-white">Secure Area</h1>
-                <p class="mt-2 text-sm text-slate-400">
-                    This is a secure area of the application. Please confirm
-                    your password before continuing.
-                </p>
-            </div>
-
-            <form @submit.prevent="submit" class="space-y-6">
-                <div>
-                    <label
-                        for="password"
-                        class="mb-1.5 block text-sm font-medium text-slate-300"
-                        >Password</label
-                    >
-                    <input
-                        id="password"
-                        ref="passwordInput"
-                        v-model="form.password"
-                        type="password"
-                        required
-                        autocomplete="current-password"
-                        class="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-white placeholder-slate-500 transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                        placeholder="••••••••"
-                        autofocus
-                    />
-                    <p
-                        v-if="form.errors.password"
-                        class="mt-1 text-sm text-red-400"
-                    >
-                        {{ form.errors.password }}
-                    </p>
-                </div>
-
-                <button
-                    type="submit"
-                    :disabled="form.processing"
-                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-500 disabled:opacity-70"
-                >
-                    <Loader2
-                        v-if="form.processing"
-                        class="h-4 w-4 animate-spin"
-                    />
-                    Confirm Password
-                </button>
-            </form>
+    <form class="flex flex-col gap-5" @submit.prevent="submit">
+        <div class="grid gap-2">
+            <Label for="password" class="text-sm font-medium">Password</Label>
+            <PasswordInput
+                id="password"
+                v-model="form.password"
+                name="password"
+                required
+                autofocus
+                autocomplete="current-password"
+                placeholder="Enter your current password"
+                class="h-10"
+            />
+            <InputError :message="form.errors.password" />
         </div>
-    </div>
+
+        <Button
+            type="submit"
+            class="h-10 w-full bg-emerald-700 font-semibold text-white hover:bg-emerald-600 focus:ring-emerald-500"
+            :disabled="form.processing"
+        >
+            <Spinner v-if="form.processing" class="mr-2" />
+            {{ form.processing ? 'Confirming…' : 'Confirm Password' }}
+        </Button>
+
+        <div class="text-center">
+            <Link
+                :href="editProfile()"
+                class="text-xs text-muted-foreground transition-colors hover:text-foreground hover:underline"
+            >
+                ← Back to Profile Settings
+            </Link>
+        </div>
+    </form>
 </template>

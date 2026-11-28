@@ -638,7 +638,11 @@ function formatTime(iso: string | null | undefined): string {
                 <p
                     class="mt-1 text-sm text-muted-foreground dark:text-slate-400"
                 >
-                    Upload daily growth photos to start documenting.
+                    {{
+                        userRole === 'student'
+                            ? 'No growth photos have been recorded yet.'
+                            : 'Upload daily growth photos to start documenting.'
+                    }}
                 </p>
             </div>
             <button
