@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Models\User;
 use App\Models\UserLog;
 use App\Rules\PhilippineMobileNumber;
 use App\Services\ThresholdService;
@@ -21,9 +22,18 @@ class SystemSettingsController extends Controller
             return Inertia::render('Dashboard');
         }
 
+        $activeSmsUsers = User::query()
+            ->whereIn('role', ['admin', 'faculty'])
+            ->where('is_active', true)
+            ->whereNotNull('contact_number')
+            ->where('contact_number', '!=', '')
+            ->orderBy('name')
+            ->get(['id', 'name', 'role', 'contact_number']);
+
         return Inertia::render('SystemSettings', [
             'settings' => Setting::all()->pluck('value', 'key'),
             'thresholdDefaults' => ThresholdService::defaultThresholdSettings(),
+            'activeSmsUsers' => $activeSmsUsers,
         ]);
     }
 

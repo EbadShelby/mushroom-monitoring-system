@@ -4,7 +4,6 @@ import {
     Sliders,
     MessageSquare,
     Sun,
-    Monitor,
     ShieldX,
     Droplets,
 } from '@lucide/vue';
@@ -22,6 +21,12 @@ defineOptions({
 const props = defineProps<{
     settings?: SystemSettingsType;
     thresholdDefaults?: Record<string, number>;
+    activeSmsUsers?: {
+        id: number;
+        name: string;
+        role: string;
+        contact_number: string;
+    }[];
 }>();
 
 const page = usePage();
@@ -31,13 +36,12 @@ const userRole = computed(
 const isAdmin = computed(() => userRole.value === 'admin');
 
 // Tabs
-type Tab = 'thresholds' | 'sms' | 'system';
+type Tab = 'thresholds' | 'sms';
 const activeTab = ref<Tab>('thresholds');
 
 const tabs: { id: Tab; label: string; icon: unknown }[] = [
     { id: 'thresholds', label: 'Thresholds & Automation', icon: Sliders },
     { id: 'sms', label: 'SMS Recipients', icon: MessageSquare },
-    { id: 'system', label: 'System', icon: Monitor },
 ];
 
 // ---------- Settings Form ----------
@@ -126,8 +130,7 @@ function formatHour(hour: number | string | undefined | null): string {
                         System Settings
                     </h1>
                     <p class="mt-1 text-muted-foreground">
-                        Manage thresholds, automation, SMS alerts, and system
-                        configuration.
+                        Manage thresholds, automation, and SMS alert recipients.
                     </p>
                 </div>
 
@@ -524,86 +527,89 @@ function formatHour(hour: number | string | undefined | null): string {
                 <!-- ======= SMS RECIPIENTS TAB ======= -->
                 <div
                     v-if="activeTab === 'sms'"
-                    class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
+                    class="space-y-6 rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
                 >
-                    <div class="mb-6 flex items-center gap-2">
+                    <div class="flex items-center gap-3">
                         <div
                             class="rounded-lg bg-blue-500/10 p-2 text-blue-500 shadow-inner"
                         >
                             <MessageSquare class="h-4 w-4" />
                         </div>
-                        <h2 class="font-semibold text-muted-foreground">
-                            SMS RECIPIENT NUMBERS
-                        </h2>
+                        <div>
+                            <h2 class="font-semibold text-foreground">
+                                SMS RECIPIENT NUMBERS
+                            </h2>
+                            <p class="text-xs text-muted-foreground">
+                                Active Admin &amp; Faculty accounts with a
+                                contact number receive SMS alerts automatically.
+                            </p>
+                        </div>
                     </div>
+
+                    <!-- Automatic Recipients (Active Admin & Faculty) -->
+                    <div
+                        class="rounded-xl border border-border/50 bg-muted/20 p-4"
+                    >
+                        <p
+                            class="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                        >
+                            Automatic Recipients (Active Admin &amp; Faculty)
+                        </p>
+                        <div
+                            v-if="activeSmsUsers && activeSmsUsers.length > 0"
+                            class="mt-2.5 flex flex-wrap gap-2"
+                        >
+                            <span
+                                v-for="u in activeSmsUsers"
+                                :key="u.id"
+                                class="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-xs"
+                            >
+                                <span class="font-medium text-foreground">{{
+                                    u.name
+                                }}</span>
+                                <span
+                                    class="font-mono text-muted-foreground"
+                                    >{{ u.contact_number }}</span
+                                >
+                            </span>
+                        </div>
+                        <p
+                            v-else
+                            class="mt-1.5 text-xs text-muted-foreground"
+                        >
+                            No active Admin or Faculty accounts have a contact
+                            number saved yet.
+                        </p>
+                    </div>
+
                     <div class="space-y-1">
                         <label
                             for="sms-recipients"
                             class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
                         >
-                            Recipient Numbers (comma-separated)
+                            Additional Recipient Numbers (Optional,
+                            comma-separated)
                         </label>
                         <textarea
                             id="sms-recipients"
                             v-model="settingsForm.sms_recipients"
-                            rows="4"
+                            rows="3"
                             :class="inputClass()"
                             placeholder="09123456789,09987654321"
                         ></textarea>
                         <p class="text-xs text-muted-foreground">
-                            Enter numbers like 09123456789, separated by commas
-                            (+63 format is also accepted). Alert SMS messages
-                            will be sent to these numbers.
+                            Add extra phone numbers outside user accounts (e.g.
+                            09123456789 or +63 format, separated by commas).
+                            Duplicate numbers are merged automatically.
                         </p>
                     </div>
                     <button
                         id="btn-save-sms"
                         @click="saveSettings"
                         :disabled="savingSettings"
-                        class="mt-6 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
+                        class="rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
                     >
                         {{ savingSettings ? 'Saving...' : 'Save Recipients' }}
-                    </button>
-                </div>
-
-                <!-- ======= SYSTEM TAB ======= -->
-                <div
-                    v-if="activeTab === 'system'"
-                    class="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-sm backdrop-blur-md"
-                >
-                    <div class="mb-6 flex items-center gap-2">
-                        <div
-                            class="rounded-lg bg-secondary/60 p-2 text-muted-foreground shadow-inner"
-                        >
-                            <Monitor class="h-4 w-4" />
-                        </div>
-                        <h2 class="font-semibold text-muted-foreground">
-                            SYSTEM CONFIGURATION
-                        </h2>
-                    </div>
-                    <div class="max-w-md space-y-4">
-                        <div class="space-y-1">
-                            <label
-                                for="system-name"
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                                >System Name</label
-                            >
-                            <input
-                                id="system-name"
-                                v-model="settingsForm.system_name"
-                                type="text"
-                                :class="inputClass()"
-                                placeholder="IoT Mushroom Monitoring System"
-                            />
-                        </div>
-                    </div>
-                    <button
-                        id="btn-save-system"
-                        @click="saveSettings"
-                        :disabled="savingSettings"
-                        class="mt-6 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
-                    >
-                        {{ savingSettings ? 'Saving...' : 'Save Settings' }}
                     </button>
                 </div>
             </template>

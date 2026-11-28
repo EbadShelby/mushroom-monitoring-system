@@ -32,6 +32,7 @@ class SmsService
     private function recipientNumbers(): array
     {
         $userNumbers = User::whereIn('role', ['admin', 'faculty'])
+            ->where('is_active', true)
             ->whereNotNull('contact_number')
             ->where('contact_number', '!=', '')
             ->pluck('contact_number')
