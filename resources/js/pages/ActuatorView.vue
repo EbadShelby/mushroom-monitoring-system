@@ -882,36 +882,10 @@ function formatTriggeredBy(value: string | null | undefined): string {
                             <div
                                 class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-cyan-500/5 px-3 py-2 text-sm ring-1 ring-cyan-500/15"
                             >
-                                <div class="flex flex-col">
-                                    <span
-                                        class="text-xs font-medium text-foreground"
-                                        >Scheduled Misting</span
-                                    >
-                                    <span
-                                        class="text-[11px] text-muted-foreground"
-                                    >
-                                        <template
-                                            v-if="thresholds.boost_enabled"
-                                        >
-                                            If below
-                                            {{
-                                                thresholds.boost_max_start_humidity
-                                            }}% humidity<template
-                                                v-if="
-                                                    thresholds.boost_min_idle_hours >
-                                                    0
-                                                "
-                                            >
-                                                &amp; off for
-                                                {{
-                                                    thresholds.boost_min_idle_hours
-                                                }}
-                                                hrs</template
-                                            >
-                                        </template>
-                                        <template v-else> Disabled </template>
-                                    </span>
-                                </div>
+                                <span
+                                    class="text-xs font-medium text-foreground"
+                                    >Scheduled Misting</span
+                                >
                                 <span
                                     v-if="thresholds.boost_enabled"
                                     class="text-xs font-semibold text-cyan-600 tabular-nums dark:text-cyan-400"

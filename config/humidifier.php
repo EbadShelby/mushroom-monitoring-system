@@ -73,9 +73,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Gently refreshes chamber humidity at 7:00 AM, 1:00 PM, and 7:00 PM when
-    | humidity is below boost_max_start_humidity AND the humidifier has been
-    | idle for at least boost_min_idle_hours. Stops automatically after
-    | boost_duration_minutes OR as soon as humidity reaches the OFF threshold.
+    | humidity is below boost_max_start_humidity. The 1:00 PM afternoon slot
+    | only runs if the humidifier has been off for at least boost_min_idle_hours.
+    | Stops automatically after boost_duration_minutes OR at the OFF threshold.
     |
     */
 

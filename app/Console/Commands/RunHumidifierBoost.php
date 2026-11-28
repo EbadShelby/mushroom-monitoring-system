@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Cache;
 
 class RunHumidifierBoost extends Command
 {
-    protected $signature = 'humidifier:boost';
+    protected $signature = 'humidifier:boost {--require-idle : Skip if the humidifier already ran within the quiet window}';
 
-    protected $description = 'Run a sensor-capped misting boost (up to 3 mins, skips if active recently or already >= 85% RH).';
+    protected $description = 'Run a sensor-capped misting boost (up to 3 mins, skips if already >= 85% RH, or if recently active when --require-idle is set).';
 
     public function handle(FirebaseService $firebase): int
     {
@@ -51,8 +51,8 @@ class RunHumidifierBoost extends Command
 
         $minIdleHours = max(0, (int) config('humidifier.boost_min_idle_hours', 4));
 
-        if ($minIdleHours > 0 && $lastLog !== null && $lastLog->triggered_at->gt(now()->subHours($minIdleHours))) {
-            $this->line("Humidifier already ran within the last {$minIdleHours} hours — skipping boost.");
+        if ($this->option('require-idle') && $minIdleHours > 0 && $lastLog !== null && $lastLog->triggered_at->gt(now()->subHours($minIdleHours))) {
+            $this->line("Humidifier already ran within the last {$minIdleHours} hours — skipping afternoon boost.");
 
             return self::SUCCESS;
         }

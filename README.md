@@ -1,6 +1,6 @@
 # IoT-Based Environmental Monitoring System for Oyster Mushroom Cultivation
 
-An IoT system designed for monitoring and automating the cultivation environment of Gray Oyster Mushrooms (_Pleurotus ostreatus_). This system was developed for Cotabato State University — BS Agriculture Program.
+An IoT system designed for monitoring and automating the cultivation environment of Oyster Mushrooms (_Pleurotus_ spp.). This system was developed for Cotabato State University — BS Agriculture Program.
 
 The system uses an ESP32 microcontroller to collect environmental data from various sensors (temperature, humidity, CO2, light, and soil moisture) and automatically controls actuators (humidifier, grow light) based on specific thresholds. The data is sent to a Laravel backend, where it is stored in MySQL for historical tracking and pushed to a Firebase Realtime Database for live dashboard monitoring built with Vue.js.
 
@@ -52,7 +52,7 @@ ESP32 (sensors + actuators)                    ESP32-CAM (OV2640 + Flash)
 ### Backend
 
 - **Framework**: Laravel 13
-- **Language**: PHP 8.4 above
+- **Language**: PHP 8.4+ (8.5 recommended)
 - **Authentication**: Laravel Fortify
 - **PDF Generation**: `barryvdh/laravel-dompdf`
 - **SMS API**: Semaphore API (PH-based)
@@ -105,14 +105,17 @@ The system evaluates incoming sensor readings against a unified set of configura
     - Continuous humidifier operation is capped at **15 minutes** with a mandatory **3-minute resting cooldown**, protecting the ultrasonic mist makers from overheating if the reservoir runs dry.
     - If the humidifier runs continuously for **5 minutes** while humidity remains below the low threshold (`75%`), a **Stall Alert** SMS is sent to check the water tank, mist maker, and sensor.
 - **Humidity Control Band & Settling Grace Period**: The humidifier switches ON at _lower limit + 3_ (`78%`) and OFF at _upper limit − 2_ (`93%`, adjustable via `HUMIDIFIER_HUMIDITY_ON_MARGIN` / `HUMIDIFIER_HUMIDITY_OFF_MARGIN`), so humidity is corrected before leaving the target range. An SMS is sent only when humidity drops below `75%`, and high-humidity readings (`> 95%`) within **3 minutes** after the humidifier turns off are treated as `Settling (mist dissipating)` rather than false breaches.
-- **2×/Day Sensor-Capped Misting Boost**: Twice daily (**7:00 AM & 7:00 PM** via `php artisan humidifier:boost`), the system triggers a gentle refresh boost if an active cycle is running, override is off, and humidity is below **85%**. It automatically stops after **3 minutes** or as soon as humidity hits **93%**, whichever comes first (tunable via `HUMIDIFIER_BOOST_ENABLED`, `HUMIDIFIER_BOOST_DURATION_MINUTES`, `HUMIDIFIER_BOOST_MAX_START_HUMIDITY`).
+- **3×/Day Scheduled Misting**: Three times daily (**7:00 AM, 1:00 PM & 7:00 PM** via `php artisan humidifier:boost`), the system triggers a gentle refresh mist if an active cycle is running, override is off, and humidity is below **85%**. The **1:00 PM** afternoon slot (`--require-idle`) only runs if the humidifier has been off for at least **4 hours** (`HUMIDIFIER_BOOST_MIN_IDLE_HOURS`), preventing over-wetting on warm days while keeping air-conditioned chambers refreshed. Every scheduled mist stops automatically after **3 minutes** or as soon as humidity hits **93%**, whichever comes first (tunable via `HUMIDIFIER_BOOST_ENABLED`, `HUMIDIFIER_BOOST_DURATION_MINUTES`, `HUMIDIFIER_BOOST_MAX_START_HUMIDITY`, `HUMIDIFIER_BOOST_MIN_IDLE_HOURS`).
 - **Night-Cycle Light Awareness**: Low-light SMS alerts and dashboard warnings are suppressed outside the configured LED ON window (`led_on_hour` – `led_off_hour`, default 6:00 AM – 6:00 PM), with a **2-minute turn-on grace period** at `led_on_hour` so the relay has time to switch on before alerting.
-- **Breach Summary Cooldown**: Cycle threshold breach counts (in Cycle Details and PDF reports) use a **rolling 15-minute cooldown** per sensor (matching the SMS alert cooldown).
+- **Breach Summary & Per-Cycle Alert Logs**: Cycle threshold breach counts (in Cycle Details, Compare Cycles, and PDF reports) and the Alert Logs frequency chart use a **rolling 15-minute cooldown** per sensor (matching the SMS alert cooldown). Alert logs are linked per growing cycle and default to the active cycle (with an **All Cycles** option).
 - **Automated Growth Camera (ESP32-CAM)**:
     - Captures automatically every ~3 hours aligned with the grow LED (`6:01 AM, 9:00 AM, 12:00 PM, 3:00 PM, 5:59 PM` using the grow LED; `9:00 PM, 12:00 AM, 3:00 AM` using onboard flash) plus on-demand **Capture Now** from `/camera`.
     - Automatically triggers the onboard flash LED (`GPIO 4`) for ~0.5s when the grow LED is off, and un-mirrors the image (`hmirror`).
     - Photos on `/camera` display capture time, source badges (**Auto**, **Manual**, **Uploaded**), and interval filtering (`Every 3h / 6h / 9h / 12h / Daily`).
-- **Growing Cycles & Measurements**: Cycles support multiple **Fruiting Bag** varieties and counts (e.g., `10× Gray Oyster Mushroom, 1× White Oyster Mushroom`), and measurements track **Fruiting Body Count**, **Avg Height (cm)**, and **Avg Cap Diameter (cm)**.
+- **Growing Cycles, Harvest Measurements & Cycle Comparison**:
+    - Cycles support multiple **Fruiting Bag** varieties and counts (e.g., `10× White Oyster Mushroom, 5× Gray Oyster Mushroom`), full editing, and post-harvest logging directly from **Growing Cycles** (`/cycles`) or inside a cycle's detail page (`/cycles/{id}`).
+    - Clicking **Complete** on an active cycle offers optional inline harvest fields (**Fruiting Bodies**, **Avg Height (cm)**, **Avg Cap Size (cm)**, **Notes**) when none have been logged yet.
+    - **Compare Cycles** lets all roles compare 2–10 cycles on demand with interactive bar charts and focused tables split into **Harvest Results** and **Growing Conditions**.
 - **Manual Override**: Faculty/Admin can manually lock any relay via the Actuator Control page. When a relay is locked, automation and schedules are paused for that specific relay.
 - **Single Active Cycle & Smart SMS Alerts**: Only one growing cycle can be active at a time. When no cycle is active, dashboard sensor cards display an `Idle` state and environmental SMS alerts are suppressed so an empty chamber does not consume SMS credits.
 - **Mist & Water Tank Tracking** (Dashboard & Actuator Control pages): Mist output and tank level are _estimates_ calculated from the humidifier relay's on-time in `actuator_logs` (not measured by a physical sensor).
@@ -125,7 +128,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 
 - **Admin**: Full access — User management, settings, thresholds, and all logs.
 - **Faculty**: Start/end cycles, log measurements, upload growth photos, control actuators, generate reports, and receive SMS alerts.
-- **Student**: View dashboard, view growth documentation, view measurements (read-only — cannot log or delete), and analyze historical data.
+- **Student**: View dashboard, growing cycles (including cycle comparisons and harvest records), growth camera photos, and historical data (read-only — cannot log, edit, or delete).
 
 ## System Requirements
 
@@ -160,7 +163,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 
 ### Network Requirements
 
-- **Live Hosting (`https://mycosense.online`)**: Traffic is routed via **Cloudflare Tunnel (`cloudflared`)** to Apache (`httpd`) + PHP-FPM on port `8080`. Both the main ESP32 and ESP32-CAM connect over HTTPS (`WiFiClientSecure`) using `DEVICE_TOKEN` and `CAMERA_TOKEN`, so they work from any Wi-Fi or mobile hotspot with internet access.
+- **Live Hosting (`https://mycosense.online`)**: Traffic is routed via **Cloudflare Tunnel (`cloudflared`)** to Apache + PHP on port `8080`. Both the main ESP32 and ESP32-CAM connect over HTTPS (`WiFiClientSecure`) using `DEVICE_TOKEN` and `CAMERA_TOKEN`, so they work from any 2.4 GHz Wi-Fi or mobile hotspot with internet access.
 - Outbound internet access is required for:
     - **Cloudflare Tunnel** — public HTTPS routing (`mycosense.online`)
     - **Firebase Realtime Database** — real-time sensor & actuator sync
@@ -180,14 +183,16 @@ The system evaluates incoming sensor readings against a unified set of configura
 
 ### ESP32 Firmware Dependencies (Arduino / PlatformIO)
 
-| Library                         | Purpose                          |
-| :------------------------------ | :------------------------------- |
-| `DHT sensor library` (Adafruit) | DHT22 temperature + humidity     |
-| `Adafruit Unified Sensor`       | Required by DHT library          |
-| `BH1750` (Christopher Laws)     | Light level sensor (I2C)         |
-| `ArduinoJson`                   | Serialize sensor payload to JSON |
-| `WiFi.h`                        | Built-in ESP32 Wi-Fi stack       |
-| `HTTPClient.h`                  | Built-in ESP32 HTTP client       |
+| Library                         | Purpose                               |
+| :------------------------------ | :------------------------------------ |
+| `DHT sensor library` (Adafruit) | DHT22 temperature + humidity          |
+| `Adafruit Unified Sensor`       | Required by DHT library               |
+| `BH1750` (Christopher Laws)     | Light level sensor (I2C)              |
+| `ArduinoJson`                   | Serialize sensor payload to JSON      |
+| `WiFi.h`                        | Built-in ESP32 Wi-Fi stack            |
+| `WiFiClientSecure.h`            | Built-in HTTPS TLS client             |
+| `HTTPClient.h`                  | Built-in ESP32 HTTP/HTTPS client      |
+| `esp_camera.h`                  | OV2640 camera driver (ESP32-CAM only) |
 
 > All libraries are available through the Arduino Library Manager or `platformio.ini` `lib_deps`.
 
@@ -198,7 +203,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 1. **Clone the repository** (using Command Prompt, PowerShell, or Git Bash)
 
     ```bash
-    git clone https://github.com/your-org/mushroom-monitoring-system.git
+    git clone <your-repo-url>
     cd mushroom-monitoring-system
     ```
 
@@ -225,7 +230,7 @@ The system evaluates incoming sensor readings against a unified set of configura
 
     _(or `cp .env.example .env` in PowerShell / Git Bash)_
 
-    _Update your `.env` file with the correct MySQL credentials, Firebase credentials, and Semaphore API key._
+    _Update your `.env` file with the correct MySQL credentials, Firebase credentials, Semaphore API key, `DEVICE_TOKEN`, and `CAMERA_TOKEN`._
 
 5. **Run Database Migrations & Seeders**
 
@@ -263,7 +268,7 @@ The system evaluates incoming sensor readings against a unified set of configura
         php artisan schedule:work
         ```
 
-        _Note: Enforces actuator schedules (e.g., LED lights) every minute._
+        _Note: Enforces actuator schedules (grow lights, scheduled misting, and camera captures) every minute._
 
 ---
 
@@ -274,31 +279,30 @@ Follow these steps when powering up the physical mushroom monitoring setup:
 1. **Start Database & Web Server (Apache & MySQL)**
     - Open **XAMPP Control Panel** (or Laragon) and click **Start** for **Apache** and **MySQL**.
 
-2. **Verify Host IP Address**
+2. **Verify Host IP Address (Local LAN Setup)**
     - Open Command Prompt or PowerShell:
         ```cmd
         ipconfig
         ```
-    - Find the `IPv4 Address` under your connected Wi-Fi adapter (e.g., `192.168.254.xxx`).
+    - Find the `IPv4 Address` under your connected Wi-Fi adapter (e.g., `192.168.x.x`).
 
-    _If your host IP is not `192.168.254.138` (or the IP configured in your C++ code), update the endpoint URL in the ESP32 Arduino sketch and re-upload to the microcontroller._
+    _If running locally without Cloudflare Tunnel, make sure the endpoint URL in your ESP32 firmware matches your host IP address._
 
 3. **Start the 3 Required Terminals**
     - **Terminal 1 — Laravel API Server**: `php artisan serve --host=0.0.0.0 --port=8080`
-    - **Terminal 2 — Composer Compiler**: `composer run dev`
+    - **Terminal 2 — Vite / Frontend Compiler**: `composer run dev`
     - **Terminal 3 — Task Scheduler**: `php artisan schedule:work`
 
 4. **Access the Dashboard**
-    - Open browser: `http://localhost:8080` (or `http://192.168.254.138:8080`)
-    - Log in with your credentials.
-    - After refilling the humidifier tanks, press **Log Refill** on the **Dashboard** or **Actuator Control** page so the water-tank tracker restarts.
+    - Open browser: `http://localhost:8080` (or `https://mycosense.online` when hosted via Cloudflare Tunnel).
+    - Log in with your credentials and ensure an **Active** growing cycle exists in **Growing Cycles** (`/cycles`).
+    - After refilling all 4 humidifier tanks (**1,200 mL total**), press **Log Refill** on the **Dashboard** or **Actuator Control** page so the water-tank tracker restarts.
 
-5. **Power On ESP32**
-    - Plug in the ESP32 board.
-    - ESP32 connects to Wi-Fi (`GlobeAtHome_50B8D`).
-    - MQ-135 sensor warms up for ~30 seconds.
-    - Microcontroller begins posting readings every 10–30 seconds.
-    - _(Optional)_ Monitor live status via Arduino IDE/PlatformIO Serial Monitor at **115200 baud**.
+5. **Power On ESP32 & ESP32-CAM**
+    - Plug in the main ESP32 board and ESP32-CAM module.
+    - Both connect to your configured 2.4 GHz Wi-Fi network.
+    - MQ-135 sensor warms up for ~30 seconds, then the microcontroller begins posting readings every 10 seconds.
+    - _(Optional)_ Monitor live status via Arduino IDE / PlatformIO Serial Monitor at **115200 baud**.
 
 6. **Live Dashboard Verified ✅**
-    - After ~35 seconds, the dashboard at `/dashboard` displays live temperature, humidity, CO₂, light, and substrate moisture metrics updated via Firebase.
+    - After ~35 seconds, `/dashboard` displays live temperature, humidity, CO₂, light, and substrate moisture metrics updated via Firebase.
